@@ -14,6 +14,9 @@
                             <li class="nav-item">
                                 <a class="nav-link fw-semibold {{ request()->routeIs('users.*') ? 'active' : '' }}" href="{{ route('users.index') }}">Usuarios</a>
                             </li>
+                            <li class="nav-item">
+                                <a class="nav-link fw-semibold {{ request()->routeIs('patients.*') ? 'active' : '' }}" href="{{ route('patients.index') }}">Pacientes</a>
+                            </li>
                         @endauth
                     </ul>
 
