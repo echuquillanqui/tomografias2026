@@ -46,14 +46,14 @@
                             <form method="POST" action="{{ route('login') }}">
                                 @csrf
 
-                                <!-- Input: Correo Electrónico o usuario -->
+                                <!-- Input: Correo Electrónico -->
                                 <div class="mb-3">
-                                    <label for="login" class="form-label small fw-semibold" style="color: var(--clinic-dark-blue);">
-                                        {{ __('Correo electrónico o usuario') }}
+                                    <label for="email" class="form-label small fw-semibold" style="color: var(--clinic-dark-blue);">
+                                        {{ __('Email Address') }}
                                     </label>
                                     <div class="input-group">
-                                        <input id="login" type="text" class="form-control bg-light border-0 py-2 px-3 @error('login') is-invalid @enderror" name="login" value="{{ old('login') }}" required autocomplete="username" autofocus placeholder="usuario o nombre@clinica.com">
-                                        @error('login')
+                                        <input id="email" type="email" class="form-control bg-light border-0 py-2 px-3 @error('email') is-invalid @enderror" name="email" value="{{ old('email') }}" required autocomplete="email" autofocus placeholder="nombre@clinica.com">
+                                        @error('email')
                                             <span class="invalid-feedback" role="alert">
                                                 <strong>{{ $message }}</strong>
                                             </span>
