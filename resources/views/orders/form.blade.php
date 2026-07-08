@@ -127,17 +127,6 @@
                             </div>
                         </div>
 
-                        <div class="selected-exams-toolbar mb-3">
-                            <div>
-                                <div class="fw-bold text-primary">Exámenes seleccionados</div>
-                                <small class="text-muted" x-text="cart.length + ' examen(es) en la orden'"></small>
-                            </div>
-                            <div class="input-group input-group-sm selected-exams-toolbar__search">
-                                <span class="input-group-text"><i class="bi bi-search"></i></span>
-                                <input type="text" class="form-control" x-model.trim="cartSearch" placeholder="Filtrar seleccionados...">
-                            </div>
-                        </div>
-
                         <div class="table-responsive">
                             <table class="table table-clinic-order align-middle mb-0">
                                 <thead class="table-light">
