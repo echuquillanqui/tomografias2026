@@ -16,6 +16,7 @@ use Illuminate\View\View;
 class OrderController extends Controller
 {
     private const ESTADOS = ['Pendiente', 'En proceso', 'Informado', 'Entregado', 'Anulado'];
+    private const TIPOS_PAGO = ['Efectivo', 'Tarjeta', 'Transferencia', 'Yape/Plin', 'Convenio'];
 
     public function index(Request $request): View
     {
@@ -78,34 +79,20 @@ class OrderController extends Controller
 
     private function formData(Request $request, ?Order $order = null): array
     {
-        $patientSearch = trim((string) $request->query('patient_search'));
-        $selectedPatientId = old('patient_id', $order?->patient_id);
-
-        $patients = Patient::query()
-            ->select(['id', 'dni', 'nombres', 'apellidos'])
-            ->when($patientSearch !== '', fn ($q) => $q->where(function ($qq) use ($patientSearch) {
-                $qq->where('dni', 'like', "%{$patientSearch}%")
-                    ->orWhere('nombres', 'like', "%{$patientSearch}%")
-                    ->orWhere('apellidos', 'like', "%{$patientSearch}%");
-            }), fn ($q) => $q->when($selectedPatientId, fn ($qq) => $qq->whereKey($selectedPatientId)))
-            ->orderBy('apellidos')
-            ->limit(50)
+        $medicos = User::select(['id', 'nombre_completo', 'tipo_medico', 'comision_porcentaje'])
+            ->where('rol', 'Médico')
+            ->where('activo', true)
+            ->orderBy('nombre_completo')
             ->get();
 
-        if ($selectedPatientId && ! $patients->contains('id', (int) $selectedPatientId)) {
-            $selectedPatient = Patient::select(['id', 'dni', 'nombres', 'apellidos'])->find($selectedPatientId);
-            if ($selectedPatient) {
-                $patients->prepend($selectedPatient);
-            }
-        }
-
         return [
-            'patients' => $patients,
-            'patientSearch' => $patientSearch,
+            'patients' => Patient::select(['id', 'dni', 'nombres', 'apellidos'])->orderBy('apellidos')->orderBy('nombres')->get(),
             'agreements' => Agreement::select(['id', 'nombre_institucion'])->where('activo', true)->orderBy('nombre_institucion')->get(),
             'exams' => Exam::select(['id', 'nombre_examen'])->where('activo', true)->orderBy('nombre_examen')->get(),
-            'medicos' => User::select(['id', 'nombre_completo', 'comision_porcentaje'])->where('rol', 'Médico')->where('activo', true)->orderBy('nombre_completo')->get(),
+            'medicosSolicitantes' => $medicos->whereIn('tipo_medico', ['Solicitante', 'Ambos'])->values(),
+            'medicosInformantes' => $medicos->whereIn('tipo_medico', ['De Informe', 'Ambos'])->values(),
             'estados' => self::ESTADOS,
+            'tiposPago' => self::TIPOS_PAGO,
         ];
     }
 
@@ -119,6 +106,7 @@ class OrderController extends Controller
             'medico_informe_id' => ['nullable', 'exists:users,id'],
             'fecha_orden' => ['required', 'date'],
             'estado' => ['required', Rule::in(self::ESTADOS)],
+            'tipo_pago' => ['required', Rule::in(self::TIPOS_PAGO)],
             'descuento' => ['nullable', 'numeric', 'min:0'],
             'observaciones' => ['nullable', 'string'],
             'exams' => ['required', 'array', 'min:1'],
