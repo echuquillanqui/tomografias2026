@@ -1,9 +1,7 @@
-        <!-- Navbar limpia de estilo hospitalario/clínico moderno -->
         <nav class="navbar navbar-expand-md navbar-clinic shadow-sm py-3">
             <div class="container">
                 <a class="navbar-brand d-flex align-items-center" href="{{ url('/') }}">
-                    <!-- Icono simulado de escaneo/médico -->
-                    <span class="me-2" style="color: var(--clinic-cyan); font-size: 1.4rem;">⦾</span>
+                    <span class="brand-mark">⦾</span>
                     {{ config('app.name', 'Clínica de Tomografía') }}
                 </a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="{{ __('Toggle navigation') }}">
