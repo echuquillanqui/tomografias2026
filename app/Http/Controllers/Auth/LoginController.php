@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Foundation\Auth\AuthenticatesUsers;
+use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 class LoginController extends Controller
 {
@@ -26,6 +28,28 @@ class LoginController extends Controller
      * @var string
      */
     protected $redirectTo = '/home';
+
+    /**
+     * Use a single login field that accepts an email address or username.
+     */
+    public function username(): string
+    {
+        return 'login';
+    }
+
+    /**
+     * Build the credentials array based on the login value entered by the user.
+     */
+    protected function credentials(Request $request): array
+    {
+        $login = $request->input($this->username());
+        $field = Str::contains($login, '@') ? 'email' : 'username';
+
+        return [
+            $field => $login,
+            'password' => $request->input('password'),
+        ];
+    }
 
     /**
      * Create a new controller instance.
