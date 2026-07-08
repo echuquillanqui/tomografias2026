@@ -13,19 +13,6 @@
         </div>
     </section>
 
-    <div class="card clinic-card p-4 mb-3">
-        <form method="GET" action="{{ $mode === 'create' ? route('orders.create') : route('orders.edit', $order) }}" class="row g-2 align-items-end">
-            <div class="col-md-9">
-                <label class="form-label">Buscar paciente</label>
-                <input name="patient_search" class="form-control" value="{{ $patientSearch }}" placeholder="DNI, nombres o apellidos">
-            </div>
-            <div class="col-md-3 d-grid">
-                <button class="btn btn-outline-primary">Buscar</button>
-            </div>
-            <div class="col-12 text-muted small">Se muestran hasta 50 coincidencias para evitar cargar toda la base de pacientes en memoria.</div>
-        </form>
-    </div>
-
     <form method="POST" action="{{ $mode === 'create' ? route('orders.store') : route('orders.update', $order) }}" class="card clinic-card p-4">
         @csrf
         @if($mode === 'edit')
@@ -35,8 +22,8 @@
         <div class="row g-3">
             <div class="col-md-4">
                 <label class="form-label">Paciente</label>
-                <select name="patient_id" class="form-select" required>
-                    <option value="">{{ $patients->isEmpty() ? 'Busca un paciente para seleccionarlo' : 'Seleccionar paciente' }}</option>
+                <select name="patient_id" class="form-select js-tom-select" data-placeholder="Buscar paciente por DNI, nombres o apellidos" required>
+                    <option value=""></option>
                     @foreach($patients as $p)
                         <option value="{{ $p->id }}" @selected(old('patient_id', $order->patient_id) == $p->id)>{{ $p->dni }} - {{ $p->nombres }} {{ $p->apellidos }}</option>
                     @endforeach
@@ -62,20 +49,28 @@
                     @endforeach
                 </select>
             </div>
-            <div class="col-md-6">
+            <div class="col-md-4">
+                <label class="form-label">Tipo de pago</label>
+                <select name="tipo_pago" class="form-select" required>
+                    @foreach($tiposPago as $tipo)
+                        <option value="{{ $tipo }}" @selected(old('tipo_pago', $order->tipo_pago ?? 'Efectivo') === $tipo)>{{ $tipo }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="col-md-4">
                 <label class="form-label">Médico solicitante</label>
-                <select name="medico_solicitante_id" class="form-select">
-                    <option value="">Sin asignar</option>
-                    @foreach($medicos as $m)
+                <select name="medico_solicitante_id" class="form-select js-tom-select" data-placeholder="Buscar médico solicitante">
+                    <option value=""></option>
+                    @foreach($medicosSolicitantes as $m)
                         <option value="{{ $m->id }}" @selected(old('medico_solicitante_id', $order->medico_solicitante_id) == $m->id)>{{ $m->nombre_completo }}</option>
                     @endforeach
                 </select>
             </div>
-            <div class="col-md-6">
+            <div class="col-md-4">
                 <label class="form-label">Médico informe</label>
-                <select name="medico_informe_id" class="form-select">
-                    <option value="">Sin asignar</option>
-                    @foreach($medicos as $m)
+                <select name="medico_informe_id" class="form-select js-tom-select" data-placeholder="Buscar médico informante">
+                    <option value=""></option>
+                    @foreach($medicosInformantes as $m)
                         <option value="{{ $m->id }}" @selected(old('medico_informe_id', $order->medico_informe_id) == $m->id)>{{ $m->nombre_completo }} ({{ $m->comision_porcentaje ?? 0 }}%)</option>
                     @endforeach
                 </select>
@@ -83,29 +78,29 @@
         </div>
 
         <hr>
-        <h5 class="fw-bold">Estudios</h5>
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="fw-bold mb-0">Estudios</h5>
+            <button type="button" class="btn btn-outline-primary btn-sm" id="add-exam-row">+ Agregar examen</button>
+        </div>
         @php($rows = old('exams', $order->orderExams->toArray() ?: [[]]))
-        @for($i = 0; $i < 5; $i++)
-            @php($row = $rows[$i] ?? [])
-            <div class="row g-2 mb-2">
-                <div class="col-md-5">
-                    <select name="exams[{{ $i }}][exam_id]" class="form-select" @if($i === 0) required @endif>
-                        <option value="">Seleccionar examen</option>
-                        @foreach($exams as $e)
-                            <option value="{{ $e->id }}" @selected(($row['exam_id'] ?? null) == $e->id)>{{ $e->nombre_examen }}</option>
-                        @endforeach
-                    </select>
+        <div id="exam-rows" class="vstack gap-2">
+            @foreach($rows as $i => $row)
+                <div class="row g-2 exam-row align-items-start">
+                    <div class="col-md-5">
+                        <select name="exams[{{ $i }}][exam_id]" class="form-select js-exam-select" data-placeholder="Buscar y seleccionar examen" required>
+                            <option value=""></option>
+                            @foreach($exams as $e)
+                                <option value="{{ $e->id }}" @selected(($row['exam_id'] ?? null) == $e->id)>{{ $e->nombre_examen }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-md-2"><select name="exams[{{ $i }}][tipo_contraste]" class="form-select"><option>Sin contraste</option><option @selected(($row['tipo_contraste'] ?? '') === 'Con contraste')>Con contraste</option></select></div>
+                    <div class="col-md-2"><input name="exams[{{ $i }}][precio]" type="number" step="0.01" class="form-control" placeholder="Precio" value="{{ $row['precio'] ?? '' }}" required></div>
+                    <div class="col-md-2"><select name="exams[{{ $i }}][estado]" class="form-select"><option @selected(($row['estado'] ?? '') === 'Pendiente')>Pendiente</option><option @selected(($row['estado'] ?? '') === 'Realizado')>Realizado</option><option @selected(($row['estado'] ?? '') === 'Informado')>Informado</option><option @selected(($row['estado'] ?? '') === 'Anulado')>Anulado</option></select></div>
+                    <div class="col-md-1 d-grid"><button type="button" class="btn btn-outline-danger remove-exam-row">×</button></div>
                 </div>
-                <div class="col-md-3">
-                    <select name="exams[{{ $i }}][tipo_contraste]" class="form-select">
-                        <option>Sin contraste</option>
-                        <option @selected(($row['tipo_contraste'] ?? '') === 'Con contraste')>Con contraste</option>
-                    </select>
-                </div>
-                <div class="col-md-2"><input name="exams[{{ $i }}][precio]" type="number" step="0.01" class="form-control" placeholder="Precio" value="{{ $row['precio'] ?? '' }}"></div>
-                <div class="col-md-2"><select name="exams[{{ $i }}][estado]" class="form-select"><option>Pendiente</option><option>Realizado</option><option>Informado</option><option>Anulado</option></select></div>
-            </div>
-        @endfor
+            @endforeach
+        </div>
 
         <div class="row g-3 mt-2">
             <div class="col-md-3 ms-auto"><label class="form-label">Descuento</label><input name="descuento" type="number" step="0.01" class="form-control" value="{{ old('descuento', $order->descuento ?? 0) }}"></div>
@@ -115,3 +110,31 @@
     </form>
 </div>
 @endsection
+
+@push('scripts')
+<link href="https://cdn.jsdelivr.net/npm/tom-select@2.4.3/dist/css/tom-select.bootstrap5.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/tom-select@2.4.3/dist/js/tom-select.complete.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const exams = @json($exams->map(fn ($e) => ['id' => $e->id, 'name' => $e->nombre_examen])->values());
+    const initTom = (select) => {
+        if (select.tomselect) return;
+        new TomSelect(select, {create: false, allowEmptyOption: true, placeholder: select.dataset.placeholder || 'Buscar...'});
+    };
+    document.querySelectorAll('.js-tom-select, .js-exam-select').forEach(initTom);
+    const rows = document.getElementById('exam-rows');
+    const reindexRows = () => rows.querySelectorAll('.exam-row').forEach((row, index) => row.querySelectorAll('[name]').forEach((field) => field.name = field.name.replace(/exams\[\d+]/, `exams[${index}]`)));
+    document.getElementById('add-exam-row').addEventListener('click', () => {
+        const index = rows.querySelectorAll('.exam-row').length;
+        const options = exams.map(exam => `<option value="${exam.id}">${exam.name}</option>`).join('');
+        rows.insertAdjacentHTML('beforeend', `<div class="row g-2 exam-row align-items-start"><div class="col-md-5"><select name="exams[${index}][exam_id]" class="form-select js-exam-select" data-placeholder="Buscar y seleccionar examen" required><option value=""></option>${options}</select></div><div class="col-md-2"><select name="exams[${index}][tipo_contraste]" class="form-select"><option>Sin contraste</option><option>Con contraste</option></select></div><div class="col-md-2"><input name="exams[${index}][precio]" type="number" step="0.01" class="form-control" placeholder="Precio" required></div><div class="col-md-2"><select name="exams[${index}][estado]" class="form-select"><option>Pendiente</option><option>Realizado</option><option>Informado</option><option>Anulado</option></select></div><div class="col-md-1 d-grid"><button type="button" class="btn btn-outline-danger remove-exam-row">×</button></div></div>`);
+        initTom(rows.querySelector('.exam-row:last-child .js-exam-select'));
+    });
+    rows.addEventListener('click', (event) => {
+        if (! event.target.classList.contains('remove-exam-row') || rows.querySelectorAll('.exam-row').length === 1) return;
+        event.target.closest('.exam-row').remove();
+        reindexRows();
+    });
+});
+</script>
+@endpush
