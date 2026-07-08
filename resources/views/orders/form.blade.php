@@ -23,9 +23,7 @@
     <section class="clinic-page-hero mb-4">
         <div class="d-flex flex-wrap justify-content-between gap-3">
             <div>
-                <div class="clinic-eyebrow mb-2">Orden médica</div>
                 <h1 class="display-6 fw-bold mb-1">{{ $mode === 'create' ? 'Generar orden' : 'Editar orden '.$order->codigo_orden }}</h1>
-                <p class="mb-0 opacity-75">Selecciona paciente, convenio, médicos y estudios en una pantalla de cobro rápida.</p>
             </div>
             <a class="btn btn-light align-self-start" href="{{ route('orders.index') }}">Volver</a>
         </div>
