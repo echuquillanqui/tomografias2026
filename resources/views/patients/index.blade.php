@@ -90,6 +90,38 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
     document.addEventListener('DOMContentLoaded', () => {
+        const calculateAge = (birthdateValue) => {
+            if (!birthdateValue) return '';
+
+            const birthdate = new Date(`${birthdateValue}T00:00:00`);
+            const today = new Date();
+
+            if (Number.isNaN(birthdate.getTime()) || birthdate > today) return '';
+
+            let age = today.getFullYear() - birthdate.getFullYear();
+            const hasBirthdayPassed = today.getMonth() > birthdate.getMonth()
+                || (today.getMonth() === birthdate.getMonth() && today.getDate() >= birthdate.getDate());
+
+            if (!hasBirthdayPassed) age -= 1;
+
+            return age;
+        };
+
+        document.querySelectorAll('.user-modal').forEach((modal) => {
+            const birthdateInput = modal.querySelector('[data-birthdate-input]');
+            const ageInput = modal.querySelector('[data-age-input]');
+
+            if (!birthdateInput || !ageInput) return;
+
+            const updateAge = () => {
+                ageInput.value = calculateAge(birthdateInput.value);
+            };
+
+            birthdateInput.addEventListener('input', updateAge);
+            birthdateInput.addEventListener('change', updateAge);
+            updateAge();
+        });
+
         const searchForm = document.querySelector('[data-reactive-search]');
         const searchInput = document.querySelector('[data-search-input]');
         const searchStatus = document.querySelector('[data-search-status]');

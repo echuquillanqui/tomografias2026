@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Patient;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
@@ -61,13 +62,18 @@ class PatientController extends Controller
 
     private function validatedData(Request $request, ?Patient $patient = null): array
     {
-        return $request->validate([
+        $data = $request->validate([
             'dni' => ['required', 'string', 'max:20', Rule::unique('patients', 'dni')->ignore($patient?->id)],
             'nombres' => ['required', 'string', 'max:255'],
             'apellidos' => ['required', 'string', 'max:255'],
             'telefono' => ['nullable', 'string', 'max:30'],
             'fecha_nacimiento' => ['nullable', 'date', 'before_or_equal:today'],
-            'edad' => ['nullable', 'integer', 'min:0', 'max:120'],
         ]);
+
+        $data['edad'] = filled($data['fecha_nacimiento'] ?? null)
+            ? Carbon::parse($data['fecha_nacimiento'])->age
+            : null;
+
+        return $data;
     }
 }

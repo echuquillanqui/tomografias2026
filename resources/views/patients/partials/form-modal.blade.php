@@ -33,13 +33,14 @@
                     </div>
                     <div class="col-md-6">
                         <label class="form-label">Fecha de nacimiento</label>
-                        <input type="date" name="fecha_nacimiento" class="form-control @error('fecha_nacimiento') is-invalid @enderror" value="{{ old('fecha_nacimiento', $patient?->fecha_nacimiento?->format('Y-m-d') ?? '') }}">
+                        <input type="date" name="fecha_nacimiento" class="form-control @error('fecha_nacimiento') is-invalid @enderror" data-birthdate-input value="{{ old('fecha_nacimiento', $patient?->fecha_nacimiento?->format('Y-m-d') ?? '') }}">
                         @error('fecha_nacimiento') <div class="invalid-feedback">{{ $message }}</div> @enderror
                     </div>
                     <div class="col-md-6">
                         <label class="form-label">Edad</label>
-                        <input type="number" name="edad" class="form-control @error('edad') is-invalid @enderror" value="{{ old('edad', $patient->edad ?? '') }}" min="0" max="120">
+                        <input type="number" name="edad" class="form-control @error('edad') is-invalid @enderror" value="{{ old('edad', $patient->edad ?? '') }}" min="0" max="120" data-age-input readonly>
                         @error('edad') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                        <div class="form-text">Se calcula automáticamente desde la fecha de nacimiento.</div>
                     </div>
                 </div>
             </div>
