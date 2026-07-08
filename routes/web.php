@@ -37,5 +37,7 @@ Route::middleware('auth')->group(function () {
     Route::resource('reagents', ReagentController::class)->except(['create', 'show', 'edit']);
     Route::resource('agreement-prices', AgreementPriceController::class)->except(['create', 'show', 'edit']);
     Route::resource('stock-movements', StockMovementController::class)->only(['index', 'store', 'destroy']);
+    Route::patch('orders/{order}/status', [OrderController::class, 'updateStatus'])->name('orders.update-status');
+    Route::patch('orders/{order}/payment', [OrderController::class, 'updatePayment'])->name('orders.update-payment');
     Route::resource('orders', OrderController::class);
 });

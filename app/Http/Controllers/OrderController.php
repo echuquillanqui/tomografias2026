@@ -32,7 +32,12 @@ class OrderController extends Controller
             ->paginate(10)
             ->withQueryString();
 
-        return view('orders.index', compact('orders', 'search'));
+        return view('orders.index', [
+            'orders' => $orders,
+            'search' => $search,
+            'estados' => self::ESTADOS,
+            'tiposPago' => self::TIPOS_PAGO,
+        ]);
     }
 
     public function create(Request $request): View
@@ -69,6 +74,28 @@ class OrderController extends Controller
         DB::transaction(fn () => $this->saveOrder($order, $request));
 
         return redirect()->route('orders.show', $order)->with('success', 'Orden actualizada correctamente.');
+    }
+
+    public function updateStatus(Request $request, Order $order): RedirectResponse
+    {
+        $data = $request->validate([
+            'estado' => ['required', Rule::in(self::ESTADOS)],
+        ]);
+
+        $order->update($data);
+
+        return redirect()->route('orders.index')->with('success', 'Estado de la orden actualizado correctamente.');
+    }
+
+    public function updatePayment(Request $request, Order $order): RedirectResponse
+    {
+        $data = $request->validate([
+            'tipo_pago' => ['required', Rule::in(self::TIPOS_PAGO)],
+        ]);
+
+        $order->update($data);
+
+        return redirect()->route('orders.index')->with('success', 'Tipo de pago actualizado correctamente.');
     }
 
     public function destroy(Order $order): RedirectResponse
