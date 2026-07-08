@@ -52,8 +52,9 @@
                 <div class="card border-0 shadow-sm mb-4 clinic-card">
                     <div class="card-header bg-white py-3 border-bottom text-primary fw-bold">DATOS DEL PACIENTE</div>
                     <div class="card-body">
-                        <div class="row g-3">
-                            <div class="col-md-6">
+                        <div class="order-search-panel mb-4">
+                            <div class="order-search-panel__icon"><i class="bi bi-person-vcard"></i></div>
+                            <div class="flex-grow-1">
                                 <label class="form-label small fw-bold">PACIENTE</label>
                                 <select name="patient_id" class="form-select js-tom-select" data-placeholder="Buscar paciente por DNI, nombres o apellidos" required>
                                     <option value=""></option>
@@ -62,6 +63,8 @@
                                     @endforeach
                                 </select>
                             </div>
+                        </div>
+                        <div class="row g-3">
                             <div class="col-md-6">
                                 <label class="form-label small fw-bold">CONVENIO</label>
                                 <select name="agreement_id" class="form-select" x-model="selectedAgreement" @change="applyAgreementPrices()" required>
@@ -115,17 +118,28 @@
                 <div class="card border-0 shadow-sm clinic-card">
                     <div class="card-header bg-white py-3 border-bottom text-primary fw-bold">BÚSQUEDA DE EXÁMENES</div>
                     <div class="card-body">
-                        <select id="item_select" class="mb-4" placeholder="Buscar exámenes... (mínimo 2 letras)"></select>
+                        <div class="order-search-panel order-search-panel--exam mb-4">
+                            <div class="order-search-panel__icon"><i class="bi bi-clipboard2-pulse"></i></div>
+                            <div class="flex-grow-1">
+                                <label class="form-label small fw-bold">AGREGAR EXAMEN</label>
+                                <select id="item_select" placeholder="Buscar exámenes... (mínimo 2 letras)"></select>
+                                <div class="form-text">Escribe al menos 2 letras y selecciona un examen para agregarlo a la orden.</div>
+                            </div>
+                        </div>
 
-                        <div class="d-flex flex-wrap gap-2 align-items-center justify-content-end mb-3">
-                            <div class="input-group input-group-sm" style="max-width: 280px;">
+                        <div class="selected-exams-toolbar mb-3">
+                            <div>
+                                <div class="fw-bold text-primary">Exámenes seleccionados</div>
+                                <small class="text-muted" x-text="cart.length + ' examen(es) en la orden'"></small>
+                            </div>
+                            <div class="input-group input-group-sm selected-exams-toolbar__search">
                                 <span class="input-group-text"><i class="bi bi-search"></i></span>
-                                <input type="text" class="form-control" x-model.trim="cartSearch" placeholder="Buscar en seleccionados...">
+                                <input type="text" class="form-control" x-model.trim="cartSearch" placeholder="Filtrar seleccionados...">
                             </div>
                         </div>
 
                         <div class="table-responsive">
-                            <table class="table align-middle mb-0">
+                            <table class="table table-clinic-order align-middle mb-0">
                                 <thead class="table-light">
                                     <tr class="small text-muted">
                                         <th>DESCRIPCIÓN</th>
@@ -236,7 +250,12 @@ function orderSystem() {
         init() {
             document.querySelectorAll('.js-tom-select').forEach((select) => {
                 if (!select.tomselect) {
-                    new TomSelect(select, { create: false, allowEmptyOption: true, placeholder: select.dataset.placeholder || 'Buscar...' });
+                    new TomSelect(select, {
+                        create: false,
+                        allowEmptyOption: true,
+                        placeholder: select.dataset.placeholder || 'Buscar...',
+                        plugins: ['clear_button']
+                    });
                 }
             });
 
