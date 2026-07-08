@@ -45,7 +45,8 @@
             transition: color 0.2s ease;
         }
 
-        .navbar-clinic .nav-link:hover {
+        .navbar-clinic .nav-link:hover,
+        .navbar-clinic .nav-link.active {
             color: var(--clinic-cyan) !important;
         }
     </style>
@@ -58,5 +59,6 @@
             @yield('content')
         </main>
     </div>
+    @stack('scripts')
 </body>
 </html>
