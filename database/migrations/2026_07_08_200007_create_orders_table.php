@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('orders', function (Blueprint $table) {
             $table->id();
-            $table->string('codigo_orden')->unique();
+            $table->string('codigo_orden')->nullable()->unique();
             $table->foreignId('patient_id')->constrained('patients')->restrictOnDelete();
             $table->foreignId('agreement_id')->constrained('agreements')->restrictOnDelete();
             $table->foreignId('medico_solicitante_id')->nullable()->constrained('users')->nullOnDelete();

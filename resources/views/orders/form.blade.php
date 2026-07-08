@@ -64,11 +64,15 @@
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label small fw-bold">CONVENIO</label>
-                                <select name="agreement_id" class="form-select" required>
+                                <select name="agreement_id" class="form-select" x-model="selectedAgreement" @change="applyAgreementPrices()" required>
                                     @foreach($agreements as $a)
                                         <option value="{{ $a->id }}" @selected(old('agreement_id', $order->agreement_id) == $a->id)>{{ $a->nombre_institucion }}</option>
                                     @endforeach
                                 </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small fw-bold">CÓDIGO DE ORDEN</label>
+                                <input name="codigo_orden" class="form-control" value="{{ old('codigo_orden', $order->codigo_orden) }}" placeholder="Opcional / si aplica">
                             </div>
                             <div class="col-md-4">
                                 <label class="form-label small fw-bold">FECHA</label>
@@ -140,7 +144,7 @@
                                                 <input type="hidden" :name="`exams[${cart.indexOf(item)}][exam_id]`" :value="item.id">
                                             </td>
                                             <td style="min-width: 160px;">
-                                                <select class="form-select form-select-sm" :name="`exams[${cart.indexOf(item)}][tipo_contraste]`" x-model="item.tipo_contraste">
+                                                <select class="form-select form-select-sm" :name="`exams[${cart.indexOf(item)}][tipo_contraste]`" x-model="item.tipo_contraste" @change="item.price = priceFor(item.id, item.tipo_contraste)">
                                                     <option>Sin contraste</option>
                                                     <option>Con contraste</option>
                                                 </select>
@@ -218,8 +222,15 @@
 <script>
 function orderSystem() {
     return {
-        cart: @json($initialItems),
-        discount: Number(@json(old('descuento', $order->descuento ?? 0))) || 0,
+        cart: {{ Illuminate\Support\Js::from($initialItems) }},
+        agreementPrices: {{ Illuminate\Support\Js::from($agreementPrices->map(fn ($price) => [
+            'agreement_id' => (string) $price->agreement_id,
+            'exam_id' => (string) $price->exam_id,
+            'tipo_contraste' => $price->tipo_contraste,
+            'price' => (float) $price->precio_pactado,
+        ])->values()) }},
+        selectedAgreement: String({{ Illuminate\Support\Js::from(old('agreement_id', $order->agreement_id ?? $agreements->first()?->id)) }} || ''),
+        discount: Number({{ Illuminate\Support\Js::from(old('descuento', $order->descuento ?? 0)) }}) || 0,
         cartSearch: '',
         isSubmitting: false,
         init() {
@@ -229,7 +240,7 @@ function orderSystem() {
                 }
             });
 
-            const exams = @json($exams->map(fn ($e) => ['id' => (string) $e->id, 'name' => $e->nombre_examen, 'uid' => 'exam'.$e->id, 'area' => 'TOMOGRAFÍA'])->values());
+            const exams = {{ Illuminate\Support\Js::from($exams->map(fn ($e) => ['id' => (string) $e->id, 'name' => $e->nombre_examen, 'uid' => 'exam'.$e->id, 'area' => 'TOMOGRAFÍA'])->values()) }};
             new TomSelect('#item_select', {
                 valueField: 'uid',
                 labelField: 'display_name',
@@ -245,7 +256,7 @@ function orderSystem() {
                     if (!value) return;
                     const item = this.$el.querySelector('#item_select').tomselect.options[value];
                     if (!this.cart.find((cartItem) => cartItem.uid === item.uid)) {
-                        this.cart.push({ ...item, type: 'exam', tipo_contraste: 'Sin contraste', estado: 'Pendiente', price: 0 });
+                        this.cart.push({ ...item, type: 'exam', tipo_contraste: 'Sin contraste', estado: 'Pendiente', price: this.priceFor(item.id, 'Sin contraste') });
                     }
                     this.$el.querySelector('#item_select').tomselect.clear();
                 }
@@ -258,6 +269,13 @@ function orderSystem() {
         removeByUid(uid) {
             const index = this.cart.findIndex((item) => item.uid === uid);
             if (index !== -1) this.cart.splice(index, 1);
+        },
+        priceFor(examId, contrast) {
+            const match = this.agreementPrices.find((price) => price.agreement_id === String(this.selectedAgreement) && price.exam_id === String(examId) && price.tipo_contraste === contrast);
+            return match ? Number(match.price) : 0;
+        },
+        applyAgreementPrices() {
+            this.cart = this.cart.map((item) => ({ ...item, price: this.priceFor(item.id, item.tipo_contraste) }));
         },
         subtotal() {
             return this.cart.reduce((sum, item) => sum + (Number(item.price) || 0), 0);

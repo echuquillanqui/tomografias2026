@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Agreement;
+use App\Models\AgreementPrice;
 use App\Models\Exam;
 use App\Models\Order;
 use App\Models\Patient;
@@ -89,6 +90,7 @@ class OrderController extends Controller
             'patients' => Patient::select(['id', 'dni', 'nombres', 'apellidos'])->orderBy('apellidos')->orderBy('nombres')->get(),
             'agreements' => Agreement::select(['id', 'nombre_institucion'])->where('activo', true)->orderBy('nombre_institucion')->get(),
             'exams' => Exam::select(['id', 'nombre_examen'])->where('activo', true)->orderBy('nombre_examen')->get(),
+            'agreementPrices' => AgreementPrice::select(['agreement_id', 'exam_id', 'tipo_contraste', 'precio_pactado'])->get(),
             'medicosSolicitantes' => $medicos->whereIn('tipo_medico', ['Solicitante', 'Ambos'])->values(),
             'medicosInformantes' => $medicos->whereIn('tipo_medico', ['De Informe', 'Ambos'])->values(),
             'estados' => self::ESTADOS,
@@ -101,6 +103,7 @@ class OrderController extends Controller
         $request->merge(['exams' => collect($request->input('exams', []))->filter(fn ($row) => ! empty($row['exam_id']))->values()->all()]);
         $data = $request->validate([
             'patient_id' => ['required', 'exists:patients,id'],
+            'codigo_orden' => ['nullable', 'string', 'max:255', Rule::unique('orders', 'codigo_orden')->ignore($order)],
             'agreement_id' => ['required', 'exists:agreements,id'],
             'medico_solicitante_id' => ['nullable', 'exists:users,id'],
             'medico_informe_id' => ['nullable', 'exists:users,id'],
@@ -118,7 +121,7 @@ class OrderController extends Controller
         $subtotal = collect($data['exams'])->sum('precio');
         $descuento = $data['descuento'] ?? 0;
         $payload = $data + [
-            'codigo_orden' => $order->exists ? $order->codigo_orden : $this->nextCode(),
+            'codigo_orden' => $data['codigo_orden'] ?? null,
             'subtotal' => $subtotal,
             'descuento' => $descuento,
             'total' => max($subtotal - $descuento, 0),
