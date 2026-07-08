@@ -25,6 +25,8 @@
             @yield('content')
         </main>
     </div>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>document.addEventListener('DOMContentLoaded',()=>{@if(session('success'))Swal.fire({icon:'success',title:'Listo',text:@json(session('success')),timer:2200,showConfirmButton:false});@endif @if(session('error'))Swal.fire({icon:'error',title:'Atención',text:@json(session('error'))});@endif @if($errors->any())Swal.fire({icon:'error',title:'Revisa el formulario',text:'Hay campos pendientes o inválidos.'});@endif});</script>
     @stack('scripts')
 </body>
 </html>

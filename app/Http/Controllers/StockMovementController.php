@@ -1,0 +1,11 @@
+<?php
+namespace App\Http\Controllers;
+use App\Models\Order; use App\Models\Reagent; use App\Models\StockMovement; use Illuminate\Http\RedirectResponse; use Illuminate\Http\Request; use Illuminate\Support\Facades\DB; use Illuminate\Validation\Rule; use Illuminate\View\View;
+class StockMovementController extends Controller{
+ public function index(Request $request):View{ $search=trim((string)$request->query('search')); $movements=StockMovement::with(['reagent','order','user'])->when($search!=='',fn($q)=>$q->where('motivo','like',"%{$search}%")->orWhereHas('reagent',fn($qq)=>$qq->where('nombre','like',"%{$search}%")))->latest('fecha_movimiento')->paginate(10)->withQueryString(); $reagents=Reagent::where('activo',true)->orderBy('nombre')->get(); $orders=Order::latest()->limit(50)->get(); return view('stock-movements.index',compact('movements','reagents','orders','search'));}
+ public function store(Request $request):RedirectResponse{ $data=$this->validatedData($request); $data['user_id']=auth()->id(); DB::transaction(function()use($data){ $movement=StockMovement::create($data); $this->applyStock($movement); }); return redirect()->route('stock-movements.index')->with('success','Movimiento registrado correctamente.');}
+ public function destroy(StockMovement $stockMovement):RedirectResponse{ DB::transaction(function()use($stockMovement){ $this->reverseStock($stockMovement); $stockMovement->delete(); }); return redirect()->route('stock-movements.index')->with('success','Movimiento eliminado y stock revertido.');}
+ private function validatedData(Request $request):array{return $request->validate(['reagent_id'=>['required','exists:reagents,id'],'tipo_movimiento'=>['required',Rule::in(['Ingreso','Salida','Ajuste'])],'cantidad'=>['required','numeric','min:0.01'],'motivo'=>['nullable','string','max:255'],'order_id'=>['nullable','exists:orders,id'],'fecha_movimiento'=>['required','date']]);}
+ private function applyStock(StockMovement $m):void{ $r=$m->reagent()->lockForUpdate()->first(); $r->stock_actual = $m->tipo_movimiento==='Salida' ? $r->stock_actual-$m->cantidad : $r->stock_actual+$m->cantidad; $r->save();}
+ private function reverseStock(StockMovement $m):void{ $r=$m->reagent()->lockForUpdate()->first(); $r->stock_actual = $m->tipo_movimiento==='Salida' ? $r->stock_actual+$m->cantidad : $r->stock_actual-$m->cantidad; $r->save();}
+}
