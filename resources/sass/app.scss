@@ -1,8 +1,236 @@
 // Fonts
-@import url('https://fonts.bunny.net/css?family=Nunito');
+@import url('https://fonts.bunny.net/css?family=Nunito:400,600,700,800');
 
 // Variables
 @import 'variables';
 
 // Bootstrap
 @import 'bootstrap/scss/bootstrap';
+
+:root {
+    --clinic-dark-blue: #071f3a;
+    --clinic-navy: #0b2545;
+    --clinic-cyan: #12a99b;
+    --clinic-cyan-dark: #0d8178;
+    --clinic-aqua: #6ee7dc;
+    --clinic-light-blue: #8da9c4;
+    --clinic-bg: #f4f8fb;
+    --clinic-surface: rgba(255, 255, 255, 0.92);
+    --clinic-border: rgba(11, 37, 69, 0.1);
+    --clinic-muted: #6b7a90;
+    --clinic-success: #16a34a;
+    --clinic-danger: #dc3545;
+    --clinic-shadow: 0 18px 45px rgba(7, 31, 58, 0.12);
+    --clinic-shadow-soft: 0 10px 28px rgba(7, 31, 58, 0.08);
+    --clinic-radius: 1.25rem;
+}
+
+body {
+    min-height: 100vh;
+    background:
+        radial-gradient(circle at top left, rgba(18, 169, 155, 0.18), transparent 34rem),
+        radial-gradient(circle at top right, rgba(141, 169, 196, 0.22), transparent 30rem),
+        linear-gradient(135deg, #f7fbff 0%, var(--clinic-bg) 48%, #edf7f5 100%);
+    color: var(--clinic-dark-blue);
+    font-family: 'Nunito', sans-serif;
+}
+
+main {
+    position: relative;
+}
+
+.text-clinic-muted { color: var(--clinic-muted) !important; }
+
+.navbar-clinic {
+    background: rgba(255, 255, 255, 0.9);
+    border-bottom: 1px solid rgba(18, 169, 155, 0.18);
+    backdrop-filter: blur(16px);
+}
+
+.navbar-clinic .navbar-brand {
+    color: var(--clinic-dark-blue) !important;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+}
+
+.navbar-clinic .brand-mark {
+    display: inline-grid;
+    width: 2.25rem;
+    height: 2.25rem;
+    margin-right: 0.65rem;
+    place-items: center;
+    border-radius: 0.8rem;
+    background: linear-gradient(135deg, var(--clinic-cyan), var(--clinic-navy));
+    color: #fff;
+    box-shadow: 0 10px 22px rgba(18, 169, 155, 0.28);
+}
+
+.navbar-clinic .nav-link {
+    border-radius: 999px;
+    color: var(--clinic-dark-blue) !important;
+    padding-inline: 1rem !important;
+    transition: all 0.2s ease;
+}
+
+.navbar-clinic .nav-link:hover,
+.navbar-clinic .nav-link.active {
+    background: rgba(18, 169, 155, 0.1);
+    color: var(--clinic-cyan-dark) !important;
+}
+
+.clinic-page-hero {
+    overflow: hidden;
+    position: relative;
+    padding: 1.75rem;
+    border: 1px solid rgba(255, 255, 255, 0.65);
+    border-radius: var(--clinic-radius);
+    background: linear-gradient(135deg, var(--clinic-navy), #0f4c75 58%, var(--clinic-cyan));
+    box-shadow: var(--clinic-shadow);
+    color: #fff;
+}
+
+.clinic-page-hero::after {
+    content: '';
+    position: absolute;
+    right: -4rem;
+    top: -5rem;
+    width: 15rem;
+    height: 15rem;
+    border: 2rem solid rgba(255, 255, 255, 0.08);
+    border-radius: 50%;
+}
+
+.clinic-page-hero > * { position: relative; z-index: 1; }
+
+.clinic-eyebrow {
+    color: rgba(255, 255, 255, 0.78);
+    font-size: 0.75rem;
+    font-weight: 800;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+}
+
+.clinic-card {
+    overflow: hidden;
+    border: 1px solid var(--clinic-border) !important;
+    border-radius: var(--clinic-radius);
+    background: var(--clinic-surface);
+    box-shadow: var(--clinic-shadow-soft);
+    backdrop-filter: blur(12px);
+}
+
+.clinic-toolbar {
+    background: linear-gradient(180deg, #fff, rgba(244, 248, 251, 0.82));
+    border-bottom: 1px solid var(--clinic-border);
+}
+
+.clinic-search {
+    position: relative;
+}
+
+.clinic-search .form-control {
+    min-height: 3.15rem;
+    border-radius: 999px;
+    padding-left: 3.1rem;
+    padding-right: 8.25rem;
+}
+
+.clinic-search-icon {
+    left: 1.15rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--clinic-cyan-dark);
+    pointer-events: none;
+    position: absolute;
+    z-index: 2;
+}
+
+.clinic-search-status {
+    position: absolute;
+    right: 1.1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--clinic-muted);
+    font-size: 0.78rem;
+    font-weight: 700;
+    pointer-events: none;
+}
+
+.form-control,
+.form-select {
+    border-color: rgba(11, 37, 69, 0.14);
+    border-radius: 0.9rem;
+    min-height: 2.75rem;
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-color: var(--clinic-cyan);
+    box-shadow: 0 0 0 0.22rem rgba(18, 169, 155, 0.18);
+}
+
+.btn-clinic-primary {
+    border: 0;
+    border-radius: 999px;
+    background: linear-gradient(135deg, var(--clinic-cyan), var(--clinic-cyan-dark));
+    color: #fff;
+    font-weight: 800;
+    box-shadow: 0 14px 28px rgba(18, 169, 155, 0.26);
+}
+
+.btn-clinic-primary:hover,
+.btn-clinic-primary:focus { color: #fff; filter: brightness(0.96); }
+
+.btn-soft-primary,
+.btn-soft-danger {
+    border-radius: 999px;
+    font-weight: 700;
+}
+
+.table-clinic thead th {
+    background: var(--clinic-dark-blue);
+    color: #fff;
+    font-size: 0.78rem;
+    letter-spacing: 0.05em;
+    padding-block: 1rem;
+    text-transform: uppercase;
+}
+
+.table-clinic tbody td { padding-block: 1rem; }
+.table-clinic tbody tr { transition: background 0.18s ease, transform 0.18s ease; }
+.table-clinic tbody tr:hover { background: rgba(18, 169, 155, 0.06); }
+
+.user-avatar {
+    display: inline-grid;
+    width: 2.4rem;
+    height: 2.4rem;
+    place-items: center;
+    border-radius: 0.85rem;
+    background: linear-gradient(135deg, rgba(18, 169, 155, 0.18), rgba(11, 37, 69, 0.14));
+    color: var(--clinic-navy);
+    font-weight: 800;
+}
+
+.badge-role { background: rgba(18, 169, 155, 0.13); color: var(--clinic-cyan-dark); }
+.badge-active { background: rgba(22, 163, 74, 0.13); color: var(--clinic-success); }
+.badge-inactive { background: rgba(107, 122, 144, 0.16); color: var(--clinic-muted); }
+
+.user-modal .modal-content {
+    border-radius: 1.25rem;
+    overflow: hidden;
+}
+
+.user-modal .modal-header {
+    background: linear-gradient(135deg, var(--clinic-navy), var(--clinic-cyan-dark));
+    border: 0;
+    padding: 1.25rem 1.5rem;
+}
+
+.user-modal .modal-body { padding: 1.5rem; }
+.user-modal .modal-footer { background: #f8fbfd; border-top: 1px solid var(--clinic-border); }
+
+.clinic-section-box {
+    background: linear-gradient(135deg, rgba(18, 169, 155, 0.09), rgba(141, 169, 196, 0.13));
+    border: 1px solid rgba(18, 169, 155, 0.14);
+    border-radius: 1rem;
+}

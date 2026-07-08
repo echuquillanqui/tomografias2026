@@ -9,7 +9,7 @@
             @if ($method !== 'POST')
                 @method($method)
             @endif
-            <div class="modal-header text-white" style="background-color: var(--clinic-dark-blue);">
+            <div class="modal-header text-white">
                 <h5 class="modal-title">{{ $title }}</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
             </div>
@@ -57,9 +57,9 @@
                     </div>
                 </div>
 
-                <div class="row g-3 mt-2 p-3 rounded d-none" style="background-color: var(--clinic-bg);" data-medical-fields>
+                <div class="row g-3 mt-3 p-3 clinic-section-box d-none" data-medical-fields>
                     <div class="col-12">
-                        <h6 class="fw-bold mb-0" style="color: var(--clinic-dark-blue);">Datos del médico</h6>
+                        <h6 class="fw-bold mb-0">Datos del médico</h6>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label">Tipo de médico</label>
@@ -88,9 +88,9 @@
                     </div>
                 </div>
             </div>
-            <div class="modal-footer bg-light">
-                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button type="submit" class="btn text-white" style="background-color: var(--clinic-cyan);">Guardar</button>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary rounded-pill px-4" data-bs-dismiss="modal">Cancelar</button>
+                <button type="submit" class="btn btn-clinic-primary px-4">Guardar</button>
             </div>
         </form>
     </div>
