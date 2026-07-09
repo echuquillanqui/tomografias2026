@@ -12,7 +12,7 @@ class Order extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['codigo_orden', 'patient_id', 'agreement_id', 'medico_solicitante_id', 'medico_informe_id', 'archivo_orden_path', 'fecha_orden', 'estado', 'tipo_pago', 'subtotal', 'descuento', 'total', 'observaciones', 'created_by'];
+    protected $fillable = ['codigo_orden', 'unidad', 'patient_id', 'agreement_id', 'medico_solicitante_id', 'medico_informe_id', 'archivo_orden_path', 'fecha_orden', 'estado', 'tipo_pago', 'subtotal', 'descuento', 'total', 'observaciones', 'created_by'];
 
     protected $casts = ['fecha_orden' => 'date', 'subtotal' => 'decimal:2', 'descuento' => 'decimal:2', 'total' => 'decimal:2'];
 
@@ -24,4 +24,5 @@ class Order extends Model
     public function orderExams(): HasMany { return $this->hasMany(OrderExam::class); }
     public function report(): HasOne { return $this->hasOne(OrderReport::class); }
     public function stockMovements(): HasMany { return $this->hasMany(StockMovement::class); }
+    public function consumables(): HasMany { return $this->hasMany(OrderConsumable::class); }
 }
