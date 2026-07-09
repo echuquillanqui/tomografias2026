@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Order extends Model
 {
@@ -21,5 +22,6 @@ class Order extends Model
     public function medicoInforme(): BelongsTo { return $this->belongsTo(User::class, 'medico_informe_id'); }
     public function creator(): BelongsTo { return $this->belongsTo(User::class, 'created_by'); }
     public function orderExams(): HasMany { return $this->hasMany(OrderExam::class); }
+    public function report(): HasOne { return $this->hasOne(OrderReport::class); }
     public function stockMovements(): HasMany { return $this->hasMany(StockMovement::class); }
 }
