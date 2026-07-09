@@ -121,8 +121,8 @@ class OrderController extends Controller
         return [
             'patients' => Patient::select(['id', 'dni', 'nombres', 'apellidos'])->orderBy('apellidos')->orderBy('nombres')->get(),
             'agreements' => Agreement::select(['id', 'nombre_institucion'])->where('activo', true)->orderBy('nombre_institucion')->get(),
-            'exams' => Exam::with('reagents:id,nombre,unidad_medida')->select(['id', 'nombre_examen'])->where('activo', true)->orderBy('nombre_examen')->get(),
-            'reagents' => Reagent::select(['id', 'nombre', 'unidad_medida'])->where('activo', true)->orderBy('nombre')->get(),
+            'exams' => Exam::with('reagents:id,nombre,unidad')->select(['id', 'nombre_examen'])->where('activo', true)->orderBy('nombre_examen')->get(),
+            'reagents' => Reagent::select(['id', 'nombre', 'unidad'])->where('activo', true)->orderBy('nombre')->get(),
             'agreementPrices' => AgreementPrice::select(['agreement_id', 'exam_id', 'tipo_contraste', 'precio_pactado'])->get(),
             'medicosSolicitantes' => $medicos->whereIn('tipo_medico', ['Solicitante', 'Ambos'])->values(),
             'medicosInformantes' => $medicos->whereIn('tipo_medico', ['De Informe', 'Ambos'])->values(),

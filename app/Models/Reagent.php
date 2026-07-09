@@ -15,6 +15,11 @@ class Reagent extends Model
 
     protected $casts = ['stock_actual' => 'decimal:2', 'stock_minimo' => 'decimal:2', 'activo' => 'boolean'];
 
+    public function getUnidadMedidaAttribute(): ?string
+    {
+        return $this->unidad;
+    }
+
     public function exams(): BelongsToMany
     {
         return $this->belongsToMany(Exam::class, 'exam_reagent')
