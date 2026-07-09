@@ -70,32 +70,6 @@
             @endif
         </div>
     </div>
-
-    <div class="card clinic-card mt-4">
-        <div class="card-header bg-white py-3 border-bottom text-primary fw-bold">
-            {{ $order->report?->titulo ?? 'REPORTE DE TOMOGRAFÍA COMPUTARIZADA' }}
-        </div>
-        <div class="card-body">
-            @if($order->report)
-                <pre class="mb-0 report-template">{{ $order->report->contenido }}</pre>
-            @else
-                <p class="text-muted mb-0">El reporte se generará automáticamente al guardar la orden.</p>
-            @endif
-        </div>
-    </div>
 </div>
 
-@push('scripts')
-<style>
-    .report-template {
-        background: #fff;
-        border: 0;
-        color: #1f2937;
-        font-family: inherit;
-        font-size: 0.95rem;
-        line-height: 1.6;
-        white-space: pre-wrap;
-    }
-</style>
-@endpush
 @endsection
