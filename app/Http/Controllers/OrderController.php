@@ -7,10 +7,13 @@ use App\Models\AgreementPrice;
 use App\Models\Exam;
 use App\Models\Order;
 use App\Models\Patient;
+use App\Models\Reagent;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
@@ -18,6 +21,7 @@ class OrderController extends Controller
 {
     private const ESTADOS = ['Pendiente', 'En proceso', 'Informado', 'Entregado', 'Anulado'];
     private const TIPOS_PAGO = ['Efectivo', 'Tarjeta', 'Transferencia', 'Yape/Plin', 'Convenio'];
+    private const UNIDADES = ['Topico', 'Sala de control (Tecnologo)'];
 
     public function index(Request $request): View
     {
@@ -37,13 +41,14 @@ class OrderController extends Controller
             'search' => $search,
             'estados' => self::ESTADOS,
             'tiposPago' => self::TIPOS_PAGO,
+            'unidades' => self::UNIDADES,
         ]);
     }
 
     public function create(Request $request): View
     {
         return view('orders.form', $this->formData($request) + [
-            'order' => new Order(['fecha_orden' => now(), 'estado' => 'Pendiente', 'descuento' => 0]),
+            'order' => new Order(['fecha_orden' => now(), 'estado' => 'Pendiente', 'descuento' => 0, 'unidad' => 'Topico']),
             'mode' => 'create',
         ]);
     }
@@ -57,14 +62,14 @@ class OrderController extends Controller
 
     public function show(Order $order): View
     {
-        $order->load(['patient', 'agreement', 'medicoSolicitante', 'medicoInforme', 'orderExams.exam', 'creator', 'report']);
+        $order->load(['patient', 'agreement', 'medicoSolicitante', 'medicoInforme', 'orderExams.exam', 'creator', 'report', 'consumables.reagent']);
 
         return view('orders.show', compact('order'));
     }
 
     public function edit(Request $request, Order $order): View
     {
-        $order->load('orderExams');
+        $order->load(['orderExams', 'consumables']);
 
         return view('orders.form', $this->formData($request, $order) + ['order' => $order, 'mode' => 'edit']);
     }
@@ -116,12 +121,14 @@ class OrderController extends Controller
         return [
             'patients' => Patient::select(['id', 'dni', 'nombres', 'apellidos'])->orderBy('apellidos')->orderBy('nombres')->get(),
             'agreements' => Agreement::select(['id', 'nombre_institucion'])->where('activo', true)->orderBy('nombre_institucion')->get(),
-            'exams' => Exam::select(['id', 'nombre_examen'])->where('activo', true)->orderBy('nombre_examen')->get(),
+            'exams' => Exam::with('reagents:id,nombre,unidad_medida')->select(['id', 'nombre_examen'])->where('activo', true)->orderBy('nombre_examen')->get(),
+            'reagents' => Reagent::select(['id', 'nombre', 'unidad_medida'])->where('activo', true)->orderBy('nombre')->get(),
             'agreementPrices' => AgreementPrice::select(['agreement_id', 'exam_id', 'tipo_contraste', 'precio_pactado'])->get(),
             'medicosSolicitantes' => $medicos->whereIn('tipo_medico', ['Solicitante', 'Ambos'])->values(),
             'medicosInformantes' => $medicos->whereIn('tipo_medico', ['De Informe', 'Ambos'])->values(),
             'estados' => self::ESTADOS,
             'tiposPago' => self::TIPOS_PAGO,
+            'unidades' => self::UNIDADES,
         ];
     }
 
@@ -131,6 +138,8 @@ class OrderController extends Controller
         $data = $request->validate([
             'patient_id' => ['required', 'exists:patients,id'],
             'codigo_orden' => ['nullable', 'string', 'max:255', Rule::unique('orders', 'codigo_orden')->ignore($order)],
+            'unidad' => ['required', Rule::in(self::UNIDADES)],
+            'archivo_orden' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png,webp', 'max:10240'],
             'agreement_id' => ['required', 'exists:agreements,id'],
             'medico_solicitante_id' => ['nullable', 'exists:users,id'],
             'medico_informe_id' => ['nullable', 'exists:users,id'],
@@ -144,9 +153,19 @@ class OrderController extends Controller
             'exams.*.tipo_contraste' => ['required', Rule::in(['Con contraste', 'Sin contraste'])],
             'exams.*.precio' => ['required', 'numeric', 'min:0'],
             'exams.*.estado' => ['required', Rule::in(['Pendiente', 'Realizado', 'Informado', 'Anulado'])],
+            'consumables' => ['nullable', 'array'],
+            'consumables.*.reagent_id' => ['required', 'exists:reagents,id'],
+            'consumables.*.cantidad' => ['required', 'numeric', 'min:0'],
         ]);
         $subtotal = collect($data['exams'])->sum('precio');
         $descuento = $data['descuento'] ?? 0;
+        if ($request->hasFile('archivo_orden')) {
+            if ($order->archivo_orden_path) {
+                Storage::disk('public')->delete($order->archivo_orden_path);
+            }
+            $data['archivo_orden_path'] = $request->file('archivo_orden')->store('ordenes', 'public');
+        }
+
         $payload = $data + [
             'codigo_orden' => $data['codigo_orden'] ?? null,
             'subtotal' => $subtotal,
@@ -154,7 +173,7 @@ class OrderController extends Controller
             'total' => max($subtotal - $descuento, 0),
             'created_by' => $order->exists ? $order->created_by : auth()->id(),
         ];
-        unset($payload['exams']);
+        unset($payload['exams'], $payload['consumables'], $payload['archivo_orden']);
         $order->fill($payload)->save();
         $order->orderExams()->delete();
         $med = User::find($data['medico_informe_id'] ?? null);
@@ -166,9 +185,43 @@ class OrderController extends Controller
             ]);
         }
 
+        $order->consumables()->delete();
+        foreach (collect($data['consumables'] ?? [])->filter(fn ($row) => (float) ($row['cantidad'] ?? 0) > 0) as $row) {
+            $order->consumables()->updateOrCreate(
+                ['reagent_id' => $row['reagent_id']],
+                ['cantidad' => $row['cantidad']]
+            );
+        }
+
         $this->createInitialReport($order);
 
         return $order;
+    }
+
+
+    public function fichaIngresoPdf(Order $order)
+    {
+        $order->load(['patient', 'agreement', 'medicoSolicitante', 'orderExams.exam']);
+        $hasContrast = $order->orderExams->contains('tipo_contraste', 'Con contraste');
+
+        return Pdf::loadView('orders.pdfs.ficha-ingreso', compact('order', 'hasContrast'))->setPaper('a4')->stream('ficha-ingreso-'.$order->id.'.pdf');
+    }
+
+    public function declaracionJuradaPdf(Order $order)
+    {
+        $order->load(['patient', 'orderExams.exam']);
+        abort_unless($this->isMinor($order->patient), 404);
+
+        return Pdf::loadView('orders.pdfs.declaracion-jurada', compact('order'))->setPaper('a4')->stream('declaracion-jurada-'.$order->id.'.pdf');
+    }
+
+    private function isMinor(Patient $patient): bool
+    {
+        if ($patient->fecha_nacimiento) {
+            return $patient->fecha_nacimiento->age < 18;
+        }
+
+        return $patient->edad !== null && (int) $patient->edad < 18;
     }
 
     public function createInitialReport(Order $order): void

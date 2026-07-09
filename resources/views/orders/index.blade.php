@@ -19,6 +19,7 @@
                 <thead>
                     <tr>
                         <th>Código</th>
+                        <th>Unidad</th>
                         <th>Paciente</th>
                         <th>Convenio</th>
                         <th>Fecha</th>
@@ -32,6 +33,7 @@
                     @forelse($orders as $o)
                         <tr>
                             <td class="fw-bold">{{ $o->codigo_orden ?? '—' }}</td>
+                            <td>{{ $o->unidad ?? '—' }}</td>
                             <td>{{ $o->patient->nombres }} {{ $o->patient->apellidos }}</td>
                             <td>{{ $o->agreement->nombre_institucion }}</td>
                             <td>{{ $o->fecha_orden->format('d/m/Y') }}</td>
@@ -49,10 +51,14 @@
                             <td class="text-end">
                                 <a class="btn btn-sm btn-outline-primary" href="{{ route('orders.show', $o) }}">Ver</a>
                                 <a class="btn btn-sm btn-outline-secondary" href="{{ route('orders.edit', $o) }}">Editar</a>
+                                <a class="btn btn-sm btn-outline-success" target="_blank" href="{{ route('orders.ficha-ingreso', $o) }}">Ficha PDF</a>
+                                @if(($o->patient->fecha_nacimiento && $o->patient->fecha_nacimiento->age < 18) || (! $o->patient->fecha_nacimiento && $o->patient->edad !== null && $o->patient->edad < 18))
+                                    <a class="btn btn-sm btn-outline-warning" target="_blank" href="{{ route('orders.declaracion-jurada', $o) }}">DJ PDF</a>
+                                @endif
                             </td>
                         </tr>
                     @empty
-                        <tr><td colspan="8" class="text-center py-5">Sin órdenes.</td></tr>
+                        <tr><td colspan="9" class="text-center py-5">Sin órdenes.</td></tr>
                     @endforelse
                 </tbody>
             </table>
