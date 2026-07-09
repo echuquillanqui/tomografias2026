@@ -235,11 +235,6 @@ Se evalúan las estructuras anatómicas incluidas en el campo de estudio.
 2. [Hallazgo secundario relevante, si existe.]
 3. [Sugerencia de correlación clínica, laboratorio o estudios complementarios, si corresponde.]
 
----
-
-**Médico radiólogo:** {$this->valueOrPlaceholder($reportingDoctor?->nombre_completo, '[Nombre del médico informante]')}
-**CMP:** {$this->valueOrPlaceholder($reportingDoctor?->cmp, '[Número CMP]')}
-**RNE:** {$this->valueOrPlaceholder($reportingDoctor?->rne, '[Número RNE]')}
 REPORT;
 
         $order->report()->updateOrCreate(

@@ -10,7 +10,7 @@
     $defaultTechnique = 'Se realizó tomografía computarizada de '.($examNames ?: '[región anatómica]').' mediante adquisición helicoidal/multicorte, con reconstrucciones multiplanares.';
     $defaultFindings = "Se evalúan las estructuras anatómicas incluidas en el campo de estudio.\n\n[Describir hallazgos normales o patológicos según el estudio.]";
     $defaultImpression = "1. [Conclusión principal del estudio.]\n2. [Hallazgo secundario relevante, si existe.]";
-    $defaultRecommendations = '[Sugerencia de correlación clínica, laboratorio o estudios complementarios, si corresponde.]';
+    $defaultRecommendations = '';
 @endphp
 <div class="container">
     <section class="clinic-page-hero mb-4">
@@ -74,7 +74,7 @@
                     <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
                         <div>
                             <h5 class="fw-bold mb-1">Campos a completar</h5>
-                            <p class="text-muted mb-0">Redacta el informe en una plantilla limpia. Usa el contenido precargado como punto de partida.</p>
+                            <p class="text-muted mb-0">Redacta solo la información final. Los campos vacíos no aparecerán en el PDF.</p>
                         </div>
                         <span class="badge rounded-pill text-bg-light">Plantilla médica</span>
                     </div>
@@ -104,7 +104,7 @@
                         <summary class="text-muted small">Ver contenido original precargado</summary>
                         <pre class="original-report-preview mt-2 mb-0">{{ $contenido }}</pre>
                     </details>
-                    <div class="form-text">Los campos se guardan como un informe ordenado para el PDF.</div>
+                    <div class="form-text">El PDF mostrará únicamente datos completados, con encabezado institucional y formato compacto de una hoja.</div>
                 </div>
 
                 <div class="d-flex justify-content-end gap-2 mt-4">
