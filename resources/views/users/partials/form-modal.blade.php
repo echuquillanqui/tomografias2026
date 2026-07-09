@@ -4,7 +4,7 @@
 
 <div class="modal fade user-modal" id="{{ $modalId }}" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
-        <form class="modal-content border-0 shadow" method="POST" action="{{ $action }}">
+        <form class="modal-content border-0 shadow" method="POST" action="{{ $action }}" enctype="multipart/form-data">
             @csrf
             @if ($method !== 'POST')
                 @method($method)
@@ -85,6 +85,14 @@
                         <label class="form-label">RNE</label>
                         <input type="text" name="rne" class="form-control @error('rne') is-invalid @enderror" value="{{ old('rne', $user->rne ?? '') }}">
                         @error('rne') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Firma digital</label>
+                        <input type="file" name="firma" class="form-control @error('firma') is-invalid @enderror" accept="image/*">
+                        @error('firma') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                        @if(!empty($user?->firma_path))
+                            <small class="text-muted d-block mt-1">Firma cargada: {{ basename($user->firma_path) }}</small>
+                        @endif
                     </div>
                 </div>
             </div>

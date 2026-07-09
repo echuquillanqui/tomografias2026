@@ -6,6 +6,7 @@ use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use Spatie\Permission\Models\Role;
@@ -47,7 +48,11 @@ class UserController extends Controller
         $data = $this->validatedData($request);
         $data['password'] = Hash::make($data['password']);
         $data['activo'] = $request->boolean('activo');
+        unset($data['firma']);
         $data = $this->normalizeMedicalFields($data);
+        if ($request->hasFile('firma')) {
+            $data['firma_path'] = $request->file('firma')->store('firmas', 'public');
+        }
 
         $user = User::create($data);
         $this->syncRole($user, $data['rol']);
@@ -66,7 +71,14 @@ class UserController extends Controller
         }
 
         $data['activo'] = $request->boolean('activo');
+        unset($data['firma']);
         $data = $this->normalizeMedicalFields($data);
+        if ($request->hasFile('firma')) {
+            if ($user->firma_path) {
+                Storage::disk('public')->delete($user->firma_path);
+            }
+            $data['firma_path'] = $request->file('firma')->store('firmas', 'public');
+        }
 
         $user->update($data);
         $this->syncRole($user, $data['rol']);
@@ -101,6 +113,7 @@ class UserController extends Controller
             'rne' => ['nullable', 'string', 'max:50'],
             'comision_porcentaje' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'activo' => ['nullable', 'boolean'],
+            'firma' => ['nullable', 'image', 'max:2048'],
         ]);
     }
 
@@ -111,6 +124,7 @@ class UserController extends Controller
             $data['cmp'] = null;
             $data['rne'] = null;
             $data['comision_porcentaje'] = null;
+            $data['firma_path'] = null;
         }
 
         return $data;

@@ -166,12 +166,12 @@ class OrderController extends Controller
             ]);
         }
 
-        $this->generateReport($order);
+        $this->createInitialReport($order);
 
         return $order;
     }
 
-    private function generateReport(Order $order): void
+    public function createInitialReport(Order $order): void
     {
         $order->load(['patient', 'medicoSolicitante', 'medicoInforme', 'orderExams.exam']);
 
@@ -240,12 +240,11 @@ Se evalúan las estructuras anatómicas incluidas en el campo de estudio.
 **Médico radiólogo:** {$this->valueOrPlaceholder($reportingDoctor?->nombre_completo, '[Nombre del médico informante]')}
 **CMP:** {$this->valueOrPlaceholder($reportingDoctor?->cmp, '[Número CMP]')}
 **RNE:** {$this->valueOrPlaceholder($reportingDoctor?->rne, '[Número RNE]')}
-**Firma:** {$this->valueOrPlaceholder($reportingDoctor?->firma_path, '[Firma digital o imagen de firma]')}
 REPORT;
 
         $order->report()->updateOrCreate(
             ['order_id' => $order->id],
-            ['titulo' => 'REPORTE DE TOMOGRAFÍA COMPUTARIZADA', 'contenido' => $content]
+            ['titulo' => 'REPORTE DE TOMOGRAFÍA COMPUTARIZADA', 'contenido' => $content, 'medico_firmante_id' => $reportingDoctor?->id]
         );
     }
 

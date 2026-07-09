@@ -5,6 +5,7 @@ use App\Http\Controllers\AgreementPriceController;
 use App\Http\Controllers\ExamController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\PatientController;
+use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ReagentController;
 use App\Http\Controllers\StockMovementController;
 use App\Http\Controllers\UserController;
@@ -39,5 +40,9 @@ Route::middleware('auth')->group(function () {
     Route::resource('stock-movements', StockMovementController::class)->only(['index', 'store', 'destroy']);
     Route::patch('orders/{order}/status', [OrderController::class, 'updateStatus'])->name('orders.update-status');
     Route::patch('orders/{order}/payment', [OrderController::class, 'updatePayment'])->name('orders.update-payment');
+    Route::get('reports', [ReportController::class, 'index'])->name('reports.index');
+    Route::get('reports/{order}/edit', [ReportController::class, 'edit'])->name('reports.edit');
+    Route::put('reports/{order}', [ReportController::class, 'update'])->name('reports.update');
+    Route::get('reports/{order}/pdf', [ReportController::class, 'pdf'])->name('reports.pdf');
     Route::resource('orders', OrderController::class);
 });
