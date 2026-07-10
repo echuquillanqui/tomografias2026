@@ -63,37 +63,37 @@
 <head>
     <meta charset="utf-8">
     <style>
-        @page { margin: 10mm 11mm; }
+        @page { margin: 6mm 7mm; }
         * { box-sizing: border-box; }
-        body { color: #111; font-family: DejaVu Sans, sans-serif; font-size: 9px; line-height: 1.24; margin: 0; }
-        .letter { border: 1px solid #222; min-height: 276mm; padding: 8mm 9mm 7mm; }
-        .masthead { border-bottom: 2px solid #111; padding-bottom: 6px; }
+        body { color: #111; font-family: DejaVu Sans, sans-serif; font-size: 8px; line-height: 1.16; margin: 0; }
+        .letter { border: 1px solid #222; padding: 5mm 6mm 4mm; }
+        .masthead { border-bottom: 1px solid #111; padding-bottom: 3px; }
         .brand-table, .info-table, .signature-table { border-collapse: collapse; width: 100%; }
         .brand-table td { vertical-align: middle; }
-        .brand-logo { max-height: 38px; max-width: 95px; vertical-align: middle; }
-        .brand-name { font-size: 14px; font-weight: 700; letter-spacing: .03em; text-transform: uppercase; }
-        .brand-meta { color: #333; font-size: 7px; line-height: 1.25; margin-top: 2px; }
-        .doc-type { border: 1px solid #111; display: inline-block; font-size: 7px; font-weight: 700; letter-spacing: .08em; padding: 4px 7px; text-transform: uppercase; }
-        .title { font-size: 12.5px; font-weight: 700; margin: 7px 0 5px; text-align: center; text-transform: uppercase; }
-        .info-table { border: 1px solid #111; margin-bottom: 7px; }
-        .info-table td { border: 1px solid #777; padding: 3px 5px; vertical-align: top; width: 33.33%; }
-        .label { display: block; font-size: 6.7px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; }
-        .value { display: block; font-size: 8.4px; font-weight: 400; margin-top: 1px; }
-        .section { margin-bottom: 5px; page-break-inside: avoid; }
-        .section-heading { background: #e9e9e9; border: 1px solid #111; font-size: 7.8px; font-weight: 700; letter-spacing: .06em; padding: 2.5px 5px; text-transform: uppercase; }
-        .section-body { border: 1px solid #777; border-top: 0; font-size: 8.8px; line-height: 1.25; min-height: 18px; padding: 4px 5px; white-space: pre-line; }
+        .brand-logo { max-height: 28px; max-width: 82px; vertical-align: middle; }
+        .brand-name { font-size: 11px; font-weight: 700; letter-spacing: .03em; text-transform: uppercase; }
+        .brand-meta { color: #333; font-size: 6.2px; line-height: 1.15; margin-top: 1px; }
+        .doc-type { border: 1px solid #111; display: inline-block; font-size: 6.3px; font-weight: 700; letter-spacing: .08em; padding: 2px 5px; text-transform: uppercase; }
+        .title { font-size: 10.5px; font-weight: 700; margin: 4px 0 3px; text-align: center; text-transform: uppercase; }
+        .info-table { border: 1px solid #111; margin-bottom: 4px; }
+        .info-table td { border: 1px solid #777; padding: 2px 4px; vertical-align: top; width: 33.33%; }
+        .label { display: block; font-size: 6px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; }
+        .value { display: block; font-size: 7.5px; font-weight: 400; margin-top: 0; }
+        .section { margin-bottom: 3px; page-break-inside: auto; }
+        .section-heading { background: #e9e9e9; border: 1px solid #111; font-size: 7px; font-weight: 700; letter-spacing: .06em; padding: 1.5px 4px; text-transform: uppercase; page-break-after: avoid; }
+        .section-body { border: 1px solid #777; border-top: 0; font-size: 7.8px; line-height: 1.16; min-height: 11px; padding: 2.5px 4px; white-space: pre-line; }
         .section.impression .section-heading { background: #dcdcdc; }
         .section.impression .section-body { font-weight: 700; }
-        .signature-table { margin-top: 8px; page-break-inside: avoid; }
+        .signature-table { margin-top: 4px; page-break-inside: avoid; }
         .signature-table td { vertical-align: bottom; width: 50%; }
-        .note { color: #333; font-size: 6.8px; line-height: 1.2; padding-right: 20px; }
+        .note { color: #333; font-size: 6px; line-height: 1.1; padding-right: 14px; }
         .signature { text-align: center; }
-        .signature-box { height: 34px; margin-bottom: 1px; }
-        .signature img { max-height: 34px; max-width: 170px; }
-        .line { border-top: 1px solid #111; margin: 0 auto 3px; width: 205px; }
-        .doctor-name { font-size: 8.5px; font-weight: 700; text-transform: uppercase; }
-        .doctor-code { font-size: 7px; margin-top: 1px; }
-        .footer { border-top: 1px solid #777; color: #333; font-size: 6.5px; margin-top: 6px; padding-top: 3px; text-align: center; }
+        .signature-box { height: 24px; margin-bottom: 0; }
+        .signature img { max-height: 24px; max-width: 145px; }
+        .line { border-top: 1px solid #111; margin: 0 auto 2px; width: 180px; }
+        .doctor-name { font-size: 7.5px; font-weight: 700; text-transform: uppercase; }
+        .doctor-code { font-size: 6.4px; margin-top: 0; }
+        .footer { border-top: 1px solid #777; color: #333; font-size: 5.9px; margin-top: 3px; padding-top: 2px; text-align: center; }
     </style>
 </head>
 <body>
