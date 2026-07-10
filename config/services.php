@@ -33,6 +33,6 @@ return [
 
 
     'decolecta' => [
-        'token' => env('DECOLECTA_TOKEN', 'sk_17231.hWD2BnDuJNzQwmy7T4ODdA1mZdpxcgkf'),
+        'token' => env('DECOLECTA_TOKEN'),
     ],
 ];
