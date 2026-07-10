@@ -379,6 +379,18 @@ class OrderController extends Controller
             ? "\nSe administró contraste endovenoso yodado, sin evidenciarse reacciones adversas inmediatas durante el procedimiento.\n"
             : '';
         $reportingDoctor = $order->medicoInforme;
+        $technique = trim("Se realizó tomografía computarizada de {$region} mediante adquisición helicoidal/multicorte, con reconstrucciones multiplanares en planos axial, coronal y sagital.\n{$contrastTechnique}");
+        $findings = <<<FINDINGS
+Se evalúan las estructuras anatómicas incluidas en el campo de estudio.
+
+[Describir hallazgos normales o patológicos según el estudio.]
+FINDINGS;
+
+        $impression = <<<IMPRESSION
+1. [Conclusión principal del estudio.]
+2. [Hallazgo secundario relevante, si existe.]
+3. [Sugerencia de correlación clínica, laboratorio o estudios complementarios, si corresponde.]
+IMPRESSION;
 
         $content = <<<REPORT
 **REPORTE DE TOMOGRAFÍA COMPUTARIZADA**
@@ -395,8 +407,8 @@ class OrderController extends Controller
 
 ### **TÉCNICA**
 
-Se realizó tomografía computarizada de {$region} mediante adquisición helicoidal/multicorte, con reconstrucciones multiplanares en planos axial, coronal y sagital.
-{$contrastTechnique}
+{$technique}
+
 ---
 
 ### **HALLAZGOS**
@@ -432,7 +444,14 @@ REPORT;
 
         $order->report()->updateOrCreate(
             ['order_id' => $order->id],
-            ['titulo' => 'REPORTE DE TOMOGRAFÍA COMPUTARIZADA', 'contenido' => $content, 'medico_firmante_id' => $reportingDoctor?->id]
+            [
+                'titulo' => 'REPORTE DE TOMOGRAFÍA COMPUTARIZADA',
+                'tecnica' => $technique,
+                'informe' => trim($findings),
+                'impresion' => trim($impression),
+                'contenido' => $content,
+                'medico_firmante_id' => $reportingDoctor?->id,
+            ]
         );
     }
 
