@@ -83,12 +83,22 @@ class PatientController extends Controller
             'numero' => ['required', 'digits:8'],
         ]);
 
-        $response = Http::acceptJson()
+        if (blank(config('services.decolecta.token'))) {
+            return response()->json(['message' => 'La consulta RENIEC no está configurada.'], 503);
+        }
+
+        try {
+            $response = Http::acceptJson()
             ->withToken(config('services.decolecta.token'))
             ->timeout(10)
             ->get('https://api.decolecta.com/v1/reniec/dni', [
                 'numero' => $data['numero'],
             ]);
+        } catch (\Throwable $exception) {
+            report($exception);
+
+            return response()->json(['message' => 'No se pudo conectar con el servicio RENIEC.'], 503);
+        }
 
         if ($response->failed()) {
             return response()->json([
@@ -126,6 +136,7 @@ class PatientController extends Controller
             'apellidos' => $patient->apellidos,
             'telefono' => $patient->telefono,
             'fecha_nacimiento' => optional($patient->fecha_nacimiento)->format('Y-m-d'),
+            'edad' => $patient->edad,
             'label' => $patient->dni.' - '.$patient->nombres.' '.$patient->apellidos,
         ];
     }

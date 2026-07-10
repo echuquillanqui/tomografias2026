@@ -287,7 +287,7 @@
                         <div class="col-md-5">
                             <label class="form-label small fw-bold">DNI</label>
                             <div class="input-group">
-                                <input type="text" maxlength="8" class="form-control" x-model="patientForm.dni" placeholder="8 dígitos">
+                                <input type="text" inputmode="numeric" maxlength="8" class="form-control" x-model="patientForm.dni" placeholder="8 dígitos" @input="handleDniInput($event)" @blur="lookupReniec()">
                                 <button type="button" class="btn btn-outline-primary" @click="lookupReniec()" :disabled="reniecLoading || !/^\d{8}$/.test(patientForm.dni)">
                                     <span x-show="!reniecLoading">RENIEC</span>
                                     <span x-show="reniecLoading">Buscando...</span>
@@ -297,7 +297,7 @@
                         </div>
                         <div class="col-md-7">
                             <label class="form-label small fw-bold">Nombres</label>
-                            <input type="text" class="form-control" x-model="patientForm.nombres">
+                            <input type="text" class="form-control" x-model="patientForm.nombres" x-ref="patientNames">
                         </div>
                         <div class="col-md-7">
                             <label class="form-label small fw-bold">Apellidos</label>
@@ -309,7 +309,11 @@
                         </div>
                         <div class="col-md-5">
                             <label class="form-label small fw-bold">Fecha de nacimiento</label>
-                            <input type="date" class="form-control" x-model="patientForm.fecha_nacimiento">
+                            <input type="date" class="form-control" x-model="patientForm.fecha_nacimiento" @change="calculatePatientAge()">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small fw-bold">Edad</label>
+                            <input type="number" class="form-control" x-model="patientForm.edad" readonly>
                         </div>
                     </div>
                 </div>
@@ -341,11 +345,12 @@ function orderSystem() {
         consumables: {{ Illuminate\Support\Js::from($initialConsumables) }},
         selectedReagent: '',
         selectedPatientId: String({{ Illuminate\Support\Js::from(old('patient_id', $order->patient_id)) }} || ''),
-        patients: {{ Illuminate\Support\Js::from($patients->map(fn ($p) => ['id' => (string) $p->id, 'dni' => $p->dni, 'nombres' => $p->nombres, 'apellidos' => $p->apellidos, 'telefono' => $p->telefono, 'fecha_nacimiento' => optional($p->fecha_nacimiento)->format('Y-m-d'), 'label' => $p->dni.' - '.$p->nombres.' '.$p->apellidos])->values()) }},
-        patientForm: { id: null, dni: '', nombres: '', apellidos: '', telefono: '', fecha_nacimiento: '' },
+        patients: {{ Illuminate\Support\Js::from($patients->map(fn ($p) => ['id' => (string) $p->id, 'dni' => $p->dni, 'nombres' => $p->nombres, 'apellidos' => $p->apellidos, 'telefono' => $p->telefono, 'fecha_nacimiento' => optional($p->fecha_nacimiento)->format('Y-m-d'), 'edad' => $p->edad, 'label' => $p->dni.' - '.$p->nombres.' '.$p->apellidos])->values()) }},
+        patientForm: { id: null, dni: '', nombres: '', apellidos: '', telefono: '', fecha_nacimiento: '', edad: '' },
         patientError: '',
         patientSaving: false,
         reniecLoading: false,
+        lastReniecDni: '',
         reagents: {{ Illuminate\Support\Js::from($reagents->map(fn ($r) => ['id' => (string) $r->id, 'name' => $r->nombre, 'unit' => $r->unidad_medida])->values()) }},
         examConsumables: {{ Illuminate\Support\Js::from($exams->mapWithKeys(fn ($e) => [(string) $e->id => $e->reagents->map(fn ($r) => ['reagent_id' => (string) $r->id, 'name' => $r->nombre, 'unit' => $r->unidad_medida, 'cantidad' => (float) $r->pivot->cantidad_estimada])->values()])) }},
         agreementPrices: {{ Illuminate\Support\Js::from($agreementPrices->map(fn ($price) => [
@@ -399,8 +404,9 @@ function orderSystem() {
             });
         },
         resetPatientForm() {
-            this.patientForm = { id: null, dni: '', nombres: '', apellidos: '', telefono: '', fecha_nacimiento: '' };
+            this.patientForm = { id: null, dni: '', nombres: '', apellidos: '', telefono: '', fecha_nacimiento: '', edad: '' };
             this.patientError = '';
+            this.lastReniecDni = '';
         },
         openPatientModal(patientId = null) {
             this.resetPatientForm();
@@ -409,19 +415,37 @@ function orderSystem() {
             bootstrap.Modal.getOrCreateInstance(this.$refs.patientModal).show();
         },
         async lookupReniec() {
+            const dni = String(this.patientForm.dni || '').replace(/\D/g, '');
+            if (dni.length !== 8 || this.reniecLoading || this.lastReniecDni === dni) return;
             this.patientError = '';
             this.reniecLoading = true;
             try {
-                const response = await fetch(`{{ route('patients.reniec') }}?numero=${encodeURIComponent(this.patientForm.dni)}`, { headers: { Accept: 'application/json' } });
+                const response = await fetch(`{{ route('patients.reniec') }}?numero=${encodeURIComponent(dni)}`, { headers: { Accept: 'application/json' } });
                 const data = await response.json();
                 if (!response.ok) throw new Error(data.message || 'No se encontró información para el DNI.');
                 this.patientForm.nombres = data.first_name || '';
                 this.patientForm.apellidos = [data.first_last_name, data.second_last_name].filter(Boolean).join(' ');
+                this.lastReniecDni = dni;
+                this.$nextTick(() => this.$refs.patientNames?.focus());
             } catch (error) {
                 this.patientError = error.message || 'No se pudo consultar RENIEC.';
             } finally {
                 this.reniecLoading = false;
             }
+        },
+        handleDniInput(event) {
+            const dni = event.target.value.replace(/\D/g, '').slice(0, 8);
+            this.patientForm.dni = dni;
+            if (this.lastReniecDni !== dni) this.lastReniecDni = '';
+            if (dni.length === 8) this.lookupReniec();
+        },
+        calculatePatientAge() {
+            if (!this.patientForm.fecha_nacimiento) return this.patientForm.edad = '';
+            const birth = new Date(`${this.patientForm.fecha_nacimiento}T00:00:00`);
+            const today = new Date();
+            let age = today.getFullYear() - birth.getFullYear();
+            if (today.getMonth() < birth.getMonth() || (today.getMonth() === birth.getMonth() && today.getDate() < birth.getDate())) age--;
+            this.patientForm.edad = Math.max(0, age);
         },
         async savePatient() {
             this.patientError = '';
