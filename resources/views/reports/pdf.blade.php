@@ -11,158 +11,145 @@
 
     $filled = fn ($value) => filled($value) && ! str_contains((string) $value, '[') && trim((string) $value) !== '—';
     $normalizeText = fn ($text) => trim(str_replace(['###', '**'], '', (string) $text));
-    $sectionTitle = fn ($title) => trim(str_replace(['REPORTE DE TOMOGRAFÍA COMPUTARIZADA', 'REPORTE DE TOMOGRAFIA COMPUTARIZADA'], 'DATOS DEL ESTUDIO', $normalizeText($title)));
-    $isPrintableLine = function ($line) use ($filled) {
-        $line = trim($line);
+    $removePlaceholders = fn ($text) => trim(collect(preg_split('/\R/', (string) $text))->reject(fn ($line) => str_contains($line, '[') && str_contains($line, ']'))->implode("\n"));
+    $fallbackSections = collect();
 
-        if (! $filled($line)) {
-            return false;
-        }
+    if (! $filled($report?->tecnica) || ! $filled($report?->informe) || ! $filled($report?->impresion)) {
+        $blocks = collect(preg_split('/\n\s*---\s*\n/', (string) $report?->contenido))
+            ->map(fn ($block) => trim($block))
+            ->filter();
 
-        return ! preg_match('/^(Médico radiólogo|Medico radiologo|CMP|RNE):/iu', str_replace('**', '', $line));
-    };
+        $fallbackSections = $blocks->mapWithKeys(function ($block) use ($normalizeText, $removePlaceholders) {
+            $lines = collect(preg_split('/\R/', $block))->map(fn ($line) => $normalizeText($line))->values();
+            $heading = mb_strtoupper($lines->first() ?? '', 'UTF-8');
+            $body = $removePlaceholders($lines->slice(1)->implode("\n"));
 
-    $sections = collect([
-        ['heading' => 'TÉCNICA', 'body' => $report->tecnica],
-        ['heading' => 'INFORME', 'body' => $report->informe],
-        ['heading' => 'IMPRESIÓN DIAGNÓSTICA', 'body' => $report->impresion],
-        ['heading' => 'RECOMENDACIONES / NOTAS', 'body' => $report->recomendaciones],
-    ])->filter(fn ($section) => $filled($section['body']))->values();
+            if (str_contains($heading, 'TÉCNICA') || str_contains($heading, 'TECNICA')) {
+                return ['tecnica' => $body];
+            }
 
-    if ($sections->isEmpty()) {
-        $sections = collect(preg_split('/\n\s*---\s*\n/', (string) $report->contenido))
-        ->map(function ($block) use ($sectionTitle, $normalizeText, $isPrintableLine) {
-            $lines = collect(preg_split('/\R/', trim($block)))
-                ->map(fn ($line) => $normalizeText($line))
-                ->filter(fn ($line) => $isPrintableLine($line))
-                ->values();
+            if (str_contains($heading, 'HALLAZGOS') || str_contains($heading, 'INFORME')) {
+                return ['informe' => $body];
+            }
 
-            $heading = $sectionTitle($lines->shift() ?? 'Informe');
-            $body = $lines->implode("\n");
+            if (str_contains($heading, 'IMPRESIÓN') || str_contains($heading, 'IMPRESION')) {
+                return ['impresion' => $body];
+            }
 
-            return ['heading' => $heading ?: 'Informe', 'body' => trim($body)];
-        })
-        ->filter(fn ($section) => $section['body'] !== '')
-        ->values();
+            if (str_contains($heading, 'RECOMENDACIONES') || str_contains($heading, 'NOTAS')) {
+                return ['recomendaciones' => $body];
+            }
+
+            return [];
+        });
     }
 
+    $sections = collect([
+        ['heading' => 'TÉCNICA', 'body' => $report?->tecnica ?: $fallbackSections->get('tecnica')],
+        ['heading' => 'INFORME', 'body' => $report?->informe ?: $fallbackSections->get('informe')],
+        ['heading' => 'IMPRESIÓN DIAGNÓSTICA', 'body' => $report?->impresion ?: $fallbackSections->get('impresion')],
+        ['heading' => 'RECOMENDACIONES / NOTAS', 'body' => $report?->recomendaciones ?: $fallbackSections->get('recomendaciones')],
+    ])->map(fn ($section) => ['heading' => $section['heading'], 'body' => $removePlaceholders($section['body'])])
+      ->filter(fn ($section) => $filled($section['body']))->values();
+
     $infoRows = collect([
-        ['Paciente', trim($patient->nombres.' '.$patient->apellidos), 'DNI / Edad', trim(($patient->dni ?: '').($patient->edad ? ' · '.$patient->edad.' años' : ''))],
-        ['Orden', $orderCode, 'Fecha de informe', $reportDate],
-        ['Estudio solicitado', $examNames, 'Contraste', $contrast],
-        ['Convenio', $order->agreement?->nombre_institucion, 'Médico solicitante', $order->medicoSolicitante?->nombre_completo],
-    ])->map(fn ($row) => collect([$row])->flatten()->all());
+        ['Paciente', trim($patient->nombres.' '.$patient->apellidos), 'Edad', $patient->edad ? $patient->edad.' años' : null, 'DNI', $patient->dni],
+        ['Estudio', $examNames, 'Contraste', $contrast, 'Fecha', $reportDate],
+        ['Médico solicitante', $order->medicoSolicitante?->nombre_completo, 'Orden', $orderCode, 'Convenio', $order->agreement?->nombre_institucion],
+    ]);
 @endphp
 <!doctype html>
 <html lang="es">
 <head>
     <meta charset="utf-8">
     <style>
-        @page { margin: 12mm 13mm 12mm; }
+        @page { margin: 10mm 11mm; }
         * { box-sizing: border-box; }
-        body { font-family: DejaVu Sans, sans-serif; color: #1f2937; font-size: 9.5px; line-height: 1.34; margin: 0; }
-        .report-shell { border: 1px solid #d9e2ec; min-height: 100%; }
-        .header { background: #102a43; color: #ffffff; padding: 12px 16px 11px; }
-        .brand-table, .info-grid, .signature-table { width: 100%; border-collapse: collapse; }
-        .brand-table td { vertical-align: middle; padding: 0; }
-        .brand-mark { border: 1px solid rgba(255,255,255,.45); color: #ffffff; display: inline-block; font-size: 15px; font-weight: 700; height: 32px; line-height: 30px; margin-right: 9px; text-align: center; width: 32px; } .brand-logo{max-height:42px;max-width:92px;margin-right:9px;vertical-align:middle;background:#fff;padding:2px;border-radius:3px;}
-        .brand-name { display: inline-block; font-size: 15px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; }
-        .brand-subtitle { color: #dbeafe; display: block; font-size: 7.5px; font-weight: 400; letter-spacing: .18em; margin-top: 1px; text-transform: uppercase; }
-        .document-chip { border-left: 3px solid #38bdf8; display: inline-block; font-size: 8px; letter-spacing: .12em; padding-left: 8px; text-transform: uppercase; }
-        .title-band { border-bottom: 2px solid #38bdf8; padding: 10px 16px 8px; }
-        .title { color: #0f172a; font-size: 14px; font-weight: 700; letter-spacing: .03em; line-height: 1.18; margin: 0; text-align: center; text-transform: uppercase; }
-        .subtitle { color: #64748b; font-size: 8px; letter-spacing: .10em; margin: 3px 0 0; text-align: center; text-transform: uppercase; }
-        .content-wrap { padding: 10px 16px 12px; }
-        .info-grid { margin-bottom: 9px; }
-        .info-grid td { border: 1px solid #e2e8f0; padding: 4px 6px; vertical-align: top; width: 50%; }
-        .label { color: #64748b; display: block; font-size: 7px; font-weight: 700; letter-spacing: .08em; margin-bottom: 1px; text-transform: uppercase; }
-        .value { color: #111827; font-size: 9px; font-weight: 700; }
-        .section { border-left: 3px solid #38bdf8; margin-bottom: 7px; page-break-inside: avoid; }
-        .section-heading { background: #eff6ff; color: #102a43; font-size: 8.3px; font-weight: 700; letter-spacing: .09em; padding: 4px 7px; text-transform: uppercase; }
-        .section-body { color: #1f2937; font-size: 9.4px; line-height: 1.38; padding: 5px 7px 3px; white-space: pre-line; }
-        .signature-table { margin-top: 9px; page-break-inside: avoid; }
+        body { color: #111; font-family: DejaVu Sans, sans-serif; font-size: 9px; line-height: 1.24; margin: 0; }
+        .letter { border: 1px solid #222; min-height: 276mm; padding: 8mm 9mm 7mm; }
+        .masthead { border-bottom: 2px solid #111; padding-bottom: 6px; }
+        .brand-table, .info-table, .signature-table { border-collapse: collapse; width: 100%; }
+        .brand-table td { vertical-align: middle; }
+        .brand-logo { max-height: 38px; max-width: 95px; vertical-align: middle; }
+        .brand-name { font-size: 14px; font-weight: 700; letter-spacing: .03em; text-transform: uppercase; }
+        .brand-meta { color: #333; font-size: 7px; line-height: 1.25; margin-top: 2px; }
+        .doc-type { border: 1px solid #111; display: inline-block; font-size: 7px; font-weight: 700; letter-spacing: .08em; padding: 4px 7px; text-transform: uppercase; }
+        .title { font-size: 12.5px; font-weight: 700; margin: 7px 0 5px; text-align: center; text-transform: uppercase; }
+        .info-table { border: 1px solid #111; margin-bottom: 7px; }
+        .info-table td { border: 1px solid #777; padding: 3px 5px; vertical-align: top; width: 33.33%; }
+        .label { display: block; font-size: 6.7px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; }
+        .value { display: block; font-size: 8.4px; font-weight: 400; margin-top: 1px; }
+        .section { margin-bottom: 5px; page-break-inside: avoid; }
+        .section-heading { background: #e9e9e9; border: 1px solid #111; font-size: 7.8px; font-weight: 700; letter-spacing: .06em; padding: 2.5px 5px; text-transform: uppercase; }
+        .section-body { border: 1px solid #777; border-top: 0; font-size: 8.8px; line-height: 1.25; min-height: 18px; padding: 4px 5px; white-space: pre-line; }
+        .section.impression .section-heading { background: #dcdcdc; }
+        .section.impression .section-body { font-weight: 700; }
+        .signature-table { margin-top: 8px; page-break-inside: avoid; }
         .signature-table td { vertical-align: bottom; width: 50%; }
-        .signature-note { color: #64748b; font-size: 7.4px; line-height: 1.28; padding-right: 16px; }
+        .note { color: #333; font-size: 6.8px; line-height: 1.2; padding-right: 20px; }
         .signature { text-align: center; }
-        .signature-box { height: 42px; margin-bottom: 2px; }
-        .signature img { max-height: 42px; max-width: 190px; }
-        .line { border-top: 1px solid #0f172a; margin: 0 auto 4px; width: 220px; }
-        .doctor-name { color: #0f172a; font-size: 9.4px; font-weight: 700; text-transform: uppercase; }
-        .doctor-code { color: #475569; font-size: 7.8px; margin-top: 1px; }
-        .footer { border-top: 1px solid #e2e8f0; color: #64748b; font-size: 7px; margin-top: 8px; padding-top: 5px; text-align: center; }
+        .signature-box { height: 34px; margin-bottom: 1px; }
+        .signature img { max-height: 34px; max-width: 170px; }
+        .line { border-top: 1px solid #111; margin: 0 auto 3px; width: 205px; }
+        .doctor-name { font-size: 8.5px; font-weight: 700; text-transform: uppercase; }
+        .doctor-code { font-size: 7px; margin-top: 1px; }
+        .footer { border-top: 1px solid #777; color: #333; font-size: 6.5px; margin-top: 6px; padding-top: 3px; text-align: center; }
     </style>
 </head>
 <body>
-    <div class="report-shell">
-        <div class="header">
+    <div class="letter">
+        <div class="masthead">
             <table class="brand-table">
                 <tr>
                     <td>
                         @if($setting->logo_path && file_exists(storage_path('app/public/'.$setting->logo_path)))
                             <img class="brand-logo" src="{{ storage_path('app/public/'.$setting->logo_path) }}" alt="Logo">
                         @else
-                            <span class="brand-mark">T</span>
+                            <span class="brand-name">{{ $setting->razon_social }}</span>
                         @endif
-                        <span class="brand-name">
-                            {{ $setting->razon_social }}
-                            <span class="brand-subtitle">{{ collect([$setting->ruc ? 'RUC '.$setting->ruc : null, $setting->direccion, $setting->telefono])->filter()->implode(' · ') }}</span>
-                        </span>
                     </td>
-                    <td style="text-align: right;"><span class="document-chip">Informe médico</span></td>
+                    <td>
+                        <div class="brand-name">{{ $setting->razon_social }}</div>
+                        <div class="brand-meta">{{ collect([$setting->ruc ? 'RUC '.$setting->ruc : null, $setting->direccion, $setting->telefono ? 'Tel. '.$setting->telefono : null])->filter()->implode(' · ') }}</div>
+                    </td>
+                    <td style="text-align: right;"><span class="doc-type">Informe médico</span></td>
                 </tr>
             </table>
         </div>
-        <div class="title-band">
-            <h1 class="title">{{ $report->titulo }}</h1>
-            <p class="subtitle">Resultado de estudio tomográfico</p>
-        </div>
-        <div class="content-wrap">
-            <table class="info-grid">
-                @foreach($infoRows as $row)
-                    @php [$labelA, $valueA, $labelB, $valueB] = $row; @endphp
-                    @if($filled($valueA) || $filled($valueB))
-                        <tr>
-                            @if($filled($valueA))<td><span class="label">{{ $labelA }}</span><span class="value">{{ $valueA }}</span></td>@endif
-                            @if($filled($valueB))<td><span class="label">{{ $labelB }}</span><span class="value">{{ $valueB }}</span></td>@endif
-                        </tr>
-                    @endif
-                @endforeach
-            </table>
-            @foreach($sections as $section)
-                <div class="section"><div class="section-heading">{{ $section['heading'] }}</div><div class="section-body">{{ $section['body'] }}</div></div>
-            @endforeach
-            <table class="signature-table">
+        <h1 class="title">{{ $report?->titulo ?: 'Informe de tomografía computarizada' }}</h1>
+        <table class="info-table">
+            @foreach($infoRows as $row)
                 <tr>
-                    <td>
-                        <div class="signature-note">Documento confidencial de uso médico. Correlacionar con antecedentes clínicos y estudios complementarios.</div>
-                    </td>
-                    <td>
-                        <div class="signature">
-                            <div class="signature-box">
-                                @if($signature && file_exists($signature))
-                                    <img src="{{ $signature }}" alt="Firma del médico">
-                                @endif
-                            </div>
-                            <div class="line"></div>
-                            @if($filled($doctor?->nombre_completo))
-                                <div class="doctor-name">{{ $doctor->nombre_completo }}</div>
-                            @endif
-                            @if($filled($doctor?->cmp) || $filled($doctor?->rne))
-                                <div class="doctor-code">
-                                    @if($filled($doctor?->cmp))
-                                        CMP: {{ $doctor->cmp }}
-                                    @endif
-                                    @if($filled($doctor?->rne))
-                                        &nbsp; RNE: {{ $doctor->rne }}
-                                    @endif
-                                </div>
-                            @endif
-                        </div>
-                    </td>
+                    @foreach(collect($row)->chunk(2) as $cell)
+                        @if($filled($cell->get(1)))
+                            <td><span class="label">{{ $cell->get(0) }}</span><span class="value">{{ $cell->get(1) }}</span></td>
+                        @else
+                            <td></td>
+                        @endif
+                    @endforeach
                 </tr>
-            </table>
-            <div class="footer">{{ $orderCode }} · {{ $setting->razon_social }}@if($setting->direccion) · {{ $setting->direccion }}@endif @if($setting->telefono) · Tel. {{ $setting->telefono }}@endif</div>
-        </div>
+            @endforeach
+        </table>
+        @foreach($sections as $section)
+            <div class="section {{ $section['heading'] === 'IMPRESIÓN DIAGNÓSTICA' ? 'impression' : '' }}">
+                <div class="section-heading">{{ $section['heading'] }}</div>
+                <div class="section-body">{{ $section['body'] }}</div>
+            </div>
+        @endforeach
+        <table class="signature-table">
+            <tr>
+                <td><div class="note">Documento confidencial de uso médico. Correlacionar con antecedentes clínicos y estudios complementarios.</div></td>
+                <td>
+                    <div class="signature">
+                        <div class="signature-box">@if($signature && file_exists($signature))<img src="{{ $signature }}" alt="Firma del médico">@endif</div>
+                        <div class="line"></div>
+                        @if($filled($doctor?->nombre_completo))<div class="doctor-name">{{ $doctor->nombre_completo }}</div>@endif
+                        @if($filled($doctor?->cmp) || $filled($doctor?->rne))<div class="doctor-code">@if($filled($doctor?->cmp))CMP: {{ $doctor->cmp }}@endif @if($filled($doctor?->rne)) RNE: {{ $doctor->rne }}@endif</div>@endif
+                    </div>
+                </td>
+            </tr>
+        </table>
+        <div class="footer">{{ $orderCode }} · {{ $setting->razon_social }}@if($setting->direccion) · {{ $setting->direccion }}@endif @if($setting->telefono) · Tel. {{ $setting->telefono }}@endif</div>
     </div>
 </body>
 </html>
