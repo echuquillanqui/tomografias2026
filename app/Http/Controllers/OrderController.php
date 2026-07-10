@@ -215,6 +215,39 @@ class OrderController extends Controller
         return view('orders.templates.ficha-ingreso', compact('order', 'hasContrast', 'admissionData'));
     }
 
+    public function updateFichaIngreso(Request $request, Order $order): RedirectResponse
+    {
+        $data = $request->validate([
+            'agreement' => ['nullable', 'string', 'max:255'],
+            'request_number' => ['nullable', 'string', 'max:255'],
+            'date' => ['nullable', 'string', 'max:255'],
+            'unit' => ['nullable', 'string', 'max:255'],
+            'patient_name' => ['nullable', 'string', 'max:255'],
+            'patient_dni' => ['nullable', 'string', 'max:255'],
+            'patient_phone' => ['nullable', 'string', 'max:255'],
+            'patient_birthdate' => ['nullable', 'string', 'max:255'],
+            'patient_age' => ['nullable', 'string', 'max:255'],
+            'requested_by' => ['nullable', 'string', 'max:255'],
+            'contrast_label' => ['nullable', 'string', 'max:255'],
+            'study' => ['nullable', 'string'],
+            'observations' => ['nullable', 'string'],
+            'cause' => ['nullable', 'string'],
+            'symptomatology' => ['nullable', 'string'],
+            'surgeries' => ['nullable', 'string'],
+            'medication' => ['nullable', 'string'],
+            'allergy' => ['nullable', 'string', 'max:255'],
+            'fasting' => ['nullable', 'string', 'max:255'],
+            'creatinine' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        $order->load(['patient', 'agreement', 'medicoSolicitante', 'orderExams.exam', 'admissionForm']);
+        $this->syncPrintableDocuments($order);
+        $current = $order->fresh('admissionForm')->admissionForm?->data ?? [];
+        $order->admissionForm()->updateOrCreate([], ['data' => array_merge($current, $data)]);
+
+        return redirect()->route('orders.ficha-ingreso.template', $order)->with('success', 'Ficha de ingreso guardada correctamente.');
+    }
+
     public function fichaIngresoPdf(Order $order)
     {
         $order->load(['patient', 'agreement', 'medicoSolicitante', 'orderExams.exam', 'admissionForm']);
@@ -234,6 +267,28 @@ class OrderController extends Controller
         $declarationData = $order->swornDeclaration?->data ?? [];
 
         return view('orders.templates.declaracion-jurada', compact('order', 'declarationData'));
+    }
+
+    public function updateDeclaracionJurada(Request $request, Order $order): RedirectResponse
+    {
+        $data = $request->validate([
+            'patient_name' => ['nullable', 'string', 'max:255'],
+            'patient_dni' => ['nullable', 'string', 'max:255'],
+            'legal_representative_dni' => ['nullable', 'string', 'max:255'],
+            'study' => ['nullable', 'string'],
+            'day' => ['nullable', 'string', 'max:20'],
+            'month' => ['nullable', 'string', 'max:50'],
+            'year' => ['nullable', 'string', 'max:20'],
+            'hour' => ['nullable', 'string', 'max:50'],
+            'revocation' => ['nullable', 'string'],
+        ]);
+
+        $order->load(['patient', 'orderExams.exam', 'swornDeclaration']);
+        $this->syncPrintableDocuments($order);
+        $current = $order->fresh('swornDeclaration')->swornDeclaration?->data ?? [];
+        $order->swornDeclaration()->updateOrCreate([], ['data' => array_merge($current, $data)]);
+
+        return redirect()->route('orders.declaracion-jurada.template', $order)->with('success', 'Declaración jurada guardada correctamente.');
     }
 
     public function declaracionJuradaPdf(Order $order)
@@ -256,37 +311,47 @@ class OrderController extends Controller
         $patientName = trim($order->patient->apellidos.' '.$order->patient->nombres);
         $patientAge = $order->patient->edad ?? ($order->patient->fecha_nacimiento?->age);
 
+        $admissionDefaults = [
+            'agreement' => $order->agreement?->nombre_institucion ?? 'PARTICULAR',
+            'request_number' => $order->codigo_orden ?? (string) $order->id,
+            'date' => $order->fecha_orden?->format('d/m/Y'),
+            'unit' => $order->unidad,
+            'patient_name' => $patientName,
+            'patient_dni' => $order->patient->dni,
+            'patient_phone' => $order->patient->telefono,
+            'patient_birthdate' => $order->patient->fecha_nacimiento?->format('d/m/Y'),
+            'patient_age' => $patientAge,
+            'requested_by' => $order->medicoSolicitante?->nombre_completo,
+            'contrast_label' => $hasContrast ? 'CON CONTRASTE' : 'SIN CONTRASTE',
+            'has_contrast' => $hasContrast,
+            'study' => $examNames,
+            'observations' => $order->observaciones,
+            'cause' => '',
+            'symptomatology' => '',
+            'surgeries' => '',
+            'medication' => '',
+            'allergy' => '',
+            'fasting' => '',
+            'creatinine' => '',
+        ];
         $order->admissionForm()->updateOrCreate([], [
-            'data' => [
-                'agreement' => $order->agreement?->nombre_institucion ?? 'PARTICULAR',
-                'request_number' => $order->codigo_orden ?? (string) $order->id,
-                'date' => $order->fecha_orden?->format('d/m/Y'),
-                'unit' => $order->unidad,
-                'patient_name' => $patientName,
-                'patient_dni' => $order->patient->dni,
-                'patient_phone' => $order->patient->telefono,
-                'patient_birthdate' => $order->patient->fecha_nacimiento?->format('d/m/Y'),
-                'patient_age' => $patientAge,
-                'requested_by' => $order->medicoSolicitante?->nombre_completo,
-                'contrast_label' => $hasContrast ? 'CON CONTRASTE' : 'SIN CONTRASTE',
-                'has_contrast' => $hasContrast,
-                'study' => $examNames,
-                'observations' => $order->observaciones,
-            ],
+            'data' => array_merge($admissionDefaults, $order->admissionForm?->data ?? []),
         ]);
 
         $now = now();
+        $declarationDefaults = [
+            'patient_name' => trim($order->patient->nombres.' '.$order->patient->apellidos),
+            'patient_dni' => $order->patient->dni,
+            'legal_representative_dni' => '',
+            'study' => $examNames,
+            'day' => $now->format('d'),
+            'month' => $now->translatedFormat('F'),
+            'year' => $now->format('Y'),
+            'hour' => '',
+            'revocation' => '',
+        ];
         $order->swornDeclaration()->updateOrCreate([], [
-            'data' => [
-                'patient_name' => trim($order->patient->nombres.' '.$order->patient->apellidos),
-                'patient_dni' => $order->patient->dni,
-                'legal_representative_dni' => '',
-                'study' => $examNames,
-                'day' => $now->format('d'),
-                'month' => $now->translatedFormat('F'),
-                'year' => $now->format('Y'),
-                'hour' => '',
-            ],
+            'data' => array_merge($declarationDefaults, $order->swornDeclaration?->data ?? []),
         ]);
     }
 

@@ -13,14 +13,14 @@ body{font-family:DejaVu Sans,sans-serif;font-size:10px;color:#003b75}.title{text
 </div>
 <div class="section-title">PROCEDENCIA</div><div class="full"><b>Estudio solicitado:</b> {{ $admissionData['study'] ?? $order->orderExams->pluck('exam.nombre_examen')->join(', ') }}<br><b>Observaciones:</b> {{ $admissionData['observations'] ?? ($order->observaciones ?? '—') }}</div>
 <div class="section-title">ANTECEDENTES</div>
-<div class="full"><b>Causa:</b> ________________________________________________________________________________</div>
-<div class="full"><b>Sintomatología:</b> _______________________________________________________________________</div>
-<div class="full"><b>Intervenciones quirúrgicas:</b> _____________________________________________________________</div>
-<div class="full"><b>Medicación:</b> ____________________________________________________________________________</div>
+<div class="full"><b>Causa:</b> {{ $admissionData['cause'] ?? '' }}</div>
+<div class="full"><b>Sintomatología:</b> {{ $admissionData['symptomatology'] ?? '' }}</div>
+<div class="full"><b>Intervenciones quirúrgicas:</b> {{ $admissionData['surgeries'] ?? '' }}</div>
+<div class="full"><b>Medicación:</b> {{ $admissionData['medication'] ?? '' }}</div>
 @if($hasContrast)
 <div class="section-title">DATOS PARA CONTRASTE</div>
-<div class="row box"><div class="cell"><span class="label">Alergia probable/medicamento:</span> ____________</div><div class="cell"><span class="label">¿Está en ayunas?</span> Sí ( ) No ( )</div><div class="cell"><span class="label">Hace 4 horas:</span> Sí ( ) No ( )</div></div>
-<div class="row box"><div class="cell"><span class="label">Prueba de creatinina:</span> ______</div><div class="cell"><span class="label">Valor:</span> ______</div><div class="cell"><span class="label">Fecha:</span> ____/____/______</div></div>
+<div class="row box"><div class="cell"><span class="label">Alergia probable/medicamento:</span> {{ $admissionData['allergy'] ?? '' }}</div><div class="cell"><span class="label">¿Está en ayunas?</span> {{ $admissionData['fasting'] ?? '' }}</div><div class="cell"><span class="label">Hace 4 horas:</span> {{ $admissionData['fasting'] ?? '' }}</div></div>
+<div class="row box"><div class="cell"><span class="label">Prueba de creatinina:</span> {{ $admissionData['creatinine'] ?? '' }}</div><div class="cell"><span class="label">Valor:</span> {{ $admissionData['creatinine'] ?? '' }}</div><div class="cell"><span class="label">Fecha:</span> {{ $admissionData['date'] ?? '' }}</div></div>
 <div class="section-title">DOCUMENTOS / ENTREGA</div><div class="full">CD ( ) &nbsp;&nbsp; Informe ( ) &nbsp;&nbsp; Bolsa de cortesía ( )</div>
 @endif
 <br><br><div class="row"><div class="cell" style="border:0;text-align:center"><div class="sig"></div>FIRMA DEL PACIENTE</div><div class="cell" style="border:0;text-align:center"><div class="sig"></div>HUELLA DEL PACIENTE</div></div>

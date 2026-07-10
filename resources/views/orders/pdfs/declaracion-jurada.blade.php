@@ -16,6 +16,5 @@
 <p>Puno, <span class="line" style="min-width:35px">{{ $declarationData['day'] ?? now()->format('d') }}</span> de <span class="line">{{ $declarationData['month'] ?? now()->translatedFormat('F') }}</span> de <span class="line" style="min-width:55px">{{ $declarationData['year'] ?? now()->format('Y') }}</span>. Hora: <span class="line">{{ $declarationData['hour'] ?? '&nbsp;' }}</span></p>
 <table style="width:100%;margin-top:30px"><tr><td style="text-align:center;width:50%"><div class="sig"></div>Firma Paciente/Representante Legal</td><td style="text-align:center;width:50%"><div class="sig"></div>(Huella digital)<br>DNI Nº <span class="line">{{ $declarationData['patient_dni'] ?? $order->patient->dni }}</span></td></tr></table>
 <p><b>REVOCATORIA:</b></p>
-<p class="small">__________________________________________________________________________________________</p>
-<p class="small">__________________________________________________________________________________________</p>
+<p class="small">{{ $declarationData['revocation'] ?? '__________________________________________________________________________________________' }}</p>
 </body></html>
