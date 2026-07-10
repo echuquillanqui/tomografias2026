@@ -97,7 +97,17 @@
         <div class="header">
             <table class="brand-table">
                 <tr>
-                    <td>@if($setting->logo_path && file_exists(storage_path('app/public/'.$setting->logo_path)))<img class="brand-logo" src="{{ storage_path('app/public/'.$setting->logo_path) }}" alt="Logo">@else<span class="brand-mark">T</span>@endif<span class="brand-name">{{ $setting->razon_social }}<span class="brand-subtitle">{{ collect([$setting->ruc ? 'RUC '.$setting->ruc : null, $setting->direccion, $setting->telefono])->filter()->implode(' · ') }}</span></span></td>
+                    <td>
+                        @if($setting->logo_path && file_exists(storage_path('app/public/'.$setting->logo_path)))
+                            <img class="brand-logo" src="{{ storage_path('app/public/'.$setting->logo_path) }}" alt="Logo">
+                        @else
+                            <span class="brand-mark">T</span>
+                        @endif
+                        <span class="brand-name">
+                            {{ $setting->razon_social }}
+                            <span class="brand-subtitle">{{ collect([$setting->ruc ? 'RUC '.$setting->ruc : null, $setting->direccion, $setting->telefono])->filter()->implode(' · ') }}</span>
+                        </span>
+                    </td>
                     <td style="text-align: right;"><span class="document-chip">Informe médico</span></td>
                 </tr>
             </table>
@@ -121,7 +131,36 @@
             @foreach($sections as $section)
                 <div class="section"><div class="section-heading">{{ $section['heading'] }}</div><div class="section-body">{{ $section['body'] }}</div></div>
             @endforeach
-            <table class="signature-table"><tr><td><div class="signature-note">Documento confidencial de uso médico. Correlacionar con antecedentes clínicos y estudios complementarios.</div></td><td><div class="signature"><div class="signature-box">@if($signature && file_exists($signature))<img src="{{ $signature }}" alt="Firma del médico">@endif</div><div class="line"></div>@if($filled($doctor?->nombre_completo))<div class="doctor-name">{{ $doctor->nombre_completo }}</div>@endif@if($filled($doctor?->cmp) || $filled($doctor?->rne))<div class="doctor-code">@if($filled($doctor?->cmp)) CMP: {{ $doctor->cmp }} @endif @if($filled($doctor?->rne)) &nbsp; RNE: {{ $doctor->rne }} @endif</div>@endif</div></td></tr></table>
+            <table class="signature-table">
+                <tr>
+                    <td>
+                        <div class="signature-note">Documento confidencial de uso médico. Correlacionar con antecedentes clínicos y estudios complementarios.</div>
+                    </td>
+                    <td>
+                        <div class="signature">
+                            <div class="signature-box">
+                                @if($signature && file_exists($signature))
+                                    <img src="{{ $signature }}" alt="Firma del médico">
+                                @endif
+                            </div>
+                            <div class="line"></div>
+                            @if($filled($doctor?->nombre_completo))
+                                <div class="doctor-name">{{ $doctor->nombre_completo }}</div>
+                            @endif
+                            @if($filled($doctor?->cmp) || $filled($doctor?->rne))
+                                <div class="doctor-code">
+                                    @if($filled($doctor?->cmp))
+                                        CMP: {{ $doctor->cmp }}
+                                    @endif
+                                    @if($filled($doctor?->rne))
+                                        &nbsp; RNE: {{ $doctor->rne }}
+                                    @endif
+                                </div>
+                            @endif
+                        </div>
+                    </td>
+                </tr>
+            </table>
             <div class="footer">{{ $orderCode }} · {{ $setting->razon_social }}@if($setting->direccion) · {{ $setting->direccion }}@endif @if($setting->telefono) · Tel. {{ $setting->telefono }}@endif</div>
         </div>
     </div>
