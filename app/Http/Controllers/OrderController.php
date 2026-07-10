@@ -199,6 +199,14 @@ class OrderController extends Controller
     }
 
 
+    public function fichaIngresoTemplate(Order $order): View
+    {
+        $order->load(['patient', 'agreement', 'medicoSolicitante', 'orderExams.exam']);
+        $hasContrast = $order->orderExams->contains('tipo_contraste', 'Con contraste');
+
+        return view('orders.templates.ficha-ingreso', compact('order', 'hasContrast'));
+    }
+
     public function fichaIngresoPdf(Order $order)
     {
         $order->load(['patient', 'agreement', 'medicoSolicitante', 'orderExams.exam']);
@@ -207,10 +215,16 @@ class OrderController extends Controller
         return Pdf::loadView('orders.pdfs.ficha-ingreso', compact('order', 'hasContrast'))->setPaper('a4')->stream('ficha-ingreso-'.$order->id.'.pdf');
     }
 
+    public function declaracionJuradaTemplate(Order $order): View
+    {
+        $order->load(['patient', 'orderExams.exam']);
+
+        return view('orders.templates.declaracion-jurada', compact('order'));
+    }
+
     public function declaracionJuradaPdf(Order $order)
     {
         $order->load(['patient', 'orderExams.exam']);
-        abort_unless($this->isMinor($order->patient), 404);
 
         return Pdf::loadView('orders.pdfs.declaracion-jurada', compact('order'))->setPaper('a4')->stream('declaracion-jurada-'.$order->id.'.pdf');
     }

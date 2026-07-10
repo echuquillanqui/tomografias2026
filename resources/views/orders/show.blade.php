@@ -11,7 +11,10 @@
             </div>
             <div>
                 <a class="btn btn-light" href="{{ route('orders.edit', $order) }}">Editar</a>
+                <a class="btn btn-outline-light" href="{{ route('orders.ficha-ingreso.template', $order) }}">Ficha plantilla</a>
                 <a class="btn btn-outline-light" target="_blank" href="{{ route('orders.ficha-ingreso', $order) }}">Ficha PDF</a>
+                <a class="btn btn-outline-light" href="{{ route('orders.declaracion-jurada.template', $order) }}">Declaración plantilla</a>
+                <a class="btn btn-outline-light" target="_blank" href="{{ route('orders.declaracion-jurada', $order) }}">Declaración PDF</a>
                 <a class="btn btn-outline-light" href="{{ route('orders.index') }}">Volver</a>
             </div>
         </div>
