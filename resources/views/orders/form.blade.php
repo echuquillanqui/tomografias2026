@@ -163,7 +163,7 @@
                                                 <input type="hidden" :name="`exams[${cart.indexOf(item)}][exam_id]`" :value="item.id">
                                             </td>
                                             <td style="min-width: 160px;">
-                                                <select class="form-select form-select-sm" :name="`exams[${cart.indexOf(item)}][tipo_contraste]`" x-model="item.tipo_contraste" @change="item.price = priceFor(item.id, item.tipo_contraste)">
+                                                <select class="form-select form-select-sm" :name="`exams[${cart.indexOf(item)}][tipo_contraste]`" x-model="item.tipo_contraste" @change="handleContrastChange(item)">
                                                     <option>Sin contraste</option>
                                                     <option>Con contraste</option>
                                                 </select>
@@ -337,6 +337,12 @@ function orderSystem() {
         removeByUid(uid) {
             const index = this.cart.findIndex((item) => item.uid === uid);
             if (index !== -1) this.cart.splice(index, 1);
+        },
+        handleContrastChange(item) {
+            item.price = this.priceFor(item.id, item.tipo_contraste);
+            if (item.tipo_contraste === 'Con contraste') {
+                this.mergeExamConsumables(item.id);
+            }
         },
         priceFor(examId, contrast) {
             const match = this.agreementPrices.find((price) => price.agreement_id === String(this.selectedAgreement) && price.exam_id === String(examId) && price.tipo_contraste === contrast);
