@@ -10,7 +10,7 @@ class OrderReport extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['order_id', 'titulo', 'contenido', 'medico_firmante_id'];
+    protected $fillable = ['order_id', 'titulo', 'tecnica', 'informe', 'impresion', 'recomendaciones', 'contenido', 'medico_firmante_id'];
 
     public function order(): BelongsTo
     {

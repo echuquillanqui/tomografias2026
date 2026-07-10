@@ -1,4 +1,5 @@
 @php
+    $setting = $setting ?? \App\Models\SystemSetting::current();
     $report = $order->report;
     $doctor = $report?->medicoFirmante;
     $signature = $doctor?->firma_path ? storage_path('app/public/'.$doctor->firma_path) : null;
@@ -21,7 +22,15 @@
         return ! preg_match('/^(Médico radiólogo|Medico radiologo|CMP|RNE):/iu', str_replace('**', '', $line));
     };
 
-    $sections = collect(preg_split('/\n\s*---\s*\n/', (string) $report->contenido))
+    $sections = collect([
+        ['heading' => 'TÉCNICA', 'body' => $report->tecnica],
+        ['heading' => 'INFORME', 'body' => $report->informe],
+        ['heading' => 'IMPRESIÓN DIAGNÓSTICA', 'body' => $report->impresion],
+        ['heading' => 'RECOMENDACIONES / NOTAS', 'body' => $report->recomendaciones],
+    ])->filter(fn ($section) => $filled($section['body']))->values();
+
+    if ($sections->isEmpty()) {
+        $sections = collect(preg_split('/\n\s*---\s*\n/', (string) $report->contenido))
         ->map(function ($block) use ($sectionTitle, $normalizeText, $isPrintableLine) {
             $lines = collect(preg_split('/\R/', trim($block)))
                 ->map(fn ($line) => $normalizeText($line))
@@ -35,6 +44,7 @@
         })
         ->filter(fn ($section) => $section['body'] !== '')
         ->values();
+    }
 
     $infoRows = collect([
         ['Paciente', trim($patient->nombres.' '.$patient->apellidos), 'DNI / Edad', trim(($patient->dni ?: '').($patient->edad ? ' · '.$patient->edad.' años' : ''))],
@@ -55,7 +65,7 @@
         .header { background: #102a43; color: #ffffff; padding: 12px 16px 11px; }
         .brand-table, .info-grid, .signature-table { width: 100%; border-collapse: collapse; }
         .brand-table td { vertical-align: middle; padding: 0; }
-        .brand-mark { border: 1px solid rgba(255,255,255,.45); color: #ffffff; display: inline-block; font-size: 15px; font-weight: 700; height: 32px; line-height: 30px; margin-right: 9px; text-align: center; width: 32px; }
+        .brand-mark { border: 1px solid rgba(255,255,255,.45); color: #ffffff; display: inline-block; font-size: 15px; font-weight: 700; height: 32px; line-height: 30px; margin-right: 9px; text-align: center; width: 32px; } .brand-logo{max-height:42px;max-width:92px;margin-right:9px;vertical-align:middle;background:#fff;padding:2px;border-radius:3px;}
         .brand-name { display: inline-block; font-size: 15px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; }
         .brand-subtitle { color: #dbeafe; display: block; font-size: 7.5px; font-weight: 400; letter-spacing: .18em; margin-top: 1px; text-transform: uppercase; }
         .document-chip { border-left: 3px solid #38bdf8; display: inline-block; font-size: 8px; letter-spacing: .12em; padding-left: 8px; text-transform: uppercase; }
@@ -87,7 +97,7 @@
         <div class="header">
             <table class="brand-table">
                 <tr>
-                    <td><span class="brand-mark">T</span><span class="brand-name">Tomografías 2026<span class="brand-subtitle">Centro de diagnóstico por imágenes</span></span></td>
+                    <td>@if($setting->logo_path && file_exists(storage_path('app/public/'.$setting->logo_path)))<img class="brand-logo" src="{{ storage_path('app/public/'.$setting->logo_path) }}" alt="Logo">@else<span class="brand-mark">T</span>@endif<span class="brand-name">{{ $setting->razon_social }}<span class="brand-subtitle">{{ collect([$setting->ruc ? 'RUC '.$setting->ruc : null, $setting->direccion, $setting->telefono])->filter()->implode(' · ') }}</span></span></td>
                     <td style="text-align: right;"><span class="document-chip">Informe médico</span></td>
                 </tr>
             </table>
@@ -112,7 +122,7 @@
                 <div class="section"><div class="section-heading">{{ $section['heading'] }}</div><div class="section-body">{{ $section['body'] }}</div></div>
             @endforeach
             <table class="signature-table"><tr><td><div class="signature-note">Documento confidencial de uso médico. Correlacionar con antecedentes clínicos y estudios complementarios.</div></td><td><div class="signature"><div class="signature-box">@if($signature && file_exists($signature))<img src="{{ $signature }}" alt="Firma del médico">@endif</div><div class="line"></div>@if($filled($doctor?->nombre_completo))<div class="doctor-name">{{ $doctor->nombre_completo }}</div>@endif@if($filled($doctor?->cmp) || $filled($doctor?->rne))<div class="doctor-code">@if($filled($doctor?->cmp)) CMP: {{ $doctor->cmp }} @endif @if($filled($doctor?->rne)) &nbsp; RNE: {{ $doctor->rne }} @endif</div>@endif</div></td></tr></table>
-            <div class="footer">{{ $orderCode }} · Generado por Tomografías 2026</div>
+            <div class="footer">{{ $orderCode }} · {{ $setting->razon_social }}@if($setting->direccion) · {{ $setting->direccion }}@endif @if($setting->telefono) · Tel. {{ $setting->telefono }}@endif</div>
         </div>
     </div>
 </body>

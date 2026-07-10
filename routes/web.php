@@ -8,6 +8,7 @@ use App\Http\Controllers\PatientController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ReagentController;
 use App\Http\Controllers\StockMovementController;
+use App\Http\Controllers\SystemSettingController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -39,6 +40,8 @@ Route::middleware('auth')->group(function () {
     Route::resource('reagents', ReagentController::class)->except(['create', 'show', 'edit']);
     Route::resource('agreement-prices', AgreementPriceController::class)->except(['create', 'show', 'edit']);
     Route::resource('stock-movements', StockMovementController::class)->only(['index', 'store', 'destroy']);
+    Route::get('system-settings', [SystemSettingController::class, 'index'])->name('system-settings.index');
+    Route::put('system-settings', [SystemSettingController::class, 'update'])->name('system-settings.update');
     Route::patch('orders/{order}/status', [OrderController::class, 'updateStatus'])->name('orders.update-status');
     Route::get('orders/{order}/ficha-ingreso/plantilla', [OrderController::class, 'fichaIngresoTemplate'])->name('orders.ficha-ingreso.template');
     Route::put('orders/{order}/ficha-ingreso/plantilla', [OrderController::class, 'updateFichaIngreso'])->name('orders.ficha-ingreso.update');

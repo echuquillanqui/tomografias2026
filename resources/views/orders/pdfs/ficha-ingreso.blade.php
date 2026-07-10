@@ -1,7 +1,9 @@
+@php($setting = \App\Models\SystemSetting::current())
 @php($admissionData = $admissionData ?? [])
-<!doctype html><html><head><meta charset="utf-8"><style>
+<!doctype html><html><head><meta charset="utf-8"><style>.company-header{width:100%;border-bottom:1px solid #1f6fb2;margin-bottom:8px;padding-bottom:6px}.company-logo{max-height:45px;max-width:100px}.company-name{font-size:14px;font-weight:bold}.company-data{font-size:9px;color:#555}</style><style>
 body{font-family:DejaVu Sans,sans-serif;font-size:10px;color:#003b75}.title{text-align:center;font-size:18px;font-weight:bold;text-decoration:underline}.box{border:1px solid #1f6fb2;margin-bottom:6px}.row{display:table;width:100%;table-layout:fixed}.cell{display:table-cell;border-right:1px solid #1f6fb2;border-bottom:1px solid #1f6fb2;padding:4px}.cell:last-child{border-right:0}.label{font-weight:bold;color:#0057a8}.yellow{background:#fff200}.head{background:#0c55a2;color:white;text-align:center;font-weight:bold;padding:4px}.red{color:red;font-weight:bold}.sig{height:70px;border:1px solid #1f6fb2;border-radius:8px}.muted{color:#666}.full{min-height:34px;padding:5px;border-bottom:1px solid #1f6fb2}.section-title{background:#0c55a2;color:white;text-align:center;font-weight:bold;padding:4px;margin-top:8px}
 </style></head><body>
+<table class="company-header"><tr><td style="width:110px">@if($setting->logo_path && file_exists(storage_path('app/public/'.$setting->logo_path)))<img class="company-logo" src="{{ storage_path('app/public/'.$setting->logo_path) }}" alt="Logo">@endif</td><td><div class="company-name">{{ $setting->razon_social }}</div><div class="company-data">{{ collect([$setting->ruc ? 'RUC '.$setting->ruc : null, $setting->direccion, $setting->telefono])->filter()->implode(' · ') }}</div></td></tr></table>
 <div class="title">FICHA DE INGRESO</div>
 <div style="text-align:center;font-weight:bold">{{ $admissionData['agreement'] ?? 'PARTICULAR' }}</div>
 <div class="box">

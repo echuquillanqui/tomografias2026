@@ -8,7 +8,7 @@
     $contrast = $order->orderExams->contains('tipo_contraste', 'Con contraste') ? 'Con contraste endovenoso' : 'Sin contraste';
     $contenido = $report->contenido;
     $defaultTechnique = 'Se realizó tomografía computarizada de '.($examNames ?: '[región anatómica]').' mediante adquisición helicoidal/multicorte, con reconstrucciones multiplanares.';
-    $defaultFindings = "Se evalúan las estructuras anatómicas incluidas en el campo de estudio.\n\n[Describir hallazgos normales o patológicos según el estudio.]";
+    $defaultFindings = "Se evalúan las estructuras anatómicas incluidas en el campo de estudio.\n\n[Describir informe tomográfico según el estudio.]";
     $defaultImpression = "1. [Conclusión principal del estudio.]\n2. [Hallazgo secundario relevante, si existe.]";
     $defaultRecommendations = '';
 @endphp
@@ -81,22 +81,22 @@
                     <div class="report-section-grid">
                         <div class="report-field">
                             <label class="form-label small fw-bold">Técnica</label>
-                            <textarea name="tecnica" rows="4" class="form-control report-content-box @error('tecnica') is-invalid @enderror" required>{{ old('tecnica', $defaultTechnique) }}</textarea>
+                            <textarea name="tecnica" rows="4" class="form-control report-content-box @error('tecnica') is-invalid @enderror" required>{{ old('tecnica', $report->tecnica ?? $defaultTechnique) }}</textarea>
                             @error('tecnica') <div class="invalid-feedback">{{ $message }}</div> @enderror
                         </div>
                         <div class="report-field">
-                            <label class="form-label small fw-bold">Hallazgos</label>
-                            <textarea name="hallazgos" rows="8" class="form-control report-content-box @error('hallazgos') is-invalid @enderror" required>{{ old('hallazgos', $defaultFindings) }}</textarea>
-                            @error('hallazgos') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                            <label class="form-label small fw-bold">Informe</label>
+                            <textarea name="informe" rows="8" class="form-control report-content-box @error('informe') is-invalid @enderror" required>{{ old('informe', $report->informe ?? $defaultFindings) }}</textarea>
+                            @error('informe') <div class="invalid-feedback">{{ $message }}</div> @enderror
                         </div>
                         <div class="report-field">
                             <label class="form-label small fw-bold">Impresión diagnóstica</label>
-                            <textarea name="impresion" rows="5" class="form-control report-content-box @error('impresion') is-invalid @enderror" required>{{ old('impresion', $defaultImpression) }}</textarea>
+                            <textarea name="impresion" rows="5" class="form-control report-content-box @error('impresion') is-invalid @enderror" required>{{ old('impresion', $report->impresion ?? $defaultImpression) }}</textarea>
                             @error('impresion') <div class="invalid-feedback">{{ $message }}</div> @enderror
                         </div>
                         <div class="report-field">
                             <label class="form-label small fw-bold">Recomendaciones / notas</label>
-                            <textarea name="recomendaciones" rows="3" class="form-control report-content-box @error('recomendaciones') is-invalid @enderror">{{ old('recomendaciones', $defaultRecommendations) }}</textarea>
+                            <textarea name="recomendaciones" rows="3" class="form-control report-content-box @error('recomendaciones') is-invalid @enderror">{{ old('recomendaciones', $report->recomendaciones ?? $defaultRecommendations) }}</textarea>
                             @error('recomendaciones') <div class="invalid-feedback">{{ $message }}</div> @enderror
                         </div>
                     </div>
