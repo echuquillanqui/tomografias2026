@@ -198,10 +198,10 @@
                 <div class="card border-0 shadow-sm clinic-card mt-4">
                     <div class="card-header bg-white py-3 border-bottom text-primary fw-bold d-flex justify-content-between align-items-center">
                         <span>CONSUMIBLES DE LA ORDEN</span>
-                        <button type="button" class="btn btn-sm btn-outline-primary" @click="preloadConsumablesFromCart(true)">Precargar desde exámenes</button>
+                        <button type="button" class="btn btn-sm btn-outline-primary" @click="preloadConsumablesFromCart(true)">Precargar desde exámenes con contraste</button>
                     </div>
                     <div class="card-body">
-                        <div class="alert alert-info py-2 small">Los consumibles configurados en cada examen se precargan automáticamente al agregarlo. Puedes ajustar las cantidades antes de guardar.</div>
+                        <div class="alert alert-info py-2 small">Los consumibles configurados solo se precargan cuando el examen está marcado con contraste. Si cambias a sin contraste, se retiran de la orden.</div>
                         <div class="row g-2 mb-3">
                             <div class="col-8">
                                 <select x-model="selectedReagent" class="form-select">
@@ -294,7 +294,7 @@ function orderSystem() {
         cartSearch: '',
         isSubmitting: false,
         init() {
-            this.preloadConsumablesFromCart(false);
+            this.preloadConsumablesFromCart(true);
 
             document.querySelectorAll('.js-tom-select').forEach((select) => {
                 if (!select.tomselect) {
@@ -324,7 +324,7 @@ function orderSystem() {
                     const item = this.$el.querySelector('#item_select').tomselect.options[value];
                     if (!this.cart.find((cartItem) => cartItem.uid === item.uid)) {
                         this.cart.push({ ...item, type: 'exam', tipo_contraste: 'Sin contraste', estado: 'Pendiente', price: this.priceFor(item.id, 'Sin contraste') });
-                        this.mergeExamConsumables(item.id);
+                        this.rebuildConsumablesFromContrastedExams();
                     }
                     this.$el.querySelector('#item_select').tomselect.clear();
                 }
@@ -336,13 +336,14 @@ function orderSystem() {
         },
         removeByUid(uid) {
             const index = this.cart.findIndex((item) => item.uid === uid);
-            if (index !== -1) this.cart.splice(index, 1);
+            if (index !== -1) {
+                this.cart.splice(index, 1);
+                this.rebuildConsumablesFromContrastedExams();
+            }
         },
         handleContrastChange(item) {
             item.price = this.priceFor(item.id, item.tipo_contraste);
-            if (item.tipo_contraste === 'Con contraste') {
-                this.mergeExamConsumables(item.id);
-            }
+            this.rebuildConsumablesFromContrastedExams();
         },
         priceFor(examId, contrast) {
             const match = this.agreementPrices.find((price) => price.agreement_id === String(this.selectedAgreement) && price.exam_id === String(examId) && price.tipo_contraste === contrast);
@@ -350,8 +351,7 @@ function orderSystem() {
         },
         preloadConsumablesFromCart(force = false) {
             if (!force && this.consumables.length > 0) return;
-            if (force) this.consumables = [];
-            this.cart.forEach((item) => this.mergeExamConsumables(item.id));
+            this.rebuildConsumablesFromContrastedExams();
         },
         addConsumable() {
             const reagent = this.reagents.find((item) => item.id === String(this.selectedReagent));
@@ -361,12 +361,21 @@ function orderSystem() {
             else this.consumables.push({ reagent_id: reagent.id, name: reagent.name, unit: reagent.unit, cantidad: 1 });
             this.selectedReagent = '';
         },
+        rebuildConsumablesFromContrastedExams() {
+            const totals = new Map();
+            this.cart
+                .filter((item) => item.tipo_contraste === 'Con contraste')
+                .forEach((item) => {
+                    (this.examConsumables[String(item.id)] || []).forEach((row) => {
+                        const current = totals.get(row.reagent_id) || { ...row, cantidad: 0 };
+                        current.cantidad = Number(current.cantidad || 0) + Number(row.cantidad || 0);
+                        totals.set(row.reagent_id, current);
+                    });
+                });
+            this.consumables = Array.from(totals.values()).filter((row) => Number(row.cantidad || 0) > 0);
+        },
         mergeExamConsumables(examId) {
-            (this.examConsumables[String(examId)] || []).forEach((row) => {
-                const existing = this.consumables.find((item) => item.reagent_id === row.reagent_id);
-                if (existing) existing.cantidad = Number(existing.cantidad || 0) + Number(row.cantidad || 0);
-                else this.consumables.push({ ...row });
-            });
+            this.rebuildConsumablesFromContrastedExams();
         },
         applyAgreementPrices() {
             this.cart = this.cart.map((item) => ({ ...item, price: this.priceFor(item.id, item.tipo_contraste) }));

@@ -1,15 +1,16 @@
+@php($admissionData = $admissionData ?? [])
 <div class="text-center mb-3">
     <h2 class="fw-bold text-decoration-underline">FICHA DE INGRESO</h2>
-    <div class="fw-bold">{{ $order->agreement->nombre_institucion ?? 'PARTICULAR' }}</div>
+    <div class="fw-bold">{{ $admissionData['agreement'] ?? ($order->agreement->nombre_institucion ?? 'PARTICULAR') }}</div>
 </div>
 <table class="table table-bordered align-middle">
     <tbody>
-        <tr><th>N° de solicitud</th><td>{{ $order->codigo_orden ?? $order->id }}</td><th>Fecha</th><td>{{ $order->fecha_orden->format('d/m/Y') }}</td><th>Unidad</th><td>{{ $order->unidad }}</td></tr>
-        <tr><th>Paciente</th><td colspan="3">{{ $order->patient->apellidos }} {{ $order->patient->nombres }}</td><th>DNI</th><td>{{ $order->patient->dni }}</td></tr>
-        <tr><th>Celular</th><td>{{ $order->patient->telefono ?? '—' }}</td><th>F. nacimiento</th><td>{{ optional($order->patient->fecha_nacimiento)->format('d/m/Y') ?? '—' }}</td><th>Edad</th><td>{{ $order->patient->edad ?? ($order->patient->fecha_nacimiento?->age ?? '—') }}</td></tr>
-        <tr><th>Solicitado por</th><td colspan="3">{{ $order->medicoSolicitante?->nombre_completo ?? '—' }}</td><th>Contraste</th><td>{{ $hasContrast ? 'CON CONTRASTE' : 'SIN CONTRASTE' }}</td></tr>
-        <tr><th>Estudio solicitado</th><td colspan="5">{{ $order->orderExams->pluck('exam.nombre_examen')->join(', ') }}</td></tr>
-        <tr><th>Observaciones</th><td colspan="5">{{ $order->observaciones ?? '—' }}</td></tr>
+        <tr><th>N° de solicitud</th><td>{{ $admissionData['request_number'] ?? ($order->codigo_orden ?? $order->id) }}</td><th>Fecha</th><td>{{ $admissionData['date'] ?? $order->fecha_orden->format('d/m/Y') }}</td><th>Unidad</th><td>{{ $admissionData['unit'] ?? $order->unidad }}</td></tr>
+        <tr><th>Paciente</th><td colspan="3">{{ $admissionData['patient_name'] ?? ($order->patient->apellidos.' '.$order->patient->nombres) }}</td><th>DNI</th><td>{{ $admissionData['patient_dni'] ?? $order->patient->dni }}</td></tr>
+        <tr><th>Celular</th><td>{{ $admissionData['patient_phone'] ?? ($order->patient->telefono ?? '—') }}</td><th>F. nacimiento</th><td>{{ $admissionData['patient_birthdate'] ?? (optional($order->patient->fecha_nacimiento)->format('d/m/Y') ?? '—') }}</td><th>Edad</th><td>{{ $admissionData['patient_age'] ?? ($order->patient->edad ?? ($order->patient->fecha_nacimiento?->age ?? '—')) }}</td></tr>
+        <tr><th>Solicitado por</th><td colspan="3">{{ $admissionData['requested_by'] ?? ($order->medicoSolicitante?->nombre_completo ?? '—') }}</td><th>Contraste</th><td>{{ $admissionData['contrast_label'] ?? ($hasContrast ? 'CON CONTRASTE' : 'SIN CONTRASTE') }}</td></tr>
+        <tr><th>Estudio solicitado</th><td colspan="5">{{ $admissionData['study'] ?? $order->orderExams->pluck('exam.nombre_examen')->join(', ') }}</td></tr>
+        <tr><th>Observaciones</th><td colspan="5">{{ $admissionData['observations'] ?? ($order->observaciones ?? '—') }}</td></tr>
     </tbody>
 </table>
 <div class="row g-3">
