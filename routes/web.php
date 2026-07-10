@@ -39,7 +39,9 @@ Route::middleware('auth')->group(function () {
     Route::resource('agreement-prices', AgreementPriceController::class)->except(['create', 'show', 'edit']);
     Route::resource('stock-movements', StockMovementController::class)->only(['index', 'store', 'destroy']);
     Route::patch('orders/{order}/status', [OrderController::class, 'updateStatus'])->name('orders.update-status');
+    Route::get('orders/{order}/ficha-ingreso/plantilla', [OrderController::class, 'fichaIngresoTemplate'])->name('orders.ficha-ingreso.template');
     Route::get('orders/{order}/ficha-ingreso', [OrderController::class, 'fichaIngresoPdf'])->name('orders.ficha-ingreso');
+    Route::get('orders/{order}/declaracion-jurada/plantilla', [OrderController::class, 'declaracionJuradaTemplate'])->name('orders.declaracion-jurada.template');
     Route::get('orders/{order}/declaracion-jurada', [OrderController::class, 'declaracionJuradaPdf'])->name('orders.declaracion-jurada');
     Route::patch('orders/{order}/payment', [OrderController::class, 'updatePayment'])->name('orders.update-payment');
     Route::get('reports', [ReportController::class, 'index'])->name('reports.index');

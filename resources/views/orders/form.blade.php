@@ -196,8 +196,12 @@
                 </div>
 
                 <div class="card border-0 shadow-sm clinic-card mt-4">
-                    <div class="card-header bg-white py-3 border-bottom text-primary fw-bold">CONSUMIBLES DE LA ORDEN</div>
+                    <div class="card-header bg-white py-3 border-bottom text-primary fw-bold d-flex justify-content-between align-items-center">
+                        <span>CONSUMIBLES DE LA ORDEN</span>
+                        <button type="button" class="btn btn-sm btn-outline-primary" @click="preloadConsumablesFromCart(true)">Precargar desde exámenes</button>
+                    </div>
                     <div class="card-body">
+                        <div class="alert alert-info py-2 small">Los consumibles configurados en cada examen se precargan automáticamente al agregarlo. Puedes ajustar las cantidades antes de guardar.</div>
                         <div class="row g-2 mb-3">
                             <div class="col-8">
                                 <select x-model="selectedReagent" class="form-select">
@@ -290,6 +294,8 @@ function orderSystem() {
         cartSearch: '',
         isSubmitting: false,
         init() {
+            this.preloadConsumablesFromCart(false);
+
             document.querySelectorAll('.js-tom-select').forEach((select) => {
                 if (!select.tomselect) {
                     new TomSelect(select, {
@@ -335,6 +341,11 @@ function orderSystem() {
         priceFor(examId, contrast) {
             const match = this.agreementPrices.find((price) => price.agreement_id === String(this.selectedAgreement) && price.exam_id === String(examId) && price.tipo_contraste === contrast);
             return match ? Number(match.price) : 0;
+        },
+        preloadConsumablesFromCart(force = false) {
+            if (!force && this.consumables.length > 0) return;
+            if (force) this.consumables = [];
+            this.cart.forEach((item) => this.mergeExamConsumables(item.id));
         },
         addConsumable() {
             const reagent = this.reagents.find((item) => item.id === String(this.selectedReagent));
