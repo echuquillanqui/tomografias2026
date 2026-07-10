@@ -32,6 +32,7 @@ Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name
 
 Route::middleware('auth')->group(function () {
     Route::resource('users', UserController::class)->except(['create', 'show', 'edit']);
+    Route::get('patients/reniec/dni', [PatientController::class, 'reniec'])->name('patients.reniec');
     Route::resource('patients', PatientController::class)->except(['create', 'show', 'edit']);
     Route::resource('agreements', AgreementController::class)->except(['create', 'show', 'edit']);
     Route::resource('exams', ExamController::class)->except(['create', 'show', 'edit']);

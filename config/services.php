@@ -31,4 +31,8 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
+
+    'decolecta' => [
+        'token' => env('DECOLECTA_TOKEN', 'sk_17231.hWD2BnDuJNzQwmy7T4ODdA1mZdpxcgkf'),
+    ],
 ];

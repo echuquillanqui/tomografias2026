@@ -59,12 +59,20 @@
                             <div class="order-search-panel__icon"><i class="bi bi-person-vcard"></i></div>
                             <div class="flex-grow-1">
                                 <label class="form-label small fw-bold">PACIENTE</label>
-                                <select name="patient_id" class="form-select js-tom-select" data-placeholder="Buscar paciente por DNI, nombres o apellidos" required>
+                                <select id="patient_select" name="patient_id" class="form-select js-tom-select" data-placeholder="Buscar paciente por DNI, nombres o apellidos" required x-model="selectedPatientId">
                                     <option value=""></option>
                                     @foreach($patients as $p)
                                         <option value="{{ $p->id }}" @selected(old('patient_id', $order->patient_id) == $p->id)>{{ $p->dni }} - {{ $p->nombres }} {{ $p->apellidos }}</option>
                                     @endforeach
                                 </select>
+                                <div class="d-flex flex-wrap gap-2 mt-2">
+                                    <button type="button" class="btn btn-sm btn-outline-primary" @click="openPatientModal()">
+                                        <i class="bi bi-person-plus"></i> Registrar paciente
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" @click="openPatientModal(selectedPatientId)" :disabled="!selectedPatientId">
+                                        <i class="bi bi-pencil-square"></i> Editar paciente
+                                    </button>
+                                </div>
                             </div>
                         </div>
                         <div class="row g-3">
@@ -265,6 +273,57 @@
             </div>
         </div>
     </form>
+
+    <div class="modal fade" id="patientModal" tabindex="-1" aria-labelledby="patientModalLabel" aria-hidden="true" x-ref="patientModal">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title" id="patientModalLabel" x-text="patientForm.id ? 'Editar paciente' : 'Registrar paciente'"></h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-danger" x-show="patientError" x-text="patientError"></div>
+                    <div class="row g-3">
+                        <div class="col-md-5">
+                            <label class="form-label small fw-bold">DNI</label>
+                            <div class="input-group">
+                                <input type="text" maxlength="8" class="form-control" x-model="patientForm.dni" placeholder="8 dígitos">
+                                <button type="button" class="btn btn-outline-primary" @click="lookupReniec()" :disabled="reniecLoading || !/^\d{8}$/.test(patientForm.dni)">
+                                    <span x-show="!reniecLoading">RENIEC</span>
+                                    <span x-show="reniecLoading">Buscando...</span>
+                                </button>
+                            </div>
+                            <div class="form-text">Consulta Decolecta RENIEC por DNI para completar nombres y apellidos.</div>
+                        </div>
+                        <div class="col-md-7">
+                            <label class="form-label small fw-bold">Nombres</label>
+                            <input type="text" class="form-control" x-model="patientForm.nombres">
+                        </div>
+                        <div class="col-md-7">
+                            <label class="form-label small fw-bold">Apellidos</label>
+                            <input type="text" class="form-control" x-model="patientForm.apellidos">
+                        </div>
+                        <div class="col-md-5">
+                            <label class="form-label small fw-bold">Teléfono</label>
+                            <input type="text" class="form-control" x-model="patientForm.telefono">
+                        </div>
+                        <div class="col-md-5">
+                            <label class="form-label small fw-bold">Fecha de nacimiento</label>
+                            <input type="date" class="form-control" x-model="patientForm.fecha_nacimiento">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" @click="savePatient()" :disabled="patientSaving">
+                        <span x-show="!patientSaving">Guardar paciente</span>
+                        <span x-show="patientSaving">Guardando...</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </div>
 @endsection
 
@@ -281,6 +340,12 @@ function orderSystem() {
         cart: {{ Illuminate\Support\Js::from($initialItems) }},
         consumables: {{ Illuminate\Support\Js::from($initialConsumables) }},
         selectedReagent: '',
+        selectedPatientId: String({{ Illuminate\Support\Js::from(old('patient_id', $order->patient_id)) }} || ''),
+        patients: {{ Illuminate\Support\Js::from($patients->map(fn ($p) => ['id' => (string) $p->id, 'dni' => $p->dni, 'nombres' => $p->nombres, 'apellidos' => $p->apellidos, 'telefono' => $p->telefono, 'fecha_nacimiento' => optional($p->fecha_nacimiento)->format('Y-m-d'), 'label' => $p->dni.' - '.$p->nombres.' '.$p->apellidos])->values()) }},
+        patientForm: { id: null, dni: '', nombres: '', apellidos: '', telefono: '', fecha_nacimiento: '' },
+        patientError: '',
+        patientSaving: false,
+        reniecLoading: false,
         reagents: {{ Illuminate\Support\Js::from($reagents->map(fn ($r) => ['id' => (string) $r->id, 'name' => $r->nombre, 'unit' => $r->unidad_medida])->values()) }},
         examConsumables: {{ Illuminate\Support\Js::from($exams->mapWithKeys(fn ($e) => [(string) $e->id => $e->reagents->map(fn ($r) => ['reagent_id' => (string) $r->id, 'name' => $r->nombre, 'unit' => $r->unidad_medida, 'cantidad' => (float) $r->pivot->cantidad_estimada])->values()])) }},
         agreementPrices: {{ Illuminate\Support\Js::from($agreementPrices->map(fn ($price) => [
@@ -302,7 +367,10 @@ function orderSystem() {
                         create: false,
                         allowEmptyOption: true,
                         placeholder: select.dataset.placeholder || 'Buscar...',
-                        plugins: ['clear_button']
+                        plugins: ['clear_button'],
+                        onChange: (value) => {
+                            if (select.id === 'patient_select') this.selectedPatientId = String(value || '');
+                        }
                     });
                 }
             });
@@ -329,6 +397,78 @@ function orderSystem() {
                     this.$el.querySelector('#item_select').tomselect.clear();
                 }
             });
+        },
+        resetPatientForm() {
+            this.patientForm = { id: null, dni: '', nombres: '', apellidos: '', telefono: '', fecha_nacimiento: '' };
+            this.patientError = '';
+        },
+        openPatientModal(patientId = null) {
+            this.resetPatientForm();
+            const patient = this.patients.find((item) => item.id === String(patientId));
+            if (patient) this.patientForm = { ...patient };
+            bootstrap.Modal.getOrCreateInstance(this.$refs.patientModal).show();
+        },
+        async lookupReniec() {
+            this.patientError = '';
+            this.reniecLoading = true;
+            try {
+                const response = await fetch(`{{ route('patients.reniec') }}?numero=${encodeURIComponent(this.patientForm.dni)}`, { headers: { Accept: 'application/json' } });
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.message || 'No se encontró información para el DNI.');
+                this.patientForm.nombres = data.first_name || '';
+                this.patientForm.apellidos = [data.first_last_name, data.second_last_name].filter(Boolean).join(' ');
+            } catch (error) {
+                this.patientError = error.message || 'No se pudo consultar RENIEC.';
+            } finally {
+                this.reniecLoading = false;
+            }
+        },
+        async savePatient() {
+            this.patientError = '';
+            this.patientSaving = true;
+            try {
+                const isEdit = Boolean(this.patientForm.id);
+                const response = await fetch(isEdit ? `/patients/${this.patientForm.id}` : `{{ route('patients.store') }}`, {
+                    method: isEdit ? 'PUT' : 'POST',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    },
+                    body: JSON.stringify({
+                        dni: this.patientForm.dni,
+                        nombres: this.patientForm.nombres,
+                        apellidos: this.patientForm.apellidos,
+                        telefono: this.patientForm.telefono,
+                        fecha_nacimiento: this.patientForm.fecha_nacimiento,
+                    }),
+                });
+                const data = await response.json();
+                if (!response.ok) {
+                    const errors = data.errors ? Object.values(data.errors).flat().join(' ') : data.message;
+                    throw new Error(errors || 'No se pudo guardar el paciente.');
+                }
+                this.upsertPatient(data.patient);
+                bootstrap.Modal.getInstance(this.$refs.patientModal).hide();
+            } catch (error) {
+                this.patientError = error.message || 'No se pudo guardar el paciente.';
+            } finally {
+                this.patientSaving = false;
+            }
+        },
+        upsertPatient(patient) {
+            patient.id = String(patient.id);
+            const index = this.patients.findIndex((item) => item.id === patient.id);
+            if (index === -1) this.patients.push(patient);
+            else this.patients.splice(index, 1, patient);
+            const select = document.getElementById('patient_select');
+            if (select?.tomselect) {
+                select.tomselect.addOption({ value: patient.id, text: patient.label });
+                select.tomselect.updateOption(patient.id, { value: patient.id, text: patient.label });
+                select.tomselect.addItem(patient.id, true);
+                select.tomselect.setValue(patient.id, true);
+            }
+            this.selectedPatientId = patient.id;
         },
         filteredCart() {
             const term = this.cartSearch.toLowerCase();
