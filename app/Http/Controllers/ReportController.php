@@ -47,14 +47,14 @@ class ReportController extends Controller
         $data = $request->validate([
             'titulo' => ['required', 'string', 'max:255'],
             'tecnica' => ['required', 'string'],
-            'hallazgos' => ['required', 'string'],
+            'informe' => ['required', 'string'],
             'impresion' => ['required', 'string'],
             'recomendaciones' => ['nullable', 'string'],
             'medico_firmante_id' => ['nullable', 'exists:users,id'],
         ]);
 
         $data['contenido'] = $this->composeReportContent($data);
-        unset($data['tecnica'], $data['hallazgos'], $data['impresion'], $data['recomendaciones']);
+
 
         $order->update(['medico_informe_id' => $data['medico_firmante_id']]);
         $order->report()->updateOrCreate(
@@ -71,14 +71,14 @@ class ReportController extends Controller
         $this->ensureReport($order);
         $order->load('report.medicoFirmante');
 
-        return Pdf::loadView('reports.pdf', ['order' => $order])->stream('informe-orden-'.$order->id.'.pdf');
+        return Pdf::loadView('reports.pdf', ['order' => $order, 'setting' => \App\Models\SystemSetting::current()])->stream('informe-orden-'.$order->id.'.pdf');
     }
 
     private function composeReportContent(array $data): string
     {
         $sections = [
             '### **TÉCNICA**' => $data['tecnica'],
-            '### **HALLAZGOS**' => $data['hallazgos'],
+            '### **INFORME**' => $data['informe'],
             '### **IMPRESIÓN DIAGNÓSTICA**' => $data['impresion'],
         ];
 
