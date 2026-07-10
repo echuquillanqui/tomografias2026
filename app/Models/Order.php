@@ -23,6 +23,8 @@ class Order extends Model
     public function creator(): BelongsTo { return $this->belongsTo(User::class, 'created_by'); }
     public function orderExams(): HasMany { return $this->hasMany(OrderExam::class); }
     public function report(): HasOne { return $this->hasOne(OrderReport::class); }
+    public function admissionForm(): HasOne { return $this->hasOne(OrderAdmissionForm::class); }
+    public function swornDeclaration(): HasOne { return $this->hasOne(OrderSwornDeclaration::class); }
     public function stockMovements(): HasMany { return $this->hasMany(StockMovement::class); }
     public function consumables(): HasMany { return $this->hasMany(OrderConsumable::class); }
 }

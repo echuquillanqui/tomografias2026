@@ -186,13 +186,18 @@ class OrderController extends Controller
         }
 
         $order->consumables()->delete();
-        foreach (collect($data['consumables'] ?? [])->filter(fn ($row) => (float) ($row['cantidad'] ?? 0) > 0) as $row) {
-            $order->consumables()->updateOrCreate(
-                ['reagent_id' => $row['reagent_id']],
-                ['cantidad' => $row['cantidad']]
-            );
+        $hasContrastedExam = collect($data['exams'])->contains(fn ($row) => ($row['tipo_contraste'] ?? null) === 'Con contraste');
+        if ($hasContrastedExam) {
+            foreach (collect($data['consumables'] ?? [])->filter(fn ($row) => (float) ($row['cantidad'] ?? 0) > 0) as $row) {
+                $order->consumables()->updateOrCreate(
+                    ['reagent_id' => $row['reagent_id']],
+                    ['cantidad' => $row['cantidad']]
+                );
+            }
         }
 
+        $order->load(['patient', 'agreement', 'medicoSolicitante', 'orderExams.exam']);
+        $this->syncPrintableDocuments($order);
         $this->createInitialReport($order);
 
         return $order;
@@ -201,32 +206,88 @@ class OrderController extends Controller
 
     public function fichaIngresoTemplate(Order $order): View
     {
-        $order->load(['patient', 'agreement', 'medicoSolicitante', 'orderExams.exam']);
+        $order->load(['patient', 'agreement', 'medicoSolicitante', 'orderExams.exam', 'admissionForm']);
+        $this->syncPrintableDocuments($order);
+        $order->refresh()->load(['patient', 'agreement', 'medicoSolicitante', 'orderExams.exam', 'admissionForm']);
+        $admissionData = $order->admissionForm?->data ?? [];
         $hasContrast = $order->orderExams->contains('tipo_contraste', 'Con contraste');
 
-        return view('orders.templates.ficha-ingreso', compact('order', 'hasContrast'));
+        return view('orders.templates.ficha-ingreso', compact('order', 'hasContrast', 'admissionData'));
     }
 
     public function fichaIngresoPdf(Order $order)
     {
-        $order->load(['patient', 'agreement', 'medicoSolicitante', 'orderExams.exam']);
+        $order->load(['patient', 'agreement', 'medicoSolicitante', 'orderExams.exam', 'admissionForm']);
+        $this->syncPrintableDocuments($order);
+        $order->refresh()->load(['patient', 'agreement', 'medicoSolicitante', 'orderExams.exam', 'admissionForm']);
+        $admissionData = $order->admissionForm?->data ?? [];
         $hasContrast = $order->orderExams->contains('tipo_contraste', 'Con contraste');
 
-        return Pdf::loadView('orders.pdfs.ficha-ingreso', compact('order', 'hasContrast'))->setPaper('a4')->stream('ficha-ingreso-'.$order->id.'.pdf');
+        return Pdf::loadView('orders.pdfs.ficha-ingreso', compact('order', 'hasContrast', 'admissionData'))->setPaper('a4')->stream('ficha-ingreso-'.$order->id.'.pdf');
     }
 
     public function declaracionJuradaTemplate(Order $order): View
     {
-        $order->load(['patient', 'orderExams.exam']);
+        $order->load(['patient', 'orderExams.exam', 'swornDeclaration']);
+        $this->syncPrintableDocuments($order);
+        $order->refresh()->load(['patient', 'orderExams.exam', 'swornDeclaration']);
+        $declarationData = $order->swornDeclaration?->data ?? [];
 
-        return view('orders.templates.declaracion-jurada', compact('order'));
+        return view('orders.templates.declaracion-jurada', compact('order', 'declarationData'));
     }
 
     public function declaracionJuradaPdf(Order $order)
     {
-        $order->load(['patient', 'orderExams.exam']);
+        $order->load(['patient', 'orderExams.exam', 'swornDeclaration']);
+        $this->syncPrintableDocuments($order);
+        $order->refresh()->load(['patient', 'orderExams.exam', 'swornDeclaration']);
+        $declarationData = $order->swornDeclaration?->data ?? [];
 
-        return Pdf::loadView('orders.pdfs.declaracion-jurada', compact('order'))->setPaper('a4')->stream('declaracion-jurada-'.$order->id.'.pdf');
+        return Pdf::loadView('orders.pdfs.declaracion-jurada', compact('order', 'declarationData'))->setPaper('a4')->stream('declaracion-jurada-'.$order->id.'.pdf');
+    }
+
+
+    private function syncPrintableDocuments(Order $order): void
+    {
+        $order->loadMissing(['patient', 'agreement', 'medicoSolicitante', 'orderExams.exam']);
+
+        $hasContrast = $order->orderExams->contains('tipo_contraste', 'Con contraste');
+        $examNames = $order->orderExams->pluck('exam.nombre_examen')->filter()->join(', ');
+        $patientName = trim($order->patient->apellidos.' '.$order->patient->nombres);
+        $patientAge = $order->patient->edad ?? ($order->patient->fecha_nacimiento?->age);
+
+        $order->admissionForm()->updateOrCreate([], [
+            'data' => [
+                'agreement' => $order->agreement?->nombre_institucion ?? 'PARTICULAR',
+                'request_number' => $order->codigo_orden ?? (string) $order->id,
+                'date' => $order->fecha_orden?->format('d/m/Y'),
+                'unit' => $order->unidad,
+                'patient_name' => $patientName,
+                'patient_dni' => $order->patient->dni,
+                'patient_phone' => $order->patient->telefono,
+                'patient_birthdate' => $order->patient->fecha_nacimiento?->format('d/m/Y'),
+                'patient_age' => $patientAge,
+                'requested_by' => $order->medicoSolicitante?->nombre_completo,
+                'contrast_label' => $hasContrast ? 'CON CONTRASTE' : 'SIN CONTRASTE',
+                'has_contrast' => $hasContrast,
+                'study' => $examNames,
+                'observations' => $order->observaciones,
+            ],
+        ]);
+
+        $now = now();
+        $order->swornDeclaration()->updateOrCreate([], [
+            'data' => [
+                'patient_name' => trim($order->patient->nombres.' '.$order->patient->apellidos),
+                'patient_dni' => $order->patient->dni,
+                'legal_representative_dni' => '',
+                'study' => $examNames,
+                'day' => $now->format('d'),
+                'month' => $now->translatedFormat('F'),
+                'year' => $now->format('Y'),
+                'hour' => '',
+            ],
+        ]);
     }
 
     private function isMinor(Patient $patient): bool
