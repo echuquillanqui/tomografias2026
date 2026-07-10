@@ -14,11 +14,18 @@
 </table>
 <div class="row g-3">
     @foreach(['Causa', 'Sintomatología', 'Intervenciones quirúrgicas', 'Medicación'] as $field)
-        <div class="col-md-6"><label class="form-label fw-bold">{{ $field }}</label><div class="border rounded p-3" style="min-height: 54px;"></div></div>
+        <div class="col-md-6">
+            <label class="form-label fw-bold">{{ $field }}</label>
+            <textarea class="form-control" rows="2" placeholder="Completar {{ strtolower($field) }}"></textarea>
+        </div>
     @endforeach
 </div>
 @if($hasContrast)
     <h5 class="bg-primary text-white text-center py-2 mt-4">DATOS PARA CONTRASTE</h5>
-    <div class="row g-3"><div class="col-md-4">Alergia: __________________</div><div class="col-md-4">Ayunas: Sí ( ) No ( )</div><div class="col-md-4">Creatinina: ______________</div></div>
+    <div class="row g-3">
+        <div class="col-md-4"><label class="form-label fw-bold">Alergia</label><input class="form-control" placeholder="Alergia probable/medicamento"></div>
+        <div class="col-md-4"><label class="form-label fw-bold">Ayunas</label><select class="form-select"><option value=""></option><option>Sí</option><option>No</option></select></div>
+        <div class="col-md-4"><label class="form-label fw-bold">Creatinina</label><input class="form-control" placeholder="Valor de creatinina"></div>
+    </div>
 @endif
 <div class="row text-center mt-5"><div class="col"><div class="border rounded mx-auto mb-2" style="height:90px;max-width:220px"></div>Firma del paciente</div><div class="col"><div class="border rounded mx-auto mb-2" style="height:90px;max-width:220px"></div>Huella del paciente</div></div>
