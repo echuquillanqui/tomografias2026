@@ -5,7 +5,7 @@
     $signature = $doctor?->firma_path ? storage_path('app/public/'.$doctor->firma_path) : null;
     $patient = $order->patient;
     $examNames = $order->orderExams->pluck('exam.nombre_examen')->filter()->implode(', ');
-    $contrast = $order->orderExams->contains('tipo_contraste', 'Con contraste') ? 'Con contraste endovenoso' : 'Sin contraste';
+    $contrast = $order->orderExams->contains('tipo_contraste', 'Con contraste') ? 'Con contraste' : 'Sin contraste';
     $orderCode = $order->codigo_orden ?? 'Orden #'.$order->id;
     $reportDate = optional($report?->updated_at ?? $order->fecha_orden)->format('d/m/Y');
 
