@@ -95,15 +95,12 @@
             @endif
         </div>
 
-        <h1 class="title">{{ $report?->titulo ?: 'Informe de tomografía' }}</h1>
+        <h1 class="title">INFORME TOMOGRAFICO</h1>
 
         <table class="meta">
             <tr><td class="label">Paciente</td><td class="sep">:</td><td>{{ trim($patient->nombres.' '.$patient->apellidos) }}</td></tr>
             <tr><td class="label">Estudio</td><td class="sep">:</td><td>{{ $examNames }} {{ $contrast ? ' - '.$contrast : '' }}</td></tr>
             <tr><td class="label">Fecha</td><td class="sep">:</td><td>{{ $reportDate }}</td></tr>
-            @if($filled($order->medicoSolicitante?->nombre_completo))
-                <tr><td class="label">Solicitante</td><td class="sep">:</td><td>{{ $order->medicoSolicitante->nombre_completo }}</td></tr>
-            @endif
         </table>
 
         @foreach($sections as $section)
