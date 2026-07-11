@@ -207,13 +207,40 @@ class OrderController extends Controller
 
     public function triaje(Order $order): View
     {
-        $order->load(['patient', 'agreement', 'medicoSolicitante', 'orderExams.exam', 'admissionForm', 'consumables.reagent']);
+        $order->load(['patient', 'agreement', 'medicoSolicitante', 'orderExams.exam.reagents', 'admissionForm', 'consumables.reagent']);
         $this->syncPrintableDocuments($order);
-        $order->refresh()->load(['patient', 'agreement', 'medicoSolicitante', 'orderExams.exam', 'admissionForm', 'consumables.reagent']);
+        $order->refresh()->load(['patient', 'agreement', 'medicoSolicitante', 'orderExams.exam.reagents', 'admissionForm', 'consumables.reagent']);
         $admissionData = $order->admissionForm?->data ?? [];
         $reagents = Reagent::select(['id', 'nombre', 'unidad'])->where('activo', true)->orderBy('nombre')->get();
+        $triageConsumables = $this->triageConsumables($order);
 
-        return view('orders.triaje', compact('order', 'admissionData', 'reagents') + ['unidades' => self::UNIDADES]);
+        return view('orders.triaje', compact('order', 'admissionData', 'reagents', 'triageConsumables') + ['unidades' => self::UNIDADES]);
+    }
+
+    private function triageConsumables(Order $order): array
+    {
+        if ($order->consumables->isNotEmpty()) {
+            return $order->consumables->map(fn ($consumable) => [
+                'reagent_id' => (string) $consumable->reagent_id,
+                'name' => $consumable->reagent?->nombre ?? 'Consumible',
+                'unit' => $consumable->reagent?->unidad_medida ?? '',
+                'cantidad' => (float) $consumable->cantidad,
+            ])->values()->all();
+        }
+
+        return $order->orderExams
+            ->filter(fn ($orderExam) => $orderExam->tipo_contraste === 'Con contraste')
+            ->flatMap(fn ($orderExam) => $orderExam->exam?->reagents ?? collect())
+            ->groupBy('id')
+            ->map(fn ($reagents) => [
+                'reagent_id' => (string) $reagents->first()->id,
+                'name' => $reagents->first()->nombre,
+                'unit' => $reagents->first()->unidad_medida ?? '',
+                'cantidad' => $reagents->sum(fn ($reagent) => (float) ($reagent->pivot->cantidad_estimada ?? 0)),
+            ])
+            ->filter(fn ($row) => (float) $row['cantidad'] > 0)
+            ->values()
+            ->all();
     }
 
     public function updateTriaje(Request $request, Order $order): RedirectResponse

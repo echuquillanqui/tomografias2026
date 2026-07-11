@@ -22,12 +22,16 @@
         'name' => $r->nombre,
         'unit' => $r->unidad,
     ])->values();
-    $initialConsumables = $order->consumables->map(fn ($c) => [
-        'reagent_id' => (string) $c->reagent_id,
-        'name' => $c->reagent?->nombre ?? 'Consumible',
-        'unit' => $c->reagent?->unidad,
-        'cantidad' => (float) $c->cantidad,
-    ])->values();
+    $initialConsumables = collect(old('consumables', $triageConsumables ?? []))->map(function ($row) use ($reagents) {
+        $reagent = $reagents->firstWhere('id', (int) ($row['reagent_id'] ?? 0));
+
+        return [
+            'reagent_id' => (string) ($row['reagent_id'] ?? ''),
+            'name' => $row['name'] ?? $reagent?->nombre ?? 'Consumible',
+            'unit' => $row['unit'] ?? $reagent?->unidad_medida ?? '',
+            'cantidad' => (float) ($row['cantidad'] ?? 0),
+        ];
+    })->filter(fn ($row) => $row['reagent_id'] !== '')->values();
 @endphp
 <div class="container py-4" x-data="triageForm()">
     <section class="clinic-page-hero mb-4">
@@ -87,7 +91,10 @@
             </div>
             <div class="col-lg-5">
                 <div class="card clinic-card shadow-sm">
-                    <div class="card-header bg-white fw-bold text-primary">CONSUMIBLES</div>
+                    <div class="card-header bg-white fw-bold text-primary d-flex justify-content-between align-items-center">
+                        <span>CONSUMIBLES</span>
+                        <span class="badge bg-light text-primary" x-text="consumables.length + ' cargado(s)'"></span>
+                    </div>
                     <div class="card-body">
                         <div class="row g-2 mb-3">
                             <div class="col-8">
