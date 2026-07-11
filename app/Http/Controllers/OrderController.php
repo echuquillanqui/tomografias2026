@@ -48,7 +48,7 @@ class OrderController extends Controller
     public function create(Request $request): View
     {
         return view('orders.form', $this->formData($request) + [
-            'order' => new Order(['fecha_orden' => now(), 'estado' => 'Pendiente', 'descuento' => 0, 'unidad' => 'Topico']),
+            'order' => new Order(['fecha_orden' => now(), 'estado' => 'Pendiente', 'descuento' => 0]),
             'mode' => 'create',
         ]);
     }
@@ -138,7 +138,7 @@ class OrderController extends Controller
         $data = $request->validate([
             'patient_id' => ['required', 'exists:patients,id'],
             'codigo_orden' => ['nullable', 'string', 'max:255', Rule::unique('orders', 'codigo_orden')->ignore($order)],
-            'unidad' => ['required', Rule::in(self::UNIDADES)],
+            'unidad' => ['nullable', Rule::in(self::UNIDADES)],
             'archivo_orden' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png,webp', 'max:10240'],
             'agreement_id' => ['required', 'exists:agreements,id'],
             'medico_solicitante_id' => ['nullable', 'exists:users,id'],
@@ -168,6 +168,7 @@ class OrderController extends Controller
 
         $payload = $data + [
             'codigo_orden' => $data['codigo_orden'] ?? null,
+            'unidad' => $data['unidad'] ?? null,
             'subtotal' => $subtotal,
             'descuento' => $descuento,
             'total' => max($subtotal - $descuento, 0),
@@ -203,6 +204,48 @@ class OrderController extends Controller
         return $order;
     }
 
+
+    public function triaje(Order $order): View
+    {
+        $order->load(['patient', 'agreement', 'medicoSolicitante', 'orderExams.exam', 'admissionForm', 'consumables.reagent']);
+        $this->syncPrintableDocuments($order);
+        $order->refresh()->load(['patient', 'agreement', 'medicoSolicitante', 'orderExams.exam', 'admissionForm', 'consumables.reagent']);
+        $admissionData = $order->admissionForm?->data ?? [];
+        $reagents = Reagent::select(['id', 'nombre', 'unidad'])->where('activo', true)->orderBy('nombre')->get();
+
+        return view('orders.triaje', compact('order', 'admissionData', 'reagents') + ['unidades' => self::UNIDADES]);
+    }
+
+    public function updateTriaje(Request $request, Order $order): RedirectResponse
+    {
+        $data = $request->validate([
+            'unit' => ['nullable', 'string', 'max:255'],
+            'cause' => ['nullable', 'string'],
+            'symptomatology' => ['nullable', 'string'],
+            'surgeries' => ['nullable', 'string'],
+            'medication' => ['nullable', 'string'],
+            'allergy' => ['nullable', 'string', 'max:255'],
+            'fasting' => ['nullable', 'string', 'max:255'],
+            'creatinine' => ['nullable', 'string', 'max:255'],
+            'observations' => ['nullable', 'string'],
+            'consumables' => ['nullable', 'array'],
+            'consumables.*.reagent_id' => ['required', 'exists:reagents,id'],
+            'consumables.*.cantidad' => ['required', 'numeric', 'min:0'],
+        ]);
+
+        $order->load(['patient', 'agreement', 'medicoSolicitante', 'orderExams.exam', 'admissionForm']);
+        $this->syncPrintableDocuments($order);
+        $current = $order->fresh('admissionForm')->admissionForm?->data ?? [];
+        $formData = collect($data)->except('consumables')->all();
+        $order->admissionForm()->updateOrCreate([], ['data' => array_merge($current, $formData)]);
+        $order->update(['unidad' => $data['unit'] ?? null]);
+        $order->consumables()->delete();
+        foreach (collect($data['consumables'] ?? [])->filter(fn ($row) => (float) ($row['cantidad'] ?? 0) > 0) as $row) {
+            $order->consumables()->updateOrCreate(['reagent_id' => $row['reagent_id']], ['cantidad' => $row['cantidad']]);
+        }
+
+        return redirect()->route('orders.triaje', $order)->with('success', 'Parte de triaje guardado correctamente.');
+    }
 
     public function fichaIngresoTemplate(Order $order): View
     {

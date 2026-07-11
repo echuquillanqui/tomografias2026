@@ -43,6 +43,8 @@ Route::middleware('auth')->group(function () {
     Route::get('system-settings', [SystemSettingController::class, 'index'])->name('system-settings.index');
     Route::put('system-settings', [SystemSettingController::class, 'update'])->name('system-settings.update');
     Route::patch('orders/{order}/status', [OrderController::class, 'updateStatus'])->name('orders.update-status');
+    Route::get('orders/{order}/triaje', [OrderController::class, 'triaje'])->name('orders.triaje');
+    Route::put('orders/{order}/triaje', [OrderController::class, 'updateTriaje'])->name('orders.triaje.update');
     Route::get('orders/{order}/ficha-ingreso/plantilla', [OrderController::class, 'fichaIngresoTemplate'])->name('orders.ficha-ingreso.template');
     Route::put('orders/{order}/ficha-ingreso/plantilla', [OrderController::class, 'updateFichaIngreso'])->name('orders.ficha-ingreso.update');
     Route::get('orders/{order}/ficha-ingreso', [OrderController::class, 'fichaIngresoPdf'])->name('orders.ficha-ingreso');
