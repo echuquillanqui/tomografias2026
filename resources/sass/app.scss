@@ -89,6 +89,20 @@ main {
     color: #fff;
 }
 
+.clinic-page-hero .d-flex {
+    gap: 1rem;
+}
+
+.clinic-page-hero .btn-clinic-primary {
+    align-self: flex-start;
+    flex-shrink: 0;
+    margin-top: 0.15rem;
+    padding: 0.78rem 1.35rem;
+    position: relative;
+    z-index: 2;
+    white-space: nowrap;
+}
+
 .clinic-page-hero::after {
     content: '';
     position: absolute;
@@ -199,6 +213,38 @@ main {
 .table-clinic tbody td { padding-block: 1rem; }
 .table-clinic tbody tr { transition: background 0.18s ease, transform 0.18s ease; }
 .table-clinic tbody tr:hover { background: rgba(18, 169, 155, 0.06); }
+
+.table-clinic td.text-end {
+    min-width: max-content;
+    white-space: nowrap;
+}
+
+.table-clinic td.text-end .btn {
+    margin: 0.12rem 0 0.12rem 0.35rem;
+}
+
+.table-clinic .btn-sm {
+    border-radius: 999px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    padding: 0.36rem 0.72rem;
+}
+
+@media (max-width: 767.98px) {
+    .clinic-page-hero {
+        padding: 1.35rem;
+    }
+
+    .clinic-page-hero .d-flex {
+        align-items: flex-start !important;
+        flex-direction: column;
+    }
+
+    .clinic-page-hero .btn-clinic-primary {
+        width: 100%;
+        text-align: center;
+    }
+}
 
 .user-avatar {
     display: inline-grid;
