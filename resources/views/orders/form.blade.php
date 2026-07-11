@@ -89,14 +89,6 @@
                                 <input name="codigo_orden" class="form-control" value="{{ old('codigo_orden', $order->codigo_orden) }}" placeholder="Opcional / si aplica">
                             </div>
                             <div class="col-md-4">
-                                <label class="form-label small fw-bold">UNIDAD</label>
-                                <select name="unidad" class="form-select" required>
-                                    @foreach($unidades as $unidad)
-                                        <option value="{{ $unidad }}" @selected(old('unidad', $order->unidad ?? 'Topico') === $unidad)>{{ $unidad }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                            <div class="col-md-4">
                                 <label class="form-label small fw-bold">FECHA</label>
                                 <input name="fecha_orden" type="date" class="form-control" value="{{ old('fecha_orden', optional($order->fecha_orden)->format('Y-m-d') ?? now()->format('Y-m-d')) }}" required>
                             </div>

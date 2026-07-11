@@ -11,6 +11,7 @@
             </div>
             <div>
                 <a class="btn btn-light" href="{{ route('orders.edit', $order) }}">Editar</a>
+                <a class="btn btn-outline-light" href="{{ route('orders.triaje', $order) }}">Parte de triaje</a>
                 <a class="btn btn-outline-light" href="{{ route('orders.ficha-ingreso.template', $order) }}">Ficha plantilla</a>
                 <a class="btn btn-outline-light" target="_blank" href="{{ route('orders.ficha-ingreso', $order) }}">Ficha PDF</a>
                 <a class="btn btn-outline-light" href="{{ route('orders.declaracion-jurada.template', $order) }}">Declaración plantilla</a>
@@ -26,7 +27,6 @@
                 <h5 class="fw-bold">Datos generales</h5>
                 <p><strong>Paciente:</strong><br>{{ $order->patient->dni }} - {{ $order->patient->nombres }} {{ $order->patient->apellidos }}</p>
                 <p><strong>Convenio:</strong><br>{{ $order->agreement->nombre_institucion }}</p>
-                <p><strong>Unidad:</strong><br>{{ $order->unidad ?? '—' }}</p>
                 <p><strong>Archivo de orden:</strong><br>@if($order->archivo_orden_path)<a target="_blank" href="{{ asset('storage/'.$order->archivo_orden_path) }}">Ver archivo</a>@else — @endif</p>
                 <p><strong>Médico solicitante:</strong><br>{{ $order->medicoSolicitante?->nombre_completo ?? '—' }}</p>
                 <p><strong>Tipo de pago:</strong><br>{{ $order->tipo_pago ?? '—' }}</p>
