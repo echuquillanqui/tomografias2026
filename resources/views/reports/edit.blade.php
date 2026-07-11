@@ -18,7 +18,28 @@
             <div>
                 <div class="clinic-eyebrow mb-2">Plantilla editable de informe</div>
                 <h1 class="display-6 fw-bold">{{ $patientName }}</h1>
-                <p class="mb-0 opacity-75">{{ $order->codigo_orden ?? 'Orden #'.$order->id }} · {{ $order->fecha_orden->format('d/m/Y') }} · {{ $examNames ?: 'Estudio por definir' }}</p>
+                <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+                    <p class="mb-0 opacity-75">{{ $order->codigo_orden ?? 'Orden #'.$order->id }} · {{ $order->fecha_orden->format('d/m/Y') }} · {{ $examNames ?: 'Estudio por definir' }}</p>
+                    <span class="badge report-status-badge">{{ $order->estado }}</span>
+                </div>
+                <div class="report-patient-summary">
+                    <div class="report-summary-item">
+                        <span>DNI / Edad</span>
+                        <strong>{{ $order->patient->dni }} · {{ $order->patient->edad ? $order->patient->edad.' años' : 'Edad no registrada' }}</strong>
+                    </div>
+                    <div class="report-summary-item">
+                        <span>Estudio</span>
+                        <strong>{{ $examNames ?: 'Sin examen registrado' }}</strong>
+                    </div>
+                    <div class="report-summary-item">
+                        <span>Contraste</span>
+                        <strong>{{ $contrast }}</strong>
+                    </div>
+                    <div class="report-summary-item">
+                        <span>Médico solicitante</span>
+                        <strong>{{ $order->medicoSolicitante?->nombre_completo ?? '—' }}</strong>
+                    </div>
+                </div>
             </div>
             <div class="d-flex gap-2 align-items-start">
                 <a class="btn btn-light" href="{{ route('reports.pdf', $order) }}" target="_blank">Ver PDF</a>
@@ -32,22 +53,7 @@
         @method('PUT')
 
         <div class="row g-4">
-            <div class="col-xl-4">
-                <div class="card clinic-card p-4 report-guide-card sticky-xl-top">
-                    <div class="d-flex align-items-center justify-content-between mb-3">
-                        <h5 class="fw-bold mb-0">Guía de la orden</h5>
-                        <span class="badge badge-role">{{ $order->estado }}</span>
-                    </div>
-                    <div class="guide-item"><span>Paciente</span><strong>{{ $patientName }}</strong></div>
-                    <div class="guide-item"><span>DNI / Edad</span><strong>{{ $order->patient->dni }} · {{ $order->patient->edad ? $order->patient->edad.' años' : 'Edad no registrada' }}</strong></div>
-                    <div class="guide-item"><span>Estudio</span><strong>{{ $examNames ?: 'Sin examen registrado' }}</strong></div>
-                    <div class="guide-item"><span>Contraste</span><strong>{{ $contrast }}</strong></div>
-                    <div class="guide-item"><span>Médico solicitante</span><strong>{{ $order->medicoSolicitante?->nombre_completo ?? '—' }}</strong></div>
-                    <p class="text-muted small mb-0 mt-3">Estos datos ya están cargados para que sirvan como referencia mientras redactas. El informe se completa en los campos de la derecha.</p>
-                </div>
-            </div>
-
-            <div class="col-xl-8">
+            <div class="col-12">
                 <div class="card clinic-card p-4 mb-4">
                     <div class="row g-3">
                         <div class="col-lg-7">
@@ -119,10 +125,13 @@
 @push('scripts')
 <style>
     .report-editor .clinic-card { border: 1px solid rgba(15, 42, 68, .08); }
-    .report-guide-card { top: 1rem; }
-    .guide-item { background: #f8fafc; border: 1px solid #e5edf5; border-radius: 14px; padding: .85rem 1rem; margin-bottom: .75rem; }
-    .guide-item span { color: #64748b; display: block; font-size: .72rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
-    .guide-item strong { color: #0f172a; display: block; margin-top: .2rem; }
+    .report-status-badge { background: rgba(236, 253, 245, .94); color: #047857; font-weight: 800; letter-spacing: .01em; }
+    .report-patient-summary { display: grid; gap: .75rem; grid-template-columns: repeat(4, minmax(0, 1fr)); max-width: 100%; }
+    .report-summary-item { background: rgba(255, 255, 255, .12); border: 1px solid rgba(255, 255, 255, .2); border-radius: 16px; padding: .8rem 1rem; backdrop-filter: blur(8px); }
+    .report-summary-item span { color: rgba(255, 255, 255, .68); display: block; font-size: .7rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+    .report-summary-item strong { color: #fff; display: block; line-height: 1.35; margin-top: .2rem; }
+    @media (max-width: 1199.98px) { .report-patient-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    @media (max-width: 575.98px) { .report-patient-summary { grid-template-columns: 1fr; } }
     .report-section-grid { display: grid; gap: 1rem; }
     .report-field { background: #f8fafc; border: 1px solid #e5edf5; border-radius: 20px; padding: 1rem; }
     .report-content-box { background: linear-gradient(#ffffff, #fbfdff); border: 1px solid #cbd5e1; border-radius: 14px; box-shadow: inset 0 1px 2px rgba(15, 23, 42, .04); font-size: 1rem; line-height: 1.65; padding: 1rem; }
