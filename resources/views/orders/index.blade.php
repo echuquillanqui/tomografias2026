@@ -51,6 +51,7 @@
                             <td class="text-end">
                                 <a class="btn btn-sm btn-outline-primary" href="{{ route('orders.show', $o) }}">Ver</a>
                                 <a class="btn btn-sm btn-outline-secondary" href="{{ route('orders.edit', $o) }}">Editar</a>
+                                <button type="button" class="btn btn-sm btn-outline-info" data-bs-toggle="modal" data-bs-target="#triage{{ $o->id }}">Triaje</button>
                                 <a class="btn btn-sm btn-outline-success" target="_blank" href="{{ route('orders.ficha-ingreso', $o) }}">Ficha PDF</a>
                                 @if(($o->patient->fecha_nacimiento && $o->patient->fecha_nacimiento->age < 18) || (! $o->patient->fecha_nacimiento && $o->patient->edad !== null && $o->patient->edad < 18))
                                     <a class="btn btn-sm btn-outline-warning" target="_blank" href="{{ route('orders.declaracion-jurada', $o) }}">DJ PDF</a>
@@ -115,6 +116,25 @@
                     <button class="btn btn-clinic-primary">Guardar estado</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <div class="modal fade user-modal" id="triage{{ $o->id }}" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header text-white">
+                    <h5 class="modal-title">Parte de triaje de {{ $o->codigo_orden ?? 'orden #'.$o->id }}</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-2"><strong>Paciente:</strong> {{ $o->patient->nombres }} {{ $o->patient->apellidos }}</p>
+                    <p class="mb-0 text-muted">Abre el formulario de triaje para completar o actualizar el índice, datos clínicos y consumibles de la orden.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
+                    <a class="btn btn-clinic-primary" href="{{ route('orders.triaje', $o) }}">Abrir triaje</a>
+                </div>
+            </div>
         </div>
     </div>
 @endforeach

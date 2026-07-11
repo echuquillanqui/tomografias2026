@@ -13,6 +13,21 @@
         'creatinine' => 'Creatinina',
         'observations' => 'Observaciones',
     ];
+
+    $initialForm = collect($fields)->mapWithKeys(fn ($label, $key) => [
+        $key => old($key, $admissionData[$key] ?? ($key === 'unit' ? $order->unidad : '')),
+    ]);
+    $reagentOptions = $reagents->map(fn ($r) => [
+        'id' => (string) $r->id,
+        'name' => $r->nombre,
+        'unit' => $r->unidad,
+    ])->values();
+    $initialConsumables = $order->consumables->map(fn ($c) => [
+        'reagent_id' => (string) $c->reagent_id,
+        'name' => $c->reagent?->nombre ?? 'Consumible',
+        'unit' => $c->reagent?->unidad,
+        'cantidad' => (float) $c->cantidad,
+    ])->values();
 @endphp
 <div class="container py-4" x-data="triageForm()">
     <section class="clinic-page-hero mb-4">
@@ -133,10 +148,10 @@
 <script>
 function triageForm() {
     return {
-        form: @json(collect($fields)->mapWithKeys(fn ($label, $key) => [$key => old($key, $admissionData[$key] ?? ($key === 'unit' ? $order->unidad : ''))])),
+        form: {{ Illuminate\Support\Js::from($initialForm) }},
         selectedReagent: '',
-        reagents: @json($reagents->map(fn ($r) => ['id' => (string) $r->id, 'name' => $r->nombre, 'unit' => $r->unidad_medida])->values()),
-        consumables: @json($order->consumables->map(fn ($c) => ['reagent_id' => (string) $c->reagent_id, 'name' => $c->reagent?->nombre ?? 'Consumible', 'unit' => $c->reagent?->unidad_medida, 'cantidad' => (float) $c->cantidad])->values()),
+        reagents: {{ Illuminate\Support\Js::from($reagentOptions) }},
+        consumables: {{ Illuminate\Support\Js::from($initialConsumables) }},
         addConsumable() {
             const reagent = this.reagents.find((item) => item.id === String(this.selectedReagent));
             if (!reagent) return;
