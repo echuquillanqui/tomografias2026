@@ -12,6 +12,10 @@
                     <ul class="navbar-nav me-auto">
                         @auth
                             <li class="nav-item">
+                                <a class="nav-link fw-semibold {{ request()->routeIs('system-settings.*') ? 'active' : '' }}" href="{{ route('system-settings.index') }}">Configuración</a>
+                            </li>
+
+                            <li class="nav-item">
                                 <a class="nav-link fw-semibold {{ request()->routeIs('users.*') ? 'active' : '' }}" href="{{ route('users.index') }}">Usuarios</a>
                             </li>
                             <li class="nav-item">
@@ -27,7 +31,6 @@
                                     <a class="dropdown-item" href="{{ route('agreement-prices.index') }}">Precios pactados</a>
                                     <a class="dropdown-item" href="{{ route('reagents.index') }}">Reactivos</a>
                                     <a class="dropdown-item" href="{{ route('stock-movements.index') }}">Movimientos stock</a>
-                                    <a class="dropdown-item" href="{{ route('system-settings.index') }}">Configuración sistema</a>
                                 </div>
                             </li>
                         @endauth
