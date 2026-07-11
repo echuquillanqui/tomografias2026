@@ -104,7 +104,7 @@
                         <summary class="text-muted small">Ver contenido original precargado</summary>
                         <pre class="original-report-preview mt-2 mb-0">{{ $contenido }}</pre>
                     </details>
-                    <div class="form-text">El PDF mostrará únicamente datos completados, con encabezado institucional y formato compacto de una hoja.</div>
+                    <div class="form-text">El PDF mostrará los datos completados con formato de informe médico, amplio y listo para firma; la impresión diagnóstica siempre tendrá una sección visible.</div>
                 </div>
 
                 <div class="d-flex justify-content-end gap-2 mt-4">
