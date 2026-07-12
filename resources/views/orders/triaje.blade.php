@@ -10,7 +10,11 @@
         'allergy' => 'Alergia',
         'fasting' => 'Ayuno',
         'creatinine' => 'Creatinina',
-        'observations' => 'Observaciones',
+        'rule_out' => 'Descartar',
+        'condition' => 'Condición',
+        'peripheral_route' => 'Vía periférica',
+        'informed_by' => 'Informado por',
+        'delivery' => 'Entrega',
     ];
 
     $initialForm = collect($fields)->mapWithKeys(fn ($label, $key) => [
@@ -174,7 +178,11 @@
                                 <div class="list-group-item text-muted" x-show="medications.length === 0">Sin medicamentos registrados.</div>
                             </div>
                         </div>
-                        <div class="col-12"><label class="form-label small fw-bold">Observaciones</label><textarea class="form-control" rows="2" x-model="form.observations"></textarea></div>
+                        <div class="col-md-6"><label class="form-label small fw-bold">Condición</label><input class="form-control" x-model="form.condition"></div>
+                        <div class="col-md-6"><label class="form-label small fw-bold">Vía periférica</label><input class="form-control" x-model="form.peripheral_route"></div>
+                        <div class="col-md-6"><label class="form-label small fw-bold">Informado por</label><input class="form-control" x-model="form.informed_by"></div>
+                        <div class="col-md-6"><label class="form-label small fw-bold">Entrega</label><textarea class="form-control" rows="2" x-model="form.delivery"></textarea></div>
+                        <div class="col-12"><label class="form-label small fw-bold">Descartar</label><textarea class="form-control" rows="2" x-model="form.rule_out"></textarea></div>
                     </div></div>
                     <div class="modal-footer"><button type="button" class="btn btn-light" data-bs-dismiss="modal">Cerrar</button><button type="submit" class="btn btn-primary">Guardar triaje</button></div>
                 </div>
