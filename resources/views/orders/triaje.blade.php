@@ -7,7 +7,6 @@
         'cause' => 'Causa / motivo',
         'symptomatology' => 'Sintomatología',
         'surgeries' => 'Cirugías previas',
-        'medication' => 'Medicación',
         'allergy' => 'Alergia',
         'fasting' => 'Ayuno',
         'creatinine' => 'Creatinina',
@@ -22,6 +21,15 @@
         'name' => $r->nombre,
         'unit' => $r->unidad,
     ])->values();
+    $initialMedications = collect(old('medications', $admissionData['medications'] ?? []))
+        ->whenEmpty(function ($items) use ($admissionData) {
+            return collect(preg_split('/\r\n|\r|\n/', (string) ($admissionData['medication'] ?? '')));
+        })
+        ->map(fn ($item) => is_array($item) ? ($item['name'] ?? '') : $item)
+        ->map(fn ($item) => trim((string) $item))
+        ->filter()
+        ->values();
+
     $initialConsumables = collect(old('consumables', $triageConsumables ?? []))->map(function ($row) use ($reagents) {
         $reagent = $reagents->firstWhere('id', (int) ($row['reagent_id'] ?? 0));
 
@@ -88,6 +96,18 @@
                         </table>
                     </div>
                 </div>
+                <div class="card clinic-card shadow-sm mt-4">
+                    <div class="card-header bg-white fw-bold text-primary d-flex justify-content-between align-items-center">
+                        <span>MEDICAMENTOS</span>
+                        <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#triageModal">Editar medicamentos</button>
+                    </div>
+                    <div class="card-body">
+                        <template x-if="medications.length > 0">
+                            <ul class="mb-0"><template x-for="(medication, index) in medications" :key="index"><li x-text="medication"></li></template></ul>
+                        </template>
+                        <div class="text-muted" x-show="medications.length === 0">Sin medicamentos registrados.</div>
+                    </div>
+                </div>
             </div>
             <div class="col-lg-5">
                 <div class="card clinic-card shadow-sm">
@@ -113,7 +133,7 @@
                                         <td><span x-text="item.name"></span><input type="hidden" :name="`consumables[${index}][reagent_id]`" :value="item.reagent_id"></td>
                                         <td><input type="number" min="0" step="0.01" class="form-control form-control-sm" :name="`consumables[${index}][cantidad]`" x-model.number="item.cantidad"></td>
                                         <td x-text="item.unit || '—'"></td>
-                                        <td><button type="button" class="btn btn-sm btn-outline-danger border-0" @click="consumables.splice(index, 1)"><i class="bi bi-trash3-fill"></i></button></td>
+                                        <td><button type="button" class="btn btn-sm btn-outline-danger" @click="consumables.splice(index, 1)">Eliminar</button></td>
                                     </tr>
                                 </template>
                                 <tr x-show="consumables.length === 0"><td colspan="4" class="text-center text-muted">Sin consumibles.</td></tr>
@@ -138,10 +158,25 @@
                         <div class="col-12"><label class="form-label small fw-bold">Causa / motivo</label><textarea class="form-control" rows="2" x-model="form.cause"></textarea></div>
                         <div class="col-12"><label class="form-label small fw-bold">Sintomatología</label><textarea class="form-control" rows="2" x-model="form.symptomatology"></textarea></div>
                         <div class="col-md-6"><label class="form-label small fw-bold">Cirugías previas</label><textarea class="form-control" rows="2" x-model="form.surgeries"></textarea></div>
-                        <div class="col-md-6"><label class="form-label small fw-bold">Medicación</label><textarea class="form-control" rows="2" x-model="form.medication"></textarea></div>
+                        <div class="col-12">
+                            <label class="form-label small fw-bold">Medicamentos</label>
+                            <div class="input-group mb-2">
+                                <input type="text" class="form-control" x-model="newMedication" placeholder="Nombre del medicamento" @keydown.enter.prevent="addMedication()">
+                                <button type="button" class="btn btn-outline-primary" @click="addMedication()">Agregar</button>
+                            </div>
+                            <div class="list-group">
+                                <template x-for="(medication, index) in medications" :key="index">
+                                    <div class="list-group-item d-flex align-items-center gap-2">
+                                        <input type="text" class="form-control form-control-sm" :name="`medications[${index}]`" x-model="medications[index]">
+                                        <button type="button" class="btn btn-sm btn-outline-danger" @click="removeMedication(index)">Eliminar</button>
+                                    </div>
+                                </template>
+                                <div class="list-group-item text-muted" x-show="medications.length === 0">Sin medicamentos registrados.</div>
+                            </div>
+                        </div>
                         <div class="col-12"><label class="form-label small fw-bold">Observaciones</label><textarea class="form-control" rows="2" x-model="form.observations"></textarea></div>
                     </div></div>
-                    <div class="modal-footer"><button type="button" class="btn btn-light" data-bs-dismiss="modal">Cerrar</button><button type="button" class="btn btn-primary" data-bs-dismiss="modal">Aplicar al índice</button></div>
+                    <div class="modal-footer"><button type="button" class="btn btn-light" data-bs-dismiss="modal">Cerrar</button><button type="submit" class="btn btn-primary">Guardar triaje</button></div>
                 </div>
             </div>
         </div>
@@ -157,8 +192,19 @@ function triageForm() {
     return {
         form: {{ Illuminate\Support\Js::from($initialForm) }},
         selectedReagent: '',
+        newMedication: '',
+        medications: {{ Illuminate\Support\Js::from($initialMedications) }},
         reagents: {{ Illuminate\Support\Js::from($reagentOptions) }},
         consumables: {{ Illuminate\Support\Js::from($initialConsumables) }},
+        addMedication() {
+            const medication = String(this.newMedication || '').trim();
+            if (!medication) return;
+            this.medications.push(medication);
+            this.newMedication = '';
+        },
+        removeMedication(index) {
+            this.medications.splice(index, 1);
+        },
         addConsumable() {
             const reagent = this.reagents.find((item) => item.id === String(this.selectedReagent));
             if (!reagent) return;
