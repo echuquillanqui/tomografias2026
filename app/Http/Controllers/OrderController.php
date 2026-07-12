@@ -251,6 +251,8 @@ class OrderController extends Controller
             'symptomatology' => ['nullable', 'string'],
             'surgeries' => ['nullable', 'string'],
             'medication' => ['nullable', 'string'],
+            'medications' => ['nullable', 'array'],
+            'medications.*' => ['nullable', 'string', 'max:255'],
             'allergy' => ['nullable', 'string', 'max:255'],
             'fasting' => ['nullable', 'string', 'max:255'],
             'creatinine' => ['nullable', 'string', 'max:255'],
@@ -264,6 +266,9 @@ class OrderController extends Controller
         $this->syncPrintableDocuments($order);
         $current = $order->fresh('admissionForm')->admissionForm?->data ?? [];
         $formData = collect($data)->except('consumables')->all();
+        $medications = collect($formData['medications'] ?? [])->map(fn ($item) => trim((string) $item))->filter()->values()->all();
+        $formData['medications'] = $medications;
+        $formData['medication'] = implode(PHP_EOL, $medications);
         $order->admissionForm()->updateOrCreate([], ['data' => array_merge($current, $formData)]);
         $order->update(['unidad' => $data['unit'] ?? null]);
         $order->consumables()->delete();
@@ -305,6 +310,8 @@ class OrderController extends Controller
             'symptomatology' => ['nullable', 'string'],
             'surgeries' => ['nullable', 'string'],
             'medication' => ['nullable', 'string'],
+            'medications' => ['nullable', 'array'],
+            'medications.*' => ['nullable', 'string', 'max:255'],
             'allergy' => ['nullable', 'string', 'max:255'],
             'fasting' => ['nullable', 'string', 'max:255'],
             'creatinine' => ['nullable', 'string', 'max:255'],
@@ -313,6 +320,10 @@ class OrderController extends Controller
         $order->load(['patient', 'agreement', 'medicoSolicitante', 'orderExams.exam', 'admissionForm']);
         $this->syncPrintableDocuments($order);
         $current = $order->fresh('admissionForm')->admissionForm?->data ?? [];
+        if (array_key_exists('medications', $data)) {
+            $data['medications'] = collect($data['medications'])->map(fn ($item) => trim((string) $item))->filter()->values()->all();
+            $data['medication'] = implode(PHP_EOL, $data['medications']);
+        }
         $order->admissionForm()->updateOrCreate([], ['data' => array_merge($current, $data)]);
 
         return redirect()->route('orders.ficha-ingreso.template', $order)->with('success', 'Ficha de ingreso guardada correctamente.');
@@ -400,6 +411,7 @@ class OrderController extends Controller
             'symptomatology' => '',
             'surgeries' => '',
             'medication' => '',
+            'medications' => [],
             'allergy' => '',
             'fasting' => '',
             'creatinine' => '',
