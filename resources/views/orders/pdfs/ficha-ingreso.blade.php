@@ -29,17 +29,18 @@ body{font-family:DejaVu Sans,sans-serif;font-size:10px;color:#003b75}.title{text
 @php
     $deliveryItems = ['PLACAS', 'CD', 'INFORME'];
     $deliveryOptions = $admissionData['delivery_options'] ?? $deliveryItems;
-    $deliveryOptions = empty($deliveryOptions) ? $deliveryItems : $deliveryOptions;
+    $deliveryOptions = empty($deliveryOptions) ? $deliveryItems : (array) $deliveryOptions;
     $deliveryQuantities = $admissionData['delivery_quantities'] ?? [];
+    $deliveryQuantities = is_array($deliveryQuantities) ? $deliveryQuantities : [];
 @endphp
 <div class="section-title">DOCUMENTOS / ENTREGA</div>
 <table class="delivery-table">
     <thead><tr><th style="width:65%">Documento</th><th style="width:35%">Número</th></tr></thead>
     <tbody>
-        @foreach($deliveryItems as $option)
+        @foreach(($deliveryItems ?? ['PLACAS', 'CD', 'INFORME']) as $option)
             <tr>
-                <td class="delivery-check">({{ in_array($option, $deliveryOptions, true) ? 'X' : ' ' }}) {{ $option }}</td>
-                <td class="delivery-number">{{ $deliveryQuantities[$option] ?? ($option === 'PLACAS' ? ($admissionData['plates_count'] ?? '—') : '—') }}</td>
+                <td class="delivery-check">({{ in_array($option, ($deliveryOptions ?? ['PLACAS', 'CD', 'INFORME']), true) ? 'X' : ' ' }}) {{ $option }}</td>
+                <td class="delivery-number">{{ ($deliveryQuantities ?? [])[$option] ?? ($option === 'PLACAS' ? ($admissionData['plates_count'] ?? '—') : '—') }}</td>
             </tr>
         @endforeach
     </tbody>

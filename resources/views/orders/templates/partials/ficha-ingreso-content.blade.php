@@ -42,16 +42,16 @@
                 <div class="col-7">Documento</div>
                 <div class="col-5">Número</div>
             </div>
-            @foreach($deliveryItems as $option)
+            @foreach(($deliveryItems ?? ['PLACAS', 'CD', 'INFORME']) as $option)
                 <div class="row g-2 align-items-center mb-2">
                     <div class="col-7">
                         <div class="form-check fs-5">
-                            <input class="form-check-input" type="checkbox" name="delivery_options[]" value="{{ $option }}" id="delivery{{ $option }}" @checked(in_array($option, $deliveryOptions, true))>
+                            <input class="form-check-input" type="checkbox" name="delivery_options[]" value="{{ $option }}" id="delivery{{ $option }}" @checked(in_array($option, ($deliveryOptions ?? ['PLACAS', 'CD', 'INFORME']), true))>
                             <label class="form-check-label fw-bold" for="delivery{{ $option }}">{{ $option }}</label>
                         </div>
                     </div>
                     <div class="col-5">
-                        <input name="delivery_quantities[{{ $option }}]" type="number" min="0" step="1" class="form-control form-control-lg" value="{{ $deliveryQuantities[$option] ?? ($option === 'PLACAS' ? old('plates_count', $admissionData['plates_count'] ?? '') : '') }}" placeholder="N°">
+                        <input name="delivery_quantities[{{ $option }}]" type="number" min="0" step="1" class="form-control form-control-lg" value="{{ ($deliveryQuantities ?? [])[$option] ?? ($option === 'PLACAS' ? old('plates_count', $admissionData['plates_count'] ?? '') : '') }}" placeholder="N°">
                     </div>
                 </div>
             @endforeach
