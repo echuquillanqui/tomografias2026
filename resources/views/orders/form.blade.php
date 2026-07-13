@@ -44,7 +44,7 @@
         </div>
     @endif
 
-    <form method="POST" enctype="multipart/form-data" action="{{ $mode === 'create' ? route('orders.store') : route('orders.update', $order) }}" @submit="isSubmitting = true">
+    <form method="POST" enctype="multipart/form-data" action="{{ $mode === 'create' ? route('orders.store') : route('orders.update', $order) }}" @submit="submitOrder($event)">
         @csrf
         @if($mode === 'edit')
             @method('PUT')
@@ -594,6 +594,17 @@ function orderSystem() {
         },
         subtotal() {
             return this.cart.reduce((sum, item) => sum + (Number(item.price) || 0), 0);
+        },
+        submitOrder(event) {
+            if (this.isSubmitting) {
+                event.preventDefault();
+                event.stopImmediatePropagation();
+                return false;
+            }
+
+            this.isSubmitting = true;
+            event.submitter?.setAttribute('disabled', 'disabled');
+            return true;
         },
         total() {
             return Math.max(this.subtotal() - (Number(this.discount) || 0), 0);
