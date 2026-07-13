@@ -180,6 +180,12 @@ class OrderController extends Controller
             'consumables.*.reagent_id' => ['required', 'exists:reagents,id'],
             'consumables.*.cantidad' => ['required', 'numeric', 'min:0'],
         ]);
+        $agreementExamIds = AgreementPrice::where('agreement_id', $data['agreement_id'])->pluck('exam_id')->map(fn ($id) => (int) $id)->unique();
+        $invalidExam = collect($data['exams'])->first(fn ($row) => ! $agreementExamIds->contains((int) $row['exam_id']));
+        if ($invalidExam) {
+            back()->withErrors(['exams' => 'Solo se pueden agregar exámenes asociados al convenio seleccionado.'])->throwResponse();
+        }
+
         $subtotal = collect($data['exams'])->sum('precio');
         $descuento = $data['descuento'] ?? 0;
         if ($request->hasFile('archivo_orden')) {
@@ -286,6 +292,7 @@ class OrderController extends Controller
             'peripheral_route' => ['nullable', 'string', 'max:255'],
             'informed_by' => ['nullable', 'string', 'max:255'],
             'delivery' => ['nullable', 'string'],
+            'plates_count' => ['nullable', 'integer', 'min:0'],
             'delivery_options' => ['nullable', 'array'],
             'delivery_options.*' => ['nullable', Rule::in(['PLACAS', 'CD', 'INFORME'])],
             'consumables' => ['nullable', 'array'],
@@ -345,6 +352,7 @@ class OrderController extends Controller
             'peripheral_route' => ['nullable', 'string', 'max:255'],
             'informed_by' => ['nullable', 'string', 'max:255'],
             'delivery' => ['nullable', 'string'],
+            'plates_count' => ['nullable', 'integer', 'min:0'],
             'cause' => ['nullable', 'string'],
             'symptomatology' => ['nullable', 'string'],
             'surgeries' => ['nullable', 'string', 'max:255'],
@@ -458,6 +466,7 @@ class OrderController extends Controller
             'informed_by' => '',
             'delivery' => '',
             'delivery_options' => [],
+            'plates_count' => '',
             'cause' => '',
             'symptomatology' => '',
             'surgeries' => 'Ninguna',
