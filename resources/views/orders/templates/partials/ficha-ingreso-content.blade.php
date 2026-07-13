@@ -1,4 +1,11 @@
-@php($admissionData = $admissionData ?? [])
+@php
+    $admissionData = $admissionData ?? [];
+    $deliveryItems = ['PLACAS', 'CD', 'INFORME'];
+    $deliveryOptions = old('delivery_options', $admissionData['delivery_options'] ?? $deliveryItems);
+    $deliveryOptions = empty($deliveryOptions) ? $deliveryItems : (array) $deliveryOptions;
+    $deliveryQuantities = old('delivery_quantities', $admissionData['delivery_quantities'] ?? []);
+    $deliveryQuantities = is_array($deliveryQuantities) ? $deliveryQuantities : [];
+@endphp
 <div class="text-center mb-3">
     <h2 class="fw-bold text-decoration-underline">FICHA DE INGRESO</h2>
     <div class="fw-bold"><input name="agreement" class="form-control form-control-sm text-center fw-bold" value="{{ old('agreement', $admissionData['agreement'] ?? ($order->agreement->nombre_institucion ?? 'PARTICULAR')) }}"></div>
@@ -28,12 +35,6 @@
     <div class="col-md-6"><label class="form-label fw-bold">Intervenciones quirúrgicas</label><select name="surgeries" class="form-select" onchange="document.getElementById('surgeries-detail').classList.toggle('d-none', this.value !== 'Otros')"><option value="Ninguna" @selected(old('surgeries', $admissionData['surgeries'] ?? 'Ninguna') === 'Ninguna')>Ninguna</option><option value="Otros" @selected(old('surgeries', $admissionData['surgeries'] ?? 'Ninguna') === 'Otros')>Otros</option></select><input id="surgeries-detail" name="surgeries_detail" class="form-control mt-2 {{ old('surgeries', $admissionData['surgeries'] ?? 'Ninguna') === 'Otros' ? '' : 'd-none' }}" value="{{ old('surgeries_detail', $admissionData['surgeries_detail'] ?? '') }}" placeholder="Especificar intervención"></div>
     <div class="col-md-6"><label class="form-label fw-bold">Medicación</label><textarea name="medication" class="form-control" rows="2" placeholder="Completar medicación">{{ old('medication', $admissionData['medication'] ?? '') }}</textarea></div>
     <div class="col-md-6"><label class="form-label fw-bold">Informado por</label><input name="informed_by" class="form-control" value="{{ old('informed_by', $admissionData['informed_by'] ?? '') }}" placeholder="Nombre de quien informa"></div>
-    @php
-        $deliveryItems = ['PLACAS', 'CD', 'INFORME'];
-        $deliveryOptions = old('delivery_options', $admissionData['delivery_options'] ?? $deliveryItems);
-        $deliveryOptions = empty($deliveryOptions) ? $deliveryItems : $deliveryOptions;
-        $deliveryQuantities = old('delivery_quantities', $admissionData['delivery_quantities'] ?? []);
-    @endphp
     <div class="col-md-6">
         <label class="form-label fw-bold">Se entrega</label>
         <div class="border rounded p-3 bg-light">

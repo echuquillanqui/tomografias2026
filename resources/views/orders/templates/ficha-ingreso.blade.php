@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="container py-4">
+<div class="container-fluid px-4 px-xl-5 py-4">
     <div class="d-flex justify-content-between align-items-center mb-3">
         <div>
             <h1 class="h3 fw-bold mb-1">Plantilla de ficha de ingreso</h1>
@@ -20,8 +20,8 @@
     <form method="POST" action="{{ route('orders.ficha-ingreso.update', $order) }}">
         @csrf
         @method('PUT')
-        <div class="card clinic-card shadow-sm">
-            <div class="card-body bg-white">
+        <div class="card clinic-card shadow-sm ficha-ingreso-card mx-auto">
+            <div class="card-body bg-white p-4 p-lg-5">
                 @include('orders.templates.partials.ficha-ingreso-content', ['editable' => true])
             </div>
             <div class="card-footer bg-white d-flex justify-content-end gap-2">
@@ -32,3 +32,21 @@
     </form>
 </div>
 @endsection
+@push('styles')
+<style>
+    .ficha-ingreso-card {
+        max-width: 1320px;
+    }
+
+    .ficha-ingreso-card .form-control,
+    .ficha-ingreso-card .form-select,
+    .ficha-ingreso-card .form-check-label {
+        font-size: 1rem;
+    }
+
+    .ficha-ingreso-card .table th,
+    .ficha-ingreso-card .table td {
+        padding: .85rem;
+    }
+</style>
+@endpush
