@@ -349,6 +349,7 @@ function orderSystem() {
         cart: {{ Illuminate\Support\Js::from($initialItems) }},
         consumables: {{ Illuminate\Support\Js::from($initialConsumables) }},
         selectedReagent: '',
+        itemSelect: null,
         selectedPatientId: String({{ Illuminate\Support\Js::from(old('patient_id', $order->patient_id)) }} || ''),
         patients: {{ Illuminate\Support\Js::from($patients->map(fn ($p) => ['id' => (string) $p->id, 'dni' => $p->dni, 'nombres' => $p->nombres, 'apellidos' => $p->apellidos, 'telefono' => $p->telefono, 'fecha_nacimiento' => optional($p->fecha_nacimiento)->format('Y-m-d'), 'edad' => $p->edad, 'label' => $p->dni.' - '.$p->nombres.' '.$p->apellidos])->values()) }},
         patientForm: { id: null, dni: '', nombres: '', apellidos: '', telefono: '', fecha_nacimiento: '', edad: '' },
@@ -367,6 +368,7 @@ function orderSystem() {
         selectedAgreement: String({{ Illuminate\Support\Js::from(old('agreement_id', $order->agreement_id ?? $agreements->first()?->id)) }} || ''),
         discount: Number({{ Illuminate\Support\Js::from(old('descuento', $order->descuento ?? 0)) }}) || 0,
         cartSearch: '',
+        exams: [],
         isSubmitting: false,
         init() {
             this.preloadConsumablesFromCart(true);
@@ -386,11 +388,12 @@ function orderSystem() {
             });
 
             const exams = {{ Illuminate\Support\Js::from($exams->map(fn ($e) => ['id' => (string) $e->id, 'name' => $e->nombre_examen, 'uid' => 'exam'.$e->id, 'area' => 'TOMOGRAFÍA'])->values()) }};
-            new TomSelect('#item_select', {
+            this.exams = exams;
+            this.itemSelect = new TomSelect('#item_select', {
                 valueField: 'uid',
                 labelField: 'display_name',
                 searchField: ['name', 'display_name'],
-                options: exams.map((exam) => ({ ...exam, display_name: `${exam.name} [EXAMEN]` })),
+                options: this.availableExams().map((exam) => ({ ...exam, display_name: `${exam.name} [EXAMEN]` })),
                 maxOptions: 50,
                 shouldLoad: (query) => query.length >= 2,
                 render: {
@@ -547,7 +550,29 @@ function orderSystem() {
             this.rebuildConsumablesFromContrastedExams();
         },
         applyAgreementPrices() {
-            this.cart = this.cart.map((item) => ({ ...item, price: this.priceFor(item.id, item.tipo_contraste) }));
+            this.cart = this.cart
+                .filter((item) => this.isExamAllowed(item.id))
+                .map((item) => ({ ...item, price: this.priceFor(item.id, item.tipo_contraste) }));
+            this.refreshExamOptions();
+            this.rebuildConsumablesFromContrastedExams();
+        },
+        allowedExamIds() {
+            return new Set(this.agreementPrices
+                .filter((price) => price.agreement_id === String(this.selectedAgreement))
+                .map((price) => String(price.exam_id)));
+        },
+        isExamAllowed(examId) {
+            return this.allowedExamIds().has(String(examId));
+        },
+        availableExams() {
+            return this.exams.filter((exam) => this.isExamAllowed(exam.id));
+        },
+        refreshExamOptions() {
+            if (!this.itemSelect) return;
+            this.itemSelect.clear(true);
+            this.itemSelect.clearOptions();
+            this.itemSelect.addOptions(this.availableExams().map((exam) => ({ ...exam, display_name: `${exam.name} [EXAMEN]` })));
+            this.itemSelect.refreshOptions(false);
         },
         subtotal() {
             return this.cart.reduce((sum, item) => sum + (Number(item.price) || 0), 0);

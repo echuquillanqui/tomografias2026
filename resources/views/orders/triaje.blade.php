@@ -15,6 +15,7 @@
         'peripheral_route' => 'Vía periférica',
         'informed_by' => 'Informado por',
         'delivery' => 'Entrega',
+        'plates_count' => 'Cantidad de placas entregadas',
     ];
 
     $initialForm = collect($fields)->mapWithKeys(fn ($label, $key) => [
@@ -185,6 +186,7 @@
                         <div class="col-md-6"><label class="form-label small fw-bold">Vía periférica</label><input class="form-control" x-model="form.peripheral_route"></div>
                         <div class="col-md-6"><label class="form-label small fw-bold">Informado por</label><input class="form-control" x-model="form.informed_by"></div>
                         <div class="col-md-6"><label class="form-label small fw-bold">Se entrega</label><div class="d-flex flex-wrap gap-3"><template x-for="option in ['PLACAS','CD','INFORME']" :key="option"><div class="form-check"><input class="form-check-input" type="checkbox" name="delivery_options[]" :value="option" x-model="form.delivery_options"><label class="form-check-label" x-text="option"></label></div></template></div></div>
+                        <div class="col-md-6"><label class="form-label small fw-bold">Cantidad de placas entregadas</label><input class="form-control" type="number" min="0" step="1" x-model="form.plates_count"></div>
                         <div class="col-12"><label class="form-label small fw-bold">Descartar</label><textarea class="form-control" rows="2" x-model="form.rule_out"></textarea></div>
                     </div></div>
                     <div class="modal-footer"><button type="button" class="btn btn-light" data-bs-dismiss="modal">Cerrar</button><button type="submit" class="btn btn-primary">Guardar triaje</button></div>

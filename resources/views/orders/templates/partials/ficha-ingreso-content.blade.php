@@ -29,6 +29,7 @@
     <div class="col-md-6"><label class="form-label fw-bold">Medicación</label><textarea name="medication" class="form-control" rows="2" placeholder="Completar medicación">{{ old('medication', $admissionData['medication'] ?? '') }}</textarea></div>
     <div class="col-md-6"><label class="form-label fw-bold">Informado por</label><input name="informed_by" class="form-control" value="{{ old('informed_by', $admissionData['informed_by'] ?? '') }}" placeholder="Nombre de quien informa"></div>
     <div class="col-md-6"><label class="form-label fw-bold">Se entrega</label>@php($deliveryOptions = old('delivery_options', $admissionData['delivery_options'] ?? []))<div class="d-flex flex-wrap gap-3">@foreach(['PLACAS','CD','INFORME'] as $option)<div class="form-check"><input class="form-check-input" type="checkbox" name="delivery_options[]" value="{{ $option }}" id="delivery{{ $option }}" @checked(in_array($option, $deliveryOptions, true))><label class="form-check-label" for="delivery{{ $option }}">{{ $option }}</label></div>@endforeach</div></div>
+    <div class="col-md-6"><label class="form-label fw-bold">Cantidad de placas entregadas</label><input name="plates_count" type="number" min="0" step="1" class="form-control" value="{{ old('plates_count', $admissionData['plates_count'] ?? '') }}" placeholder="Número de placas entregadas"></div>
 </div>
 @if($hasContrast)
     <h5 class="bg-primary text-white text-center py-2 mt-4">USO INTERNO / DATOS PARA CONTRASTE</h5>

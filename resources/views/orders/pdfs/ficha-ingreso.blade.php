@@ -27,6 +27,6 @@ body{font-family:DejaVu Sans,sans-serif;font-size:10px;color:#003b75}.title{text
 <div class="row box"><div class="cell"><span class="label">Vía periférica:</span> {{ $admissionData['peripheral_route'] ?? '' }}</div><div class="cell"><span class="label">Uso interno:</span> Contraste aplicado ( )</div></div>
 @endif
 @php($deliveryOptions = $admissionData['delivery_options'] ?? [])
-<div class="section-title">DOCUMENTOS / ENTREGA</div><div class="full">PLACAS ({{ in_array('PLACAS', $deliveryOptions, true) ? 'X' : ' ' }}) &nbsp;&nbsp; CD ({{ in_array('CD', $deliveryOptions, true) ? 'X' : ' ' }}) &nbsp;&nbsp; INFORME ({{ in_array('INFORME', $deliveryOptions, true) ? 'X' : ' ' }})</div>
+<div class="section-title">DOCUMENTOS / ENTREGA</div><div class="full">PLACAS ({{ in_array('PLACAS', $deliveryOptions, true) ? 'X' : ' ' }}) &nbsp;&nbsp; CD ({{ in_array('CD', $deliveryOptions, true) ? 'X' : ' ' }}) &nbsp;&nbsp; INFORME ({{ in_array('INFORME', $deliveryOptions, true) ? 'X' : ' ' }})<br><b>Cantidad de placas entregadas:</b> {{ $admissionData['plates_count'] ?? '—' }}</div>
 <br><br><div class="row"><div class="cell" style="border:0;text-align:center"><div class="sig"></div>FIRMA DEL PACIENTE</div><div class="cell" style="border:0;text-align:center"><div class="sig"></div>HUELLA DEL PACIENTE</div></div>
 </body></html>
