@@ -17,7 +17,7 @@ body{font-family:DejaVu Sans,sans-serif;font-size:10px;color:#003b75}.title{text
 <div class="section-title">ANTECEDENTES</div>
 <div class="full"><b>Causa:</b> {{ $admissionData['cause'] ?? '' }}</div>
 <div class="full"><b>Sintomatología:</b> {{ $admissionData['symptomatology'] ?? '' }}</div>
-<div class="full"><b>Intervenciones quirúrgicas:</b> {{ $admissionData['surgeries'] ?? '' }}</div>
+<div class="full"><b>Intervenciones quirúrgicas:</b> {{ ($admissionData['surgeries'] ?? 'Ninguna') === 'Otros' ? ($admissionData['surgeries_detail'] ?? 'Otros') : ($admissionData['surgeries'] ?? 'Ninguna') }}</div>
 <div class="full"><b>Medicación:</b> {{ $admissionData['medication'] ?? '' }}</div>
 <div class="full"><b>Informado por:</b> {{ $admissionData['informed_by'] ?? '' }}</div>
 @if($hasContrast)
@@ -26,6 +26,7 @@ body{font-family:DejaVu Sans,sans-serif;font-size:10px;color:#003b75}.title{text
 <div class="row box"><div class="cell"><span class="label">Prueba de creatinina:</span> {{ $admissionData['creatinine'] ?? '' }}</div><div class="cell"><span class="label">Valor:</span> {{ $admissionData['creatinine'] ?? '' }}</div><div class="cell"><span class="label">Fecha:</span> {{ $admissionData['date'] ?? '' }}</div></div>
 <div class="row box"><div class="cell"><span class="label">Vía periférica:</span> {{ $admissionData['peripheral_route'] ?? '' }}</div><div class="cell"><span class="label">Uso interno:</span> Contraste aplicado ( )</div></div>
 @endif
-<div class="section-title">DOCUMENTOS / ENTREGA</div><div class="full">{{ $admissionData['delivery'] ?? '' }}<br>CD ( ) &nbsp;&nbsp; Informe ( ) &nbsp;&nbsp; Bolsa de cortesía ( )</div>
+@php($deliveryOptions = $admissionData['delivery_options'] ?? [])
+<div class="section-title">DOCUMENTOS / ENTREGA</div><div class="full">PLACAS ({{ in_array('PLACAS', $deliveryOptions, true) ? 'X' : ' ' }}) &nbsp;&nbsp; CD ({{ in_array('CD', $deliveryOptions, true) ? 'X' : ' ' }}) &nbsp;&nbsp; INFORME ({{ in_array('INFORME', $deliveryOptions, true) ? 'X' : ' ' }})</div>
 <br><br><div class="row"><div class="cell" style="border:0;text-align:center"><div class="sig"></div>FIRMA DEL PACIENTE</div><div class="cell" style="border:0;text-align:center"><div class="sig"></div>HUELLA DEL PACIENTE</div></div>
 </body></html>

@@ -10,9 +10,9 @@ class Agreement extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['nombre_institucion', 'activo'];
+    protected $fillable = ['nombre_institucion', 'activo', 'mostrar_precio_orden'];
 
-    protected $casts = ['activo' => 'boolean'];
+    protected $casts = ['activo' => 'boolean', 'mostrar_precio_orden' => 'boolean'];
 
     public function orders(): HasMany
     {

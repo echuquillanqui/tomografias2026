@@ -18,7 +18,10 @@
     ];
 
     $initialForm = collect($fields)->mapWithKeys(fn ($label, $key) => [
-        $key => old($key, $admissionData[$key] ?? ($key === 'unit' ? $order->unidad : '')),
+        $key => old($key, $admissionData[$key] ?? ($key === 'unit' ? $order->unidad : ($key === 'surgeries' ? 'Ninguna' : ''))),
+    ])->merge([
+        'surgeries_detail' => old('surgeries_detail', $admissionData['surgeries_detail'] ?? ''),
+        'delivery_options' => old('delivery_options', $admissionData['delivery_options'] ?? []),
     ]);
     $reagentOptions = $reagents->map(fn ($r) => [
         'id' => (string) $r->id,
@@ -161,7 +164,7 @@
                         <div class="col-md-6"><label class="form-label small fw-bold">Creatinina</label><input class="form-control" x-model="form.creatinine"></div>
                         <div class="col-12"><label class="form-label small fw-bold">Causa / motivo</label><textarea class="form-control" rows="2" x-model="form.cause"></textarea></div>
                         <div class="col-12"><label class="form-label small fw-bold">Sintomatología</label><textarea class="form-control" rows="2" x-model="form.symptomatology"></textarea></div>
-                        <div class="col-md-6"><label class="form-label small fw-bold">Cirugías previas</label><textarea class="form-control" rows="2" x-model="form.surgeries"></textarea></div>
+                        <div class="col-md-6"><label class="form-label small fw-bold">Cirugías previas</label><select class="form-select" x-model="form.surgeries"><option value="Ninguna">Ninguna</option><option value="Otros">Otros</option></select><input name="surgeries_detail" class="form-control mt-2" x-show="form.surgeries === 'Otros'" x-model="form.surgeries_detail" placeholder="Especificar intervención"></div>
                         <div class="col-12">
                             <label class="form-label small fw-bold">Medicamentos</label>
                             <div class="input-group mb-2">
@@ -181,7 +184,7 @@
                         <div class="col-md-6"><label class="form-label small fw-bold">Condición</label><input class="form-control" x-model="form.condition"></div>
                         <div class="col-md-6"><label class="form-label small fw-bold">Vía periférica</label><input class="form-control" x-model="form.peripheral_route"></div>
                         <div class="col-md-6"><label class="form-label small fw-bold">Informado por</label><input class="form-control" x-model="form.informed_by"></div>
-                        <div class="col-md-6"><label class="form-label small fw-bold">Entrega</label><textarea class="form-control" rows="2" x-model="form.delivery"></textarea></div>
+                        <div class="col-md-6"><label class="form-label small fw-bold">Se entrega</label><div class="d-flex flex-wrap gap-3"><template x-for="option in ['PLACAS','CD','INFORME']" :key="option"><div class="form-check"><input class="form-check-input" type="checkbox" name="delivery_options[]" :value="option" x-model="form.delivery_options"><label class="form-check-label" x-text="option"></label></div></template></div></div>
                         <div class="col-12"><label class="form-label small fw-bold">Descartar</label><textarea class="form-control" rows="2" x-model="form.rule_out"></textarea></div>
                     </div></div>
                     <div class="modal-footer"><button type="button" class="btn btn-light" data-bs-dismiss="modal">Cerrar</button><button type="submit" class="btn btn-primary">Guardar triaje</button></div>

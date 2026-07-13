@@ -21,6 +21,7 @@ class OrderController extends Controller
 {
     private const ESTADOS = ['Pendiente', 'En proceso', 'Informado', 'Entregado', 'Anulado'];
     private const TIPOS_PAGO = ['Efectivo', 'Tarjeta', 'Transferencia', 'Yape/Plin', 'Convenio'];
+    private const TIPOS_COMPROBANTE = ['Boleta', 'Factura'];
     private const UNIDADES = ['Topico', 'Sala de control (Tecnologo)'];
 
     public function index(Request $request): View
@@ -41,6 +42,7 @@ class OrderController extends Controller
             'search' => $search,
             'estados' => self::ESTADOS,
             'tiposPago' => self::TIPOS_PAGO,
+            'tiposComprobante' => self::TIPOS_COMPROBANTE,
             'unidades' => self::UNIDADES,
         ]);
     }
@@ -103,6 +105,24 @@ class OrderController extends Controller
         return redirect()->route('orders.index')->with('success', 'Tipo de pago actualizado correctamente.');
     }
 
+
+    public function updateOrderFile(Request $request, Order $order): RedirectResponse
+    {
+        $data = $request->validate([
+            'archivo_orden' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png,webp', 'max:10240'],
+        ]);
+
+        if ($order->archivo_orden_path) {
+            Storage::disk('public')->delete($order->archivo_orden_path);
+        }
+
+        $order->update([
+            'archivo_orden_path' => $request->file('archivo_orden')->store('ordenes', 'public'),
+        ]);
+
+        return redirect()->route('orders.index')->with('success', 'Archivo de orden actualizado correctamente.');
+    }
+
     public function destroy(Order $order): RedirectResponse
     {
         $order->delete();
@@ -120,7 +140,7 @@ class OrderController extends Controller
 
         return [
             'patients' => Patient::select(['id', 'dni', 'nombres', 'apellidos', 'telefono', 'fecha_nacimiento', 'edad'])->orderBy('apellidos')->orderBy('nombres')->get(),
-            'agreements' => Agreement::select(['id', 'nombre_institucion'])->where('activo', true)->orderBy('nombre_institucion')->get(),
+            'agreements' => Agreement::select(['id', 'nombre_institucion', 'mostrar_precio_orden'])->where('activo', true)->orderByRaw("CASE WHEN UPPER(nombre_institucion) = 'PARTICULAR' THEN 0 ELSE 1 END")->orderBy('nombre_institucion')->get(),
             'exams' => Exam::with('reagents:id,nombre,unidad')->select(['id', 'nombre_examen'])->where('activo', true)->orderBy('nombre_examen')->get(),
             'reagents' => Reagent::select(['id', 'nombre', 'unidad'])->where('activo', true)->orderBy('nombre')->get(),
             'agreementPrices' => AgreementPrice::select(['agreement_id', 'exam_id', 'tipo_contraste', 'precio_pactado'])->get(),
@@ -128,6 +148,7 @@ class OrderController extends Controller
             'medicosInformantes' => $medicos->whereIn('tipo_medico', ['De Informe', 'Ambos'])->values(),
             'estados' => self::ESTADOS,
             'tiposPago' => self::TIPOS_PAGO,
+            'tiposComprobante' => self::TIPOS_COMPROBANTE,
             'unidades' => self::UNIDADES,
         ];
     }
@@ -146,6 +167,8 @@ class OrderController extends Controller
             'fecha_orden' => ['required', 'date'],
             'estado' => ['required', Rule::in(self::ESTADOS)],
             'tipo_pago' => ['required', Rule::in(self::TIPOS_PAGO)],
+            'tipo_comprobante' => ['nullable', Rule::in(self::TIPOS_COMPROBANTE)],
+            'numero_comprobante' => ['nullable', 'string', 'max:255'],
             'descuento' => ['nullable', 'numeric', 'min:0'],
             'observaciones' => ['nullable', 'string'],
             'exams' => ['required', 'array', 'min:1'],
@@ -249,7 +272,8 @@ class OrderController extends Controller
             'unit' => ['nullable', 'string', 'max:255'],
             'cause' => ['nullable', 'string'],
             'symptomatology' => ['nullable', 'string'],
-            'surgeries' => ['nullable', 'string'],
+            'surgeries' => ['nullable', 'string', 'max:255'],
+            'surgeries_detail' => ['nullable', 'string', 'max:255'],
             'medication' => ['nullable', 'string'],
             'medications' => ['nullable', 'array'],
             'medications.*' => ['nullable', 'string', 'max:255'],
@@ -262,6 +286,8 @@ class OrderController extends Controller
             'peripheral_route' => ['nullable', 'string', 'max:255'],
             'informed_by' => ['nullable', 'string', 'max:255'],
             'delivery' => ['nullable', 'string'],
+            'delivery_options' => ['nullable', 'array'],
+            'delivery_options.*' => ['nullable', Rule::in(['PLACAS', 'CD', 'INFORME'])],
             'consumables' => ['nullable', 'array'],
             'consumables.*.reagent_id' => ['required', 'exists:reagents,id'],
             'consumables.*.cantidad' => ['required', 'numeric', 'min:0'],
@@ -271,6 +297,9 @@ class OrderController extends Controller
         $this->syncPrintableDocuments($order);
         $current = $order->fresh('admissionForm')->admissionForm?->data ?? [];
         $formData = collect($data)->except('consumables')->all();
+        $formData['delivery_options'] = array_values($formData['delivery_options'] ?? []);
+        $formData['delivery'] = implode(', ', $formData['delivery_options']);
+        if (($formData['surgeries'] ?? '') !== 'Otros') $formData['surgeries_detail'] = '';
         $medications = collect($formData['medications'] ?? [])->map(fn ($item) => trim((string) $item))->filter()->values()->all();
         $formData['medications'] = $medications;
         $formData['medication'] = implode(PHP_EOL, $medications);
@@ -318,7 +347,10 @@ class OrderController extends Controller
             'delivery' => ['nullable', 'string'],
             'cause' => ['nullable', 'string'],
             'symptomatology' => ['nullable', 'string'],
-            'surgeries' => ['nullable', 'string'],
+            'surgeries' => ['nullable', 'string', 'max:255'],
+            'surgeries_detail' => ['nullable', 'string', 'max:255'],
+            'delivery_options' => ['nullable', 'array'],
+            'delivery_options.*' => ['nullable', Rule::in(['PLACAS', 'CD', 'INFORME'])],
             'medication' => ['nullable', 'string'],
             'medications' => ['nullable', 'array'],
             'medications.*' => ['nullable', 'string', 'max:255'],
@@ -330,6 +362,9 @@ class OrderController extends Controller
         $order->load(['patient', 'agreement', 'medicoSolicitante', 'orderExams.exam', 'admissionForm']);
         $this->syncPrintableDocuments($order);
         $current = $order->fresh('admissionForm')->admissionForm?->data ?? [];
+        $data['delivery_options'] = array_values($data['delivery_options'] ?? []);
+        $data['delivery'] = implode(', ', $data['delivery_options']);
+        if (($data['surgeries'] ?? '') !== 'Otros') $data['surgeries_detail'] = '';
         if (array_key_exists('medications', $data)) {
             $data['medications'] = collect($data['medications'])->map(fn ($item) => trim((string) $item))->filter()->values()->all();
             $data['medication'] = implode(PHP_EOL, $data['medications']);
@@ -422,9 +457,11 @@ class OrderController extends Controller
             'peripheral_route' => '',
             'informed_by' => '',
             'delivery' => '',
+            'delivery_options' => [],
             'cause' => '',
             'symptomatology' => '',
-            'surgeries' => '',
+            'surgeries' => 'Ninguna',
+            'surgeries_detail' => '',
             'medication' => '',
             'medications' => [],
             'allergy' => '',

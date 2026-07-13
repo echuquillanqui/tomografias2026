@@ -30,6 +30,7 @@
                 <p><strong>Archivo de orden:</strong><br>@if($order->archivo_orden_path)<a target="_blank" href="{{ asset('storage/'.$order->archivo_orden_path) }}">Ver archivo</a>@else — @endif</p>
                 <p><strong>Médico solicitante:</strong><br>{{ $order->medicoSolicitante?->nombre_completo ?? '—' }}</p>
                 <p><strong>Tipo de pago:</strong><br>{{ $order->tipo_pago ?? '—' }}</p>
+                <p><strong>Comprobante:</strong><br>{{ $order->tipo_comprobante ?? '—' }} @if($order->numero_comprobante) N° {{ $order->numero_comprobante }} @endif</p>
                 <p><strong>Médico informe:</strong><br>{{ $order->medicoInforme?->nombre_completo ?? '—' }}</p>
                 <span class="badge badge-role align-self-start">{{ $order->estado }}</span>
             </div>
@@ -44,7 +45,7 @@
                                 <th>Examen</th>
                                 <th>Contraste</th>
                                 <th>Estado</th>
-                                <th>Precio</th>
+                                @if($order->agreement->mostrar_precio_orden)<th>Precio</th>@endif
                                 <th>Comisión</th>
                             </tr>
                         </thead>
@@ -54,15 +55,17 @@
                                     <td class="fw-bold">{{ $item->exam->nombre_examen }}</td>
                                     <td>{{ $item->tipo_contraste }}</td>
                                     <td>{{ $item->estado }}</td>
-                                    <td>S/ {{ $item->precio }}</td>
+                                    @if($order->agreement->mostrar_precio_orden)<td>S/ {{ $item->precio }}</td>@endif
                                     <td>{{ $item->comision_monto ? 'S/ '.$item->comision_monto : '—' }}</td>
                                 </tr>
                             @endforeach
                         </tbody>
                         <tfoot>
+                            @if($order->agreement->mostrar_precio_orden)
                             <tr><th colspan="3" class="text-end">Subtotal</th><th>S/ {{ $order->subtotal }}</th><th></th></tr>
                             <tr><th colspan="3" class="text-end">Descuento</th><th>S/ {{ $order->descuento }}</th><th></th></tr>
                             <tr><th colspan="3" class="text-end">Total</th><th>S/ {{ $order->total }}</th><th></th></tr>
+                            @endif
                         </tfoot>
                     </table>
                 </div>
