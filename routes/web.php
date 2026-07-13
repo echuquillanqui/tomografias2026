@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AgreementController;
 use App\Http\Controllers\AgreementPriceController;
+use App\Http\Controllers\CashClosingController;
 use App\Http\Controllers\ExamController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\PatientController;
@@ -40,6 +41,9 @@ Route::middleware('auth')->group(function () {
     Route::resource('reagents', ReagentController::class)->except(['create', 'show', 'edit']);
     Route::resource('agreement-prices', AgreementPriceController::class)->except(['create', 'show', 'edit']);
     Route::resource('stock-movements', StockMovementController::class)->only(['index', 'store', 'destroy']);
+    Route::get('cash-closings', [CashClosingController::class, 'index'])->name('cash-closings.index');
+    Route::post('cash-closings/expenses', [CashClosingController::class, 'storeExpense'])->name('cash-closings.expenses.store');
+    Route::delete('cash-closings/expenses/{cashExpense}', [CashClosingController::class, 'destroyExpense'])->name('cash-closings.expenses.destroy');
     Route::get('system-settings', [SystemSettingController::class, 'index'])->name('system-settings.index');
     Route::put('system-settings', [SystemSettingController::class, 'update'])->name('system-settings.update');
     Route::patch('orders/{order}/status', [OrderController::class, 'updateStatus'])->name('orders.update-status');
