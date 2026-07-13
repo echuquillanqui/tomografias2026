@@ -288,6 +288,7 @@
                 </div>
                 <div class="modal-body">
                     <div class="alert alert-danger" x-show="patientError" x-text="patientError"></div>
+                    <div class="alert alert-warning" x-show="patientNotice" x-text="patientNotice"></div>
                     <div class="row g-3">
                         <div class="col-md-5">
                             <label class="form-label small fw-bold">DNI</label>
@@ -354,6 +355,7 @@ function orderSystem() {
         patients: {{ Illuminate\Support\Js::from($patients->map(fn ($p) => ['id' => (string) $p->id, 'dni' => $p->dni, 'nombres' => $p->nombres, 'apellidos' => $p->apellidos, 'telefono' => $p->telefono, 'fecha_nacimiento' => optional($p->fecha_nacimiento)->format('Y-m-d'), 'edad' => $p->edad, 'label' => $p->dni.' - '.$p->nombres.' '.$p->apellidos])->values()) }},
         patientForm: { id: null, dni: '', nombres: '', apellidos: '', telefono: '', fecha_nacimiento: '', edad: '' },
         patientError: '',
+        patientNotice: '',
         patientSaving: false,
         reniecLoading: false,
         lastReniecDni: '',
@@ -414,6 +416,7 @@ function orderSystem() {
         resetPatientForm() {
             this.patientForm = { id: null, dni: '', nombres: '', apellidos: '', telefono: '', fecha_nacimiento: '', edad: '' };
             this.patientError = '';
+            this.patientNotice = '';
             this.lastReniecDni = '';
         },
         openPatientModal(patientId = null) {
@@ -425,7 +428,9 @@ function orderSystem() {
         async lookupReniec() {
             const dni = String(this.patientForm.dni || '').replace(/\D/g, '');
             if (dni.length !== 8 || this.reniecLoading || this.lastReniecDni === dni) return;
+            if (this.fillExistingPatientByDni(dni)) return;
             this.patientError = '';
+            this.patientNotice = '';
             this.reniecLoading = true;
             try {
                 const response = await fetch(`{{ route('patients.reniec') }}?numero=${encodeURIComponent(dni)}`, { headers: { Accept: 'application/json' } });
@@ -444,8 +449,21 @@ function orderSystem() {
         handleDniInput(event) {
             const dni = event.target.value.replace(/\D/g, '').slice(0, 8);
             this.patientForm.dni = dni;
+            this.patientNotice = '';
             if (this.lastReniecDni !== dni) this.lastReniecDni = '';
-            if (dni.length === 8) this.lookupReniec();
+            if (dni.length === 8 && !this.fillExistingPatientByDni(dni)) this.lookupReniec();
+        },
+        fillExistingPatientByDni(dni) {
+            const existing = this.patients.find((patient) => String(patient.dni || '') === String(dni));
+            if (!existing) return false;
+
+            this.patientForm = { ...existing };
+            this.patientError = '';
+            this.patientNotice = 'El paciente ya existe en la base de datos. Se completaron sus datos para evitar una consulta externa innecesaria.';
+            this.lastReniecDni = dni;
+            this.upsertPatient(existing);
+
+            return true;
         },
         calculatePatientAge() {
             if (!this.patientForm.fecha_nacimiento) return this.patientForm.edad = '';
