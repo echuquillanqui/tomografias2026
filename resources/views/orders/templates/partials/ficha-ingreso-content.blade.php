@@ -28,8 +28,34 @@
     <div class="col-md-6"><label class="form-label fw-bold">Intervenciones quirúrgicas</label><select name="surgeries" class="form-select" onchange="document.getElementById('surgeries-detail').classList.toggle('d-none', this.value !== 'Otros')"><option value="Ninguna" @selected(old('surgeries', $admissionData['surgeries'] ?? 'Ninguna') === 'Ninguna')>Ninguna</option><option value="Otros" @selected(old('surgeries', $admissionData['surgeries'] ?? 'Ninguna') === 'Otros')>Otros</option></select><input id="surgeries-detail" name="surgeries_detail" class="form-control mt-2 {{ old('surgeries', $admissionData['surgeries'] ?? 'Ninguna') === 'Otros' ? '' : 'd-none' }}" value="{{ old('surgeries_detail', $admissionData['surgeries_detail'] ?? '') }}" placeholder="Especificar intervención"></div>
     <div class="col-md-6"><label class="form-label fw-bold">Medicación</label><textarea name="medication" class="form-control" rows="2" placeholder="Completar medicación">{{ old('medication', $admissionData['medication'] ?? '') }}</textarea></div>
     <div class="col-md-6"><label class="form-label fw-bold">Informado por</label><input name="informed_by" class="form-control" value="{{ old('informed_by', $admissionData['informed_by'] ?? '') }}" placeholder="Nombre de quien informa"></div>
-    <div class="col-md-6"><label class="form-label fw-bold">Se entrega</label>@php($deliveryOptions = old('delivery_options', $admissionData['delivery_options'] ?? []))<div class="d-flex flex-wrap gap-3">@foreach(['PLACAS','CD','INFORME'] as $option)<div class="form-check"><input class="form-check-input" type="checkbox" name="delivery_options[]" value="{{ $option }}" id="delivery{{ $option }}" @checked(in_array($option, $deliveryOptions, true))><label class="form-check-label" for="delivery{{ $option }}">{{ $option }}</label></div>@endforeach</div></div>
-    <div class="col-md-6"><label class="form-label fw-bold">Cantidad de placas entregadas</label><input name="plates_count" type="number" min="0" step="1" class="form-control" value="{{ old('plates_count', $admissionData['plates_count'] ?? '') }}" placeholder="Número de placas entregadas"></div>
+    @php
+        $deliveryItems = ['PLACAS', 'CD', 'INFORME'];
+        $deliveryOptions = old('delivery_options', $admissionData['delivery_options'] ?? $deliveryItems);
+        $deliveryOptions = empty($deliveryOptions) ? $deliveryItems : $deliveryOptions;
+        $deliveryQuantities = old('delivery_quantities', $admissionData['delivery_quantities'] ?? []);
+    @endphp
+    <div class="col-md-6">
+        <label class="form-label fw-bold">Se entrega</label>
+        <div class="border rounded p-3 bg-light">
+            <div class="row g-2 fw-bold small text-uppercase text-muted mb-1">
+                <div class="col-7">Documento</div>
+                <div class="col-5">Número</div>
+            </div>
+            @foreach($deliveryItems as $option)
+                <div class="row g-2 align-items-center mb-2">
+                    <div class="col-7">
+                        <div class="form-check fs-5">
+                            <input class="form-check-input" type="checkbox" name="delivery_options[]" value="{{ $option }}" id="delivery{{ $option }}" @checked(in_array($option, $deliveryOptions, true))>
+                            <label class="form-check-label fw-bold" for="delivery{{ $option }}">{{ $option }}</label>
+                        </div>
+                    </div>
+                    <div class="col-5">
+                        <input name="delivery_quantities[{{ $option }}]" type="number" min="0" step="1" class="form-control form-control-lg" value="{{ $deliveryQuantities[$option] ?? ($option === 'PLACAS' ? old('plates_count', $admissionData['plates_count'] ?? '') : '') }}" placeholder="N°">
+                    </div>
+                </div>
+            @endforeach
+        </div>
+    </div>
 </div>
 @if($hasContrast)
     <h5 class="bg-primary text-white text-center py-2 mt-4">USO INTERNO / DATOS PARA CONTRASTE</h5>

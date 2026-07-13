@@ -1,7 +1,7 @@
 @php($setting = \App\Models\SystemSetting::current())
 @php($admissionData = $admissionData ?? [])
 <!doctype html><html><head><meta charset="utf-8"><style>.company-header{width:100%;border-bottom:1px solid #1f6fb2;margin-bottom:8px;padding-bottom:6px}.company-logo{max-height:45px;max-width:100px}.company-name{font-size:14px;font-weight:bold}.company-data{font-size:9px;color:#555}</style><style>
-body{font-family:DejaVu Sans,sans-serif;font-size:10px;color:#003b75}.title{text-align:center;font-size:18px;font-weight:bold;text-decoration:underline}.box{border:1px solid #1f6fb2;margin-bottom:6px}.row{display:table;width:100%;table-layout:fixed}.cell{display:table-cell;border-right:1px solid #1f6fb2;border-bottom:1px solid #1f6fb2;padding:4px}.cell:last-child{border-right:0}.label{font-weight:bold;color:#0057a8}.yellow{background:#fff200}.head{background:#0c55a2;color:white;text-align:center;font-weight:bold;padding:4px}.red{color:red;font-weight:bold}.sig{height:70px;border:1px solid #1f6fb2;border-radius:8px}.muted{color:#666}.full{min-height:34px;padding:5px;border-bottom:1px solid #1f6fb2}.section-title{background:#0c55a2;color:white;text-align:center;font-weight:bold;padding:4px;margin-top:8px}
+body{font-family:DejaVu Sans,sans-serif;font-size:10px;color:#003b75}.title{text-align:center;font-size:18px;font-weight:bold;text-decoration:underline}.box{border:1px solid #1f6fb2;margin-bottom:6px}.row{display:table;width:100%;table-layout:fixed}.cell{display:table-cell;border-right:1px solid #1f6fb2;border-bottom:1px solid #1f6fb2;padding:4px}.cell:last-child{border-right:0}.label{font-weight:bold;color:#0057a8}.yellow{background:#fff200}.head{background:#0c55a2;color:white;text-align:center;font-weight:bold;padding:4px}.red{color:red;font-weight:bold}.sig{height:70px;border:1px solid #1f6fb2;border-radius:8px}.muted{color:#666}.full{min-height:34px;padding:5px;border-bottom:1px solid #1f6fb2}.section-title{background:#0c55a2;color:white;text-align:center;font-weight:bold;padding:4px;margin-top:8px}.delivery-table{width:100%;border-collapse:collapse;font-size:12px;margin-top:4px}.delivery-table th,.delivery-table td{border:1px solid #1f6fb2;padding:8px}.delivery-table th{background:#eaf3fb;color:#0057a8;text-align:left}.delivery-check{font-weight:bold;font-size:13px}.delivery-number{text-align:center;font-weight:bold;font-size:13px}
 </style></head><body>
 <table class="company-header"><tr><td style="width:110px">@if($setting->logo_path && file_exists(storage_path('app/public/'.$setting->logo_path)))<img class="company-logo" src="{{ storage_path('app/public/'.$setting->logo_path) }}" alt="Logo">@endif</td><td><div class="company-name">{{ $setting->razon_social }}</div><div class="company-data">{{ collect([$setting->ruc ? 'RUC '.$setting->ruc : null, $setting->direccion, $setting->telefono])->filter()->implode(' · ') }}</div></td></tr></table>
 <div class="title">FICHA DE INGRESO</div>
@@ -26,7 +26,23 @@ body{font-family:DejaVu Sans,sans-serif;font-size:10px;color:#003b75}.title{text
 <div class="row box"><div class="cell"><span class="label">Prueba de creatinina:</span> {{ $admissionData['creatinine'] ?? '' }}</div><div class="cell"><span class="label">Valor:</span> {{ $admissionData['creatinine'] ?? '' }}</div><div class="cell"><span class="label">Fecha:</span> {{ $admissionData['date'] ?? '' }}</div></div>
 <div class="row box"><div class="cell"><span class="label">Vía periférica:</span> {{ $admissionData['peripheral_route'] ?? '' }}</div><div class="cell"><span class="label">Uso interno:</span> Contraste aplicado ( )</div></div>
 @endif
-@php($deliveryOptions = $admissionData['delivery_options'] ?? [])
-<div class="section-title">DOCUMENTOS / ENTREGA</div><div class="full">PLACAS ({{ in_array('PLACAS', $deliveryOptions, true) ? 'X' : ' ' }}) &nbsp;&nbsp; CD ({{ in_array('CD', $deliveryOptions, true) ? 'X' : ' ' }}) &nbsp;&nbsp; INFORME ({{ in_array('INFORME', $deliveryOptions, true) ? 'X' : ' ' }})<br><b>Cantidad de placas entregadas:</b> {{ $admissionData['plates_count'] ?? '—' }}</div>
+@php
+    $deliveryItems = ['PLACAS', 'CD', 'INFORME'];
+    $deliveryOptions = $admissionData['delivery_options'] ?? $deliveryItems;
+    $deliveryOptions = empty($deliveryOptions) ? $deliveryItems : $deliveryOptions;
+    $deliveryQuantities = $admissionData['delivery_quantities'] ?? [];
+@endphp
+<div class="section-title">DOCUMENTOS / ENTREGA</div>
+<table class="delivery-table">
+    <thead><tr><th style="width:65%">Documento</th><th style="width:35%">Número</th></tr></thead>
+    <tbody>
+        @foreach($deliveryItems as $option)
+            <tr>
+                <td class="delivery-check">({{ in_array($option, $deliveryOptions, true) ? 'X' : ' ' }}) {{ $option }}</td>
+                <td class="delivery-number">{{ $deliveryQuantities[$option] ?? ($option === 'PLACAS' ? ($admissionData['plates_count'] ?? '—') : '—') }}</td>
+            </tr>
+        @endforeach
+    </tbody>
+</table>
 <br><br><div class="row"><div class="cell" style="border:0;text-align:center"><div class="sig"></div>FIRMA DEL PACIENTE</div><div class="cell" style="border:0;text-align:center"><div class="sig"></div>HUELLA DEL PACIENTE</div></div>
 </body></html>
