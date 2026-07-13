@@ -12,6 +12,12 @@
             <form method="GET" class="d-flex flex-column flex-sm-row gap-2 align-self-lg-start">
                 <input type="date" name="from" value="{{ $from }}" class="form-control" aria-label="Desde">
                 <input type="date" name="to" value="{{ $to }}" class="form-control" aria-label="Hasta">
+                <select name="tipo_pago" class="form-select" aria-label="Tipo de pago">
+                    <option value="">Todos los pagos</option>
+                    @foreach($tiposPago as $tipo)
+                        <option value="{{ $tipo }}" @selected($tipoPago === $tipo)>{{ $tipo }}</option>
+                    @endforeach
+                </select>
                 <button class="btn btn-light fw-bold">Filtrar</button>
             </form>
         </div>
@@ -28,7 +34,7 @@
             <div class="card clinic-card mb-4">
                 <div class="card-header bg-white border-0 pt-4 px-4"><h5 class="fw-bold mb-0">Registrar egreso</h5></div>
                 <div class="card-body px-4 pb-4">
-                    <form method="POST" action="{{ route('cash-closings.expenses.store', ['from' => $from, 'to' => $to]) }}" enctype="multipart/form-data">
+                    <form method="POST" action="{{ route('cash-closings.expenses.store', ['from' => $from, 'to' => $to, 'tipo_pago' => $tipoPago]) }}" enctype="multipart/form-data">
                         @csrf
                         <div class="mb-3"><label class="form-label fw-bold">Fecha</label><input type="date" name="fecha_egreso" value="{{ old('fecha_egreso', $to) }}" class="form-control" required></div>
                         <div class="mb-3"><label class="form-label fw-bold">Descripción</label><input name="descripcion" value="{{ old('descripcion') }}" class="form-control" maxlength="255" required placeholder="Ej. Compra de útiles, movilidad..."></div>
