@@ -57,6 +57,7 @@
                                 @if(($o->patient->fecha_nacimiento && $o->patient->fecha_nacimiento->age < 18) || (! $o->patient->fecha_nacimiento && $o->patient->edad !== null && $o->patient->edad < 18))
                                     <a class="btn btn-sm btn-outline-warning" target="_blank" href="{{ route('orders.declaracion-jurada', $o) }}">DJ PDF</a>
                                 @endif
+                                <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteOrder{{ $o->id }}">Eliminar</button>
                             </td>
                         </tr>
                     @empty
@@ -160,5 +161,54 @@
             </div>
         </div>
     </div>
+
+    <div class="modal fade user-modal" id="deleteOrder{{ $o->id }}" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <form method="POST" action="{{ route('orders.destroy', $o) }}" class="modal-content order-delete-form">
+                @csrf
+                @method('DELETE')
+                <div class="modal-header text-white bg-danger">
+                    <h5 class="modal-title">Eliminar {{ $o->codigo_orden ?? 'orden #'.$o->id }}</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-3">Selecciona el motivo por el que deseas eliminar esta orden. Esta acción no se puede deshacer.</p>
+                    <label class="form-label small fw-bold">MOTIVO DE ELIMINACIÓN</label>
+                    <select name="motivo_eliminacion" class="form-select delete-reason-select" required>
+                        <option value="" selected disabled>Seleccionar motivo</option>
+                        @foreach($motivosEliminacion as $motivo)
+                            <option value="{{ $motivo }}">{{ ucfirst($motivo) }}</option>
+                        @endforeach
+                    </select>
+                    <div class="delete-reason-other d-none mt-3">
+                        <label class="form-label small fw-bold">ESPECIFICA EL MOTIVO</label>
+                        <textarea name="motivo_eliminacion_otro" class="form-control" rows="3" maxlength="255" placeholder="Escribe el motivo de eliminación"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
+                    <button class="btn btn-danger">Eliminar orden</button>
+                </div>
+            </form>
+        </div>
+    </div>
 @endforeach
+@push('scripts')
+<script>
+    document.querySelectorAll('.order-delete-form').forEach((form) => {
+        const select = form.querySelector('.delete-reason-select');
+        const otherWrapper = form.querySelector('.delete-reason-other');
+        const otherInput = otherWrapper.querySelector('textarea');
+        const toggleOther = () => {
+            const show = select.value === 'otros';
+            otherWrapper.classList.toggle('d-none', !show);
+            otherInput.required = show;
+            if (!show) otherInput.value = '';
+        };
+
+        select.addEventListener('change', toggleOther);
+        toggleOther();
+    });
+</script>
+@endpush
 @endsection

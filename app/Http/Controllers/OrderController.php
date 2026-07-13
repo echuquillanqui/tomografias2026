@@ -22,6 +22,7 @@ class OrderController extends Controller
     private const ESTADOS = ['Pendiente', 'En proceso', 'Informado', 'Entregado', 'Anulado'];
     private const TIPOS_PAGO = ['Efectivo', 'Tarjeta', 'Transferencia', 'Yape/Plin', 'Convenio'];
     private const TIPOS_COMPROBANTE = ['Boleta', 'Factura'];
+    private const MOTIVOS_ELIMINACION = ['error de digitacion', 'equivocacion', 'error por sistema', 'otros'];
     private const UNIDADES = ['Topico', 'Sala de control (Tecnologo)'];
 
     public function index(Request $request): View
@@ -43,6 +44,7 @@ class OrderController extends Controller
             'estados' => self::ESTADOS,
             'tiposPago' => self::TIPOS_PAGO,
             'tiposComprobante' => self::TIPOS_COMPROBANTE,
+            'motivosEliminacion' => self::MOTIVOS_ELIMINACION,
             'unidades' => self::UNIDADES,
         ]);
     }
@@ -123,11 +125,20 @@ class OrderController extends Controller
         return redirect()->route('orders.index')->with('success', 'Archivo de orden actualizado correctamente.');
     }
 
-    public function destroy(Order $order): RedirectResponse
+    public function destroy(Request $request, Order $order): RedirectResponse
     {
+        $data = $request->validate([
+            'motivo_eliminacion' => ['required', Rule::in(self::MOTIVOS_ELIMINACION)],
+            'motivo_eliminacion_otro' => ['required_if:motivo_eliminacion,otros', 'nullable', 'string', 'max:255'],
+        ]);
+
+        $motivo = $data['motivo_eliminacion'] === 'otros'
+            ? trim((string) $data['motivo_eliminacion_otro'])
+            : $data['motivo_eliminacion'];
+
         $order->delete();
 
-        return redirect()->route('orders.index')->with('success', 'Orden eliminada correctamente.');
+        return redirect()->route('orders.index')->with('success', 'Orden eliminada correctamente. Motivo: '.$motivo);
     }
 
     private function formData(Request $request, ?Order $order = null): array
@@ -149,6 +160,7 @@ class OrderController extends Controller
             'estados' => self::ESTADOS,
             'tiposPago' => self::TIPOS_PAGO,
             'tiposComprobante' => self::TIPOS_COMPROBANTE,
+            'motivosEliminacion' => self::MOTIVOS_ELIMINACION,
             'unidades' => self::UNIDADES,
         ];
     }
