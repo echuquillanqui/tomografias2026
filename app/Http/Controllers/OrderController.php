@@ -294,6 +294,8 @@ class OrderController extends Controller
             'delivery' => ['nullable', 'string'],
             'plates_count' => ['nullable', 'integer', 'min:0'],
             'delivery_options' => ['nullable', 'array'],
+            'delivery_quantities' => ['nullable', 'array'],
+            'delivery_quantities.*' => ['nullable', 'integer', 'min:0'],
             'delivery_options.*' => ['nullable', Rule::in(['PLACAS', 'CD', 'INFORME'])],
             'consumables' => ['nullable', 'array'],
             'consumables.*.reagent_id' => ['required', 'exists:reagents,id'],
@@ -304,7 +306,9 @@ class OrderController extends Controller
         $this->syncPrintableDocuments($order);
         $current = $order->fresh('admissionForm')->admissionForm?->data ?? [];
         $formData = collect($data)->except('consumables')->all();
-        $formData['delivery_options'] = array_values($formData['delivery_options'] ?? []);
+        $formData['delivery_options'] = array_values($formData['delivery_options'] ?? ['PLACAS', 'CD', 'INFORME']);
+        $formData['delivery_quantities'] = collect($formData['delivery_quantities'] ?? [])->map(fn ($item) => $item === null || $item === '' ? '' : (int) $item)->all();
+        $formData['plates_count'] = $formData['delivery_quantities']['PLACAS'] ?? ($formData['plates_count'] ?? null);
         $formData['delivery'] = implode(', ', $formData['delivery_options']);
         if (($formData['surgeries'] ?? '') !== 'Otros') $formData['surgeries_detail'] = '';
         $medications = collect($formData['medications'] ?? [])->map(fn ($item) => trim((string) $item))->filter()->values()->all();
@@ -353,6 +357,8 @@ class OrderController extends Controller
             'informed_by' => ['nullable', 'string', 'max:255'],
             'delivery' => ['nullable', 'string'],
             'plates_count' => ['nullable', 'integer', 'min:0'],
+            'delivery_quantities' => ['nullable', 'array'],
+            'delivery_quantities.*' => ['nullable', 'integer', 'min:0'],
             'cause' => ['nullable', 'string'],
             'symptomatology' => ['nullable', 'string'],
             'surgeries' => ['nullable', 'string', 'max:255'],
@@ -370,7 +376,9 @@ class OrderController extends Controller
         $order->load(['patient', 'agreement', 'medicoSolicitante', 'orderExams.exam', 'admissionForm']);
         $this->syncPrintableDocuments($order);
         $current = $order->fresh('admissionForm')->admissionForm?->data ?? [];
-        $data['delivery_options'] = array_values($data['delivery_options'] ?? []);
+        $data['delivery_options'] = array_values($data['delivery_options'] ?? ['PLACAS', 'CD', 'INFORME']);
+        $data['delivery_quantities'] = collect($data['delivery_quantities'] ?? [])->map(fn ($item) => $item === null || $item === '' ? '' : (int) $item)->all();
+        $data['plates_count'] = $data['delivery_quantities']['PLACAS'] ?? ($data['plates_count'] ?? null);
         $data['delivery'] = implode(', ', $data['delivery_options']);
         if (($data['surgeries'] ?? '') !== 'Otros') $data['surgeries_detail'] = '';
         if (array_key_exists('medications', $data)) {
@@ -464,8 +472,9 @@ class OrderController extends Controller
             'condition' => $order->agreement?->nombre_institucion ?? 'PARTICULAR',
             'peripheral_route' => '',
             'informed_by' => '',
-            'delivery' => '',
-            'delivery_options' => [],
+            'delivery' => 'PLACAS, CD, INFORME',
+            'delivery_options' => ['PLACAS', 'CD', 'INFORME'],
+            'delivery_quantities' => [],
             'plates_count' => '',
             'cause' => '',
             'symptomatology' => '',
