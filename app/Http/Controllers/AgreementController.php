@@ -39,8 +39,10 @@ class AgreementController extends Controller
         $data = $request->validate([
             'nombre_institucion' => ['required','string','max:255', Rule::unique('agreements')->ignore($agreement?->id)],
             'activo' => ['nullable','boolean'],
+            'mostrar_precio_orden' => ['nullable','boolean'],
         ]);
         $data['activo'] = $request->boolean('activo');
+        $data['mostrar_precio_orden'] = $request->boolean('mostrar_precio_orden');
         return $data;
     }
 }

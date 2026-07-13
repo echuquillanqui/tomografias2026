@@ -84,6 +84,19 @@
                                     @endforeach
                                 </select>
                             </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold">BOLETA O FACTURA</label>
+                                <select name="tipo_comprobante" class="form-select">
+                                    <option value="">Seleccionar...</option>
+                                    @foreach($tiposComprobante as $tipo)
+                                        <option value="{{ $tipo }}" @selected(old('tipo_comprobante', $order->tipo_comprobante) === $tipo)>{{ $tipo }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold">NÚMERO DE COMPROBANTE</label>
+                                <input name="numero_comprobante" class="form-control" value="{{ old('numero_comprobante', $order->numero_comprobante) }}" placeholder="Número de boleta o factura">
+                            </div>
                             <div class="col-md-4">
                                 <label class="form-label small fw-bold">CÓDIGO DE ORDEN</label>
                                 <input name="codigo_orden" class="form-control" value="{{ old('codigo_orden', $order->codigo_orden) }}" placeholder="Opcional / si aplica">

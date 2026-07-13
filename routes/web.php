@@ -55,6 +55,7 @@ Route::middleware('auth')->group(function () {
     Route::get('orders/{order}/declaracion-jurada/plantilla', [OrderController::class, 'declaracionJuradaTemplate'])->name('orders.declaracion-jurada.template');
     Route::put('orders/{order}/declaracion-jurada/plantilla', [OrderController::class, 'updateDeclaracionJurada'])->name('orders.declaracion-jurada.update');
     Route::get('orders/{order}/declaracion-jurada', [OrderController::class, 'declaracionJuradaPdf'])->name('orders.declaracion-jurada');
+    Route::patch('orders/{order}/file', [OrderController::class, 'updateOrderFile'])->name('orders.update-file');
     Route::patch('orders/{order}/payment', [OrderController::class, 'updatePayment'])->name('orders.update-payment');
     Route::get('reports', [ReportController::class, 'index'])->name('reports.index');
     Route::get('reports/{order}/edit', [ReportController::class, 'edit'])->name('reports.edit');

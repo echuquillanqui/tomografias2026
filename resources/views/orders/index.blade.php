@@ -37,7 +37,7 @@
                             <td>{{ $o->patient->nombres }} {{ $o->patient->apellidos }}</td>
                             <td>{{ $o->agreement->nombre_institucion }}</td>
                             <td>{{ $o->fecha_orden->format('d/m/Y') }}</td>
-                            <td>S/ {{ $o->total }}</td>
+                            <td>@if($o->agreement->mostrar_precio_orden) S/ {{ $o->total }} @else <span class="text-muted">Oculto</span> @endif</td>
                             <td>
                                 <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#payment{{ $o->id }}">
                                     {{ $o->tipo_pago ?? 'Actualizar pago' }}
@@ -51,6 +51,7 @@
                             <td class="text-end">
                                 <a class="btn btn-sm btn-outline-primary" href="{{ route('orders.show', $o) }}">Ver</a>
                                 <a class="btn btn-sm btn-outline-secondary" href="{{ route('orders.edit', $o) }}">Editar</a>
+                                <button type="button" class="btn btn-sm btn-outline-dark" data-bs-toggle="modal" data-bs-target="#file{{ $o->id }}">Subir orden</button>
                                 <button type="button" class="btn btn-sm btn-outline-info" data-bs-toggle="modal" data-bs-target="#triage{{ $o->id }}">Triaje</button>
                                 <a class="btn btn-sm btn-outline-success" target="_blank" href="{{ route('orders.ficha-ingreso', $o) }}">Ficha PDF</a>
                                 @if(($o->patient->fecha_nacimiento && $o->patient->fecha_nacimiento->age < 18) || (! $o->patient->fecha_nacimiento && $o->patient->edad !== null && $o->patient->edad < 18))
@@ -114,6 +115,28 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
                     <button class="btn btn-clinic-primary">Guardar estado</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal fade user-modal" id="file{{ $o->id }}" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <form method="POST" enctype="multipart/form-data" action="{{ route('orders.update-file', $o) }}" class="modal-content">
+                @csrf
+                @method('PATCH')
+                <div class="modal-header text-white">
+                    <h5 class="modal-title">Subir archivo de {{ $o->codigo_orden ?? 'orden #'.$o->id }}</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <label class="form-label small fw-bold">ARCHIVO DE ORDEN</label>
+                    <input name="archivo_orden" type="file" class="form-control" accept=".pdf,.jpg,.jpeg,.png,.webp" required>
+                    @if($o->archivo_orden_path)<div class="form-text">Actual: {{ basename($o->archivo_orden_path) }}</div>@endif
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
+                    <button class="btn btn-clinic-primary">Guardar archivo</button>
                 </div>
             </form>
         </div>
