@@ -23,6 +23,7 @@
                             </li>
                             <li class="nav-item"><a class="nav-link fw-semibold {{ request()->routeIs('orders.*') ? 'active' : '' }}" href="{{ route('orders.index') }}">Órdenes</a></li>
                             <li class="nav-item"><a class="nav-link fw-semibold {{ request()->routeIs('reports.*') ? 'active' : '' }}" href="{{ route('reports.index') }}">Informes</a></li>
+                            <li class="nav-item"><a class="nav-link fw-semibold {{ request()->routeIs('cash-closings.*') ? 'active' : '' }}" href="{{ route('cash-closings.index') }}">Cuadre de caja</a></li>
                             <li class="nav-item dropdown">
                                 <a class="nav-link dropdown-toggle fw-semibold {{ request()->routeIs('agreements.*') || request()->routeIs('exams.*') || request()->routeIs('reagents.*') || request()->routeIs('agreement-prices.*') || request()->routeIs('stock-movements.*') || request()->routeIs('system-settings.*') ? 'active' : '' }}" href="#" role="button" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">Catálogos</a>
                                 <div class="dropdown-menu shadow border-0">
