@@ -19,7 +19,7 @@
         : ($admissionData['surgeries'] ?? 'Ninguna');
     $defaultProvenance = $order->agreement?->nombre_institucion ?? 'PARTICULAR';
     $storedCondition = $admissionData['condition'] ?? '';
-    $conditionValue = $storedCondition === $defaultProvenance ? '' : $storedCondition;
+    $conditionValue = $storedCondition === $defaultProvenance ? 'NORMAL' : ($storedCondition ?: 'NORMAL');
     $provenanceValue = $admissionData['provenance'] ?? $defaultProvenance;
 ?>
 <!doctype html><html><head><meta charset="utf-8"><style>@page{margin:18px 24px}.company-header{width:100%;border-bottom:1.4px solid #1f6fb2;margin-bottom:8px;padding-bottom:6px}.company-logo{max-height:44px;max-width:110px}.company-name{font-size:14px;font-weight:bold}.company-data{font-size:9.5px;color:#555}</style><style>
