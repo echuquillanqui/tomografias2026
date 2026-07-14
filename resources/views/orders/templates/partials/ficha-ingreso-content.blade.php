@@ -10,9 +10,8 @@
 
         return ($value === null || $value === '') ? 0 : $value;
     };
-    $defaultProvenance = $order->agreement?->nombre_institucion ?? 'PARTICULAR';
-    $storedCondition = $admissionData['condition'] ?? '';
-    $conditionValue = $storedCondition === $defaultProvenance ? 'NORMAL' : ($storedCondition ?: 'NORMAL');
+    $rawPatientAge = old('patient_age', $admissionData['patient_age'] ?? ($order->patient->edad ?? ($order->patient->fecha_nacimiento?->age ?? '—')));
+    $patientAgeLabel = is_numeric($rawPatientAge) ? $rawPatientAge.' años' : $rawPatientAge;
 @endphp
 <div class="text-center mb-3">
     <h2 class="fw-bold text-decoration-underline">FICHA DE INGRESO</h2>
@@ -21,26 +20,24 @@
 <table class="table table-bordered align-middle">
     <tbody>
         <tr>
-            <th>N° de solicitud</th><td><input name="request_number" class="form-control form-control-sm" value="{{ old('request_number', $admissionData['request_number'] ?? ($order->codigo_orden ?? $order->id)) }}"></td>
-            <th>Fecha</th><td><input name="date" class="form-control form-control-sm" value="{{ old('date', $admissionData['date'] ?? $order->fecha_orden->format('d/m/Y')) }}"></td>
-            <th>Unidad</th><td><input name="unit" class="form-control form-control-sm" value="{{ old('unit', $admissionData['unit'] ?? $order->unidad) }}"></td>
+            <th>N° de solicitud</th><td colspan="2"><input name="request_number" class="form-control form-control-sm" value="{{ old('request_number', $admissionData['request_number'] ?? ($order->codigo_orden ?? $order->id)) }}"></td>
+            <th>Fecha y hora de atención</th><td colspan="2"><input name="date" class="form-control form-control-sm" value="{{ old('date', $admissionData['date'] ?? $order->fecha_orden->format('d/m/Y H:i')) }}"></td>
         </tr>
         <tr><th>Paciente</th><td colspan="3"><input name="patient_name" class="form-control form-control-sm" value="{{ old('patient_name', $admissionData['patient_name'] ?? ($order->patient->apellidos.' '.$order->patient->nombres)) }}"></td><th>DNI</th><td><input name="patient_dni" class="form-control form-control-sm" value="{{ old('patient_dni', $admissionData['patient_dni'] ?? $order->patient->dni) }}"></td></tr>
         <tr>
-            <th>Celular</th><td><input name="patient_phone" class="form-control form-control-sm" value="{{ old('patient_phone', $admissionData['patient_phone'] ?? ($order->patient->telefono ?? '—')) }}"></td>
             <th>F. nacimiento</th><td><input name="patient_birthdate" class="form-control form-control-sm" value="{{ old('patient_birthdate', $admissionData['patient_birthdate'] ?? (optional($order->patient->fecha_nacimiento)->format('d/m/Y') ?? '—')) }}"></td>
-            <th>Edad</th><td><input name="patient_age" class="form-control form-control-sm" value="{{ old('patient_age', $admissionData['patient_age'] ?? ($order->patient->edad ?? ($order->patient->fecha_nacimiento?->age ?? '—'))) }}"></td>
+            <th>Edad</th><td><input name="patient_age" class="form-control form-control-sm" value="{{ $patientAgeLabel }}" placeholder="30 años"></td>
+            <th>Celular</th><td><input name="patient_phone" class="form-control form-control-sm" value="{{ old('patient_phone', $admissionData['patient_phone'] ?? ($order->patient->telefono ?? '—')) }}"></td>
         </tr>
-        <tr><th>Solicitado por</th><td colspan="3"><input name="requested_by" class="form-control form-control-sm" value="{{ old('requested_by', $admissionData['requested_by'] ?? ($order->medicoSolicitante?->nombre_completo ?? '—')) }}"></td><th>Contraste</th><td><input name="contrast_label" class="form-control form-control-sm" value="{{ old('contrast_label', $admissionData['contrast_label'] ?? ($hasContrast ? 'CON CONTRASTE' : 'SIN CONTRASTE')) }}"></td></tr>
+        <tr><th>Solicitado por</th><td colspan="5"><input name="requested_by" class="form-control form-control-sm" value="{{ old('requested_by', $admissionData['requested_by'] ?? ($order->medicoSolicitante?->nombre_completo ?? '—')) }}"></td></tr>
         <tr>
-            <th>Condición</th><td colspan="2"><select name="condition" class="form-select form-select-sm"><option value="NORMAL" @selected(old('condition', $conditionValue) === 'NORMAL')>NORMAL</option><option value="PATOLOGICO" @selected(old('condition', $conditionValue) === 'PATOLOGICO')>PATOLOGICO</option></select></td>
-            <th>Procedencia</th><td colspan="2"><input name="provenance" class="form-control form-control-sm" value="{{ old('provenance', $admissionData['provenance'] ?? $defaultProvenance) }}"></td>
+            <th>Estudio solicitado</th><td colspan="3"><textarea name="study" class="form-control form-control-sm" rows="2" placeholder="Ej.: TEM cerebral">{{ old('study', $admissionData['study'] ?? $order->orderExams->pluck('exam.nombre_examen')->join(', ')) }}</textarea></td>
+            <th>Contraste</th><td><input name="contrast_label" class="form-control form-control-lg fw-bold text-danger text-center" value="{{ old('contrast_label', $admissionData['contrast_label'] ?? ($hasContrast ? 'CON CONTRASTE' : 'SIN CONTRASTE')) }}"></td>
         </tr>
-        <tr><th>Estudio solicitado</th><td colspan="5"><textarea name="study" class="form-control form-control-sm" rows="2">{{ old('study', $admissionData['study'] ?? $order->orderExams->pluck('exam.nombre_examen')->join(', ')) }}</textarea></td></tr>
         <tr><th>Descartar</th><td colspan="5"><textarea name="rule_out" class="form-control form-control-sm" rows="2">{{ old('rule_out', $admissionData['rule_out'] ?? ($admissionData['observations'] ?? ($order->observaciones ?? '—'))) }}</textarea></td></tr>
     </tbody>
 </table>
-<h5 class="bg-primary text-white text-center py-2 mt-4">ANTECEDENTES</h5>
+<h5 class="bg-primary text-white text-center py-2 mt-4">ANAMNESIS</h5>
 <div class="row g-3">
     <div class="col-md-6"><label class="form-label fw-bold">Causa</label><textarea name="cause" class="form-control" rows="2" placeholder="Completar causa">{{ old('cause', $admissionData['cause'] ?? '') }}</textarea></div>
     <div class="col-md-6"><label class="form-label fw-bold">Sintomatología</label><textarea name="symptomatology" class="form-control" rows="2" placeholder="Completar sintomatología">{{ old('symptomatology', $admissionData['symptomatology'] ?? '') }}</textarea></div>

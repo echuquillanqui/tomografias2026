@@ -472,7 +472,7 @@ class OrderController extends Controller
         $admissionDefaults = [
             'agreement' => $order->agreement?->nombre_institucion ?? 'PARTICULAR',
             'request_number' => $order->codigo_orden ?? (string) $order->id,
-            'date' => $order->fecha_orden?->format('d/m/Y'),
+            'date' => $order->fecha_orden?->format('d/m/Y H:i'),
             'unit' => $order->unidad,
             'patient_name' => $patientName,
             'patient_dni' => $order->patient->dni,
