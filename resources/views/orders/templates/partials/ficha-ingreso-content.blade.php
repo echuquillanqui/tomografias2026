@@ -1,6 +1,6 @@
 @php
     $admissionData = $admissionData ?? [];
-    $deliveryItems = ['PLACAS', 'INFORME'];
+    $deliveryItems = ['PLACAS', 'CD', 'INFORME'];
     $deliveryMediaOptions = ['CD', 'LINK', 'AMBOS'];
     $deliveryOptions = old('delivery_options', $admissionData['delivery_options'] ?? $deliveryItems);
     $deliveryOptions = empty($deliveryOptions) ? $deliveryItems : array_values(array_intersect((array) $deliveryOptions, $deliveryItems));
@@ -45,28 +45,22 @@
     <div class="col-md-6"><label class="form-label fw-bold">Intervenciones quirúrgicas</label><select name="surgeries" class="form-select" onchange="document.getElementById('surgeries-detail').classList.toggle('d-none', this.value !== 'Otros')"><option value="Ninguna" @selected(old('surgeries', $admissionData['surgeries'] ?? 'Ninguna') === 'Ninguna')>Ninguna</option><option value="Otros" @selected(old('surgeries', $admissionData['surgeries'] ?? 'Ninguna') === 'Otros')>Otros</option></select><input id="surgeries-detail" name="surgeries_detail" class="form-control mt-2 {{ old('surgeries', $admissionData['surgeries'] ?? 'Ninguna') === 'Otros' ? '' : 'd-none' }}" value="{{ old('surgeries_detail', $admissionData['surgeries_detail'] ?? '') }}" placeholder="Especificar intervención"></div>
     <div class="col-md-6"><label class="form-label fw-bold">Medicación</label><textarea name="medication" class="form-control" rows="2" placeholder="Completar medicación">{{ old('medication', $admissionData['medication'] ?? '') }}</textarea></div>
     <div class="col-12"><label class="form-label fw-bold">Antecedentes</label><textarea name="antecedents" class="form-control" rows="3" placeholder="Completar antecedentes del paciente">{{ old('antecedents', $admissionData['antecedents'] ?? '') }}</textarea></div>
-    <div class="col-md-6">
+    <div class="col-12">
         <label class="form-label fw-bold">Se entrega</label>
-        <div class="border rounded p-3 bg-light">
-            <div class="row g-2 fw-bold small text-uppercase text-muted mb-1">
-                <div class="col-5">Documento</div>
-                <div class="col-3 text-center">Marca</div>
-                <div class="col-4">Cantidad</div>
-            </div>
-            @foreach(($deliveryItems ?? ['PLACAS', 'INFORME']) as $option)
-                <div class="row g-2 align-items-center mb-2">
-                    <div class="col-5 fw-bold fs-5">{{ $option }}</div>
-                    <div class="col-3 text-center">
-                        <input class="form-check-input fs-5 m-0" type="checkbox" name="delivery_options[]" value="{{ $option }}" id="delivery{{ $option }}" aria-label="Marcar {{ $option }}" @checked(in_array($option, ($deliveryOptions ?? ['PLACAS', 'INFORME']), true))>
-                    </div>
-                    <div class="col-4">
-                        <input name="delivery_quantities[{{ $option }}]" type="number" min="0" step="1" class="form-control form-control-sm text-center" value="{{ $formatDeliveryQuantity($option) }}" placeholder="0">
-                    </div>
+        <div class="border rounded p-3 bg-light d-flex flex-wrap align-items-end gap-3">
+            @foreach(($deliveryItems ?? ['PLACAS', 'CD', 'INFORME']) as $option)
+                <div class="d-flex align-items-center gap-2 flex-nowrap">
+                    <span class="fw-bold fs-5">{{ $option }}</span>
+                    <input class="form-check-input fs-5 m-0" type="checkbox" name="delivery_options[]" value="{{ $option }}" id="delivery{{ $option }}" aria-label="Marcar {{ $option }}" @checked(in_array($option, ($deliveryOptions ?? ['PLACAS', 'CD', 'INFORME']), true))>
+                    <input name="delivery_quantities[{{ $option }}]" type="number" min="0" step="1" class="form-control form-control-sm text-center" style="width:90px" value="{{ $formatDeliveryQuantity($option) }}" placeholder="Cant.">
                 </div>
             @endforeach
+            <div class="d-flex align-items-center gap-2 flex-nowrap">
+                <label class="form-label fw-bold mb-0">CD / Link</label>
+                <select name="delivery_media" class="form-select form-select-sm" style="width:130px"><option value=""></option>@foreach($deliveryMediaOptions as $media)<option value="{{ $media }}" @selected(old('delivery_media', $admissionData['delivery_media'] ?? '') === $media)>{{ $media }}</option>@endforeach</select>
+            </div>
         </div>
     </div>
-    <div class="col-md-3"><label class="form-label fw-bold">CD / Link</label><select name="delivery_media" class="form-select"><option value=""></option>@foreach($deliveryMediaOptions as $media)<option value="{{ $media }}" @selected(old('delivery_media', $admissionData['delivery_media'] ?? '') === $media)>{{ $media }}</option>@endforeach</select></div>
 </div>
 @if($hasContrast)
     <h5 class="bg-primary text-white text-center py-2 mt-4">INSUMOS Y MATERIALES DE USO INTERNO PARA ESTUDIO CON CONTRASTE</h5>
@@ -79,4 +73,4 @@
         <div class="col-md-4"><label class="form-label fw-bold">Informado por</label><select name="informed_by" class="form-select"><option value=""></option>@foreach(($medicosInformantes ?? collect()) as $medico)<option value="{{ $medico->nombre_completo }}" @selected(old('informed_by', $admissionData['informed_by'] ?? '') === $medico->nombre_completo)>{{ $medico->nombre_completo }}</option>@endforeach</select></div>
     </div>
 @endif
-<div class="row text-center mt-5"><div class="col"><div class="border rounded mx-auto mb-2" style="height:90px;max-width:220px"></div>Firma del paciente</div><div class="col"><div class="border rounded mx-auto mb-2" style="height:130px;max-width:85px"></div>Huella del paciente</div></div>
+<div class="row text-center mt-5"><div class="col"><div class="border rounded mx-auto mb-2" style="height:120px;max-width:260px"></div>Firma del paciente</div><div class="col"><div class="border rounded mx-auto mb-2" style="height:130px;max-width:140px"></div>Huella del paciente</div></div>
