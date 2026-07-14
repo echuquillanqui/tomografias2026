@@ -1,6 +1,7 @@
 @php
     $admissionData = $admissionData ?? [];
     $deliveryItems = ['PLACAS', 'CD', 'INFORME'];
+    $deliveryMediaOptions = ['CD', 'LINK', 'AMBOS'];
     $deliveryOptions = old('delivery_options', $admissionData['delivery_options'] ?? $deliveryItems);
     $deliveryOptions = empty($deliveryOptions) ? $deliveryItems : (array) $deliveryOptions;
     $deliveryQuantities = old('delivery_quantities', $admissionData['delivery_quantities'] ?? []);
@@ -8,7 +9,7 @@
     $formatDeliveryQuantity = function ($option) use ($deliveryQuantities, $admissionData) {
         $value = ($deliveryQuantities ?? [])[$option] ?? ($option === 'PLACAS' ? old('plates_count', $admissionData['plates_count'] ?? null) : null);
 
-        return ($value === null || $value === '') ? 0 : $value;
+        return ($value === null || $value === '') ? '' : $value;
     };
     $rawPatientAge = old('patient_age', $admissionData['patient_age'] ?? ($order->patient->edad ?? ($order->patient->fecha_nacimiento?->age ?? '—')));
     $patientAgeLabel = is_numeric($rawPatientAge) ? $rawPatientAge.' años' : $rawPatientAge;
@@ -65,15 +66,18 @@
             @endforeach
         </div>
     </div>
-    <div class="col-md-6"><label class="form-label fw-bold">Informado por</label><input name="informed_by" class="form-control" value="{{ old('informed_by', $admissionData['informed_by'] ?? '') }}" placeholder="Nombre de quien informa"></div>
+    <div class="col-md-3"><label class="form-label fw-bold">CD / Link</label><select name="delivery_media" class="form-select"><option value=""></option>@foreach($deliveryMediaOptions as $media)<option value="{{ $media }}" @selected(old('delivery_media', $admissionData['delivery_media'] ?? '') === $media)>{{ $media }}</option>@endforeach</select></div>
+    <div class="col-md-3"><label class="form-label fw-bold">Informado por</label><input name="informed_by" class="form-control" value="{{ old('informed_by', $admissionData['informed_by'] ?? '') }}" placeholder="Nombre de quien informa"></div>
 </div>
 @if($hasContrast)
+    <h5 class="bg-primary text-white text-center py-2 mt-4">INSUMOS Y MATERIALES DE USO INTERNO PARA ESTUDIO CON CONTRASTE</h5>
+    <div class="table-responsive mb-3"><table class="table table-bordered table-sm align-middle"><tbody><tr><th colspan="4">Vía periférica endovenosa</th></tr>@forelse(($contrastConsumables ?? []) as $index => $consumable)<tr><td>{{ $consumable['name'] }}<input type="hidden" name="consumables[{{ $index }}][reagent_id]" value="{{ $consumable['reagent_id'] }}"></td><td style="width:140px"><input name="consumables[{{ $index }}][cantidad]" type="number" min="0" step="0.01" class="form-control form-control-sm" value="{{ $consumable['cantidad'] }}"></td><td>{{ $consumable['unit'] ?? '' }}</td><td></td></tr>@empty<tr><td colspan="4" class="text-muted">Sin insumos precargados.</td></tr>@endforelse<tr><td colspan="4" class="fw-bold text-danger">BRANULA: OPCIONES N° 18, N° 20, N° 22 o Permeable</td></tr></tbody></table></div>
     <h5 class="bg-primary text-white text-center py-2 mt-4">USO INTERNO / DATOS PARA CONTRASTE</h5>
     <div class="row g-3">
         <div class="col-md-8"><label class="form-label fw-bold">Alergia probable/medicamento</label><textarea name="allergy" class="form-control" rows="2" placeholder="Alergia probable/medicamento">{{ old('allergy', $admissionData['allergy'] ?? '') }}</textarea></div>
-        <div class="col-md-4"><label class="form-label fw-bold">¿Está en ayunas?</label><select name="fasting" class="form-select"><option value=""></option><option @selected(old('fasting', $admissionData['fasting'] ?? '') === 'Sí')>Sí</option><option @selected(old('fasting', $admissionData['fasting'] ?? '') === 'No')>No</option></select></div>
+        <div class="col-md-4"><label class="form-label fw-bold">¿Está en ayunas?</label><select name="fasting" class="form-select"><option value=""></option><option value="SI" @selected(old('fasting', $admissionData['fasting'] ?? '') === 'SI')>SI</option><option value="NO" @selected(old('fasting', $admissionData['fasting'] ?? '') === 'NO')>NO</option></select></div>
         <div class="col-12"><label class="form-label fw-bold">Prueba de creatinina</label><input name="creatinine" class="form-control" value="{{ old('creatinine', $admissionData['creatinine'] ?? '') }}" placeholder="Valor de creatinina"></div>
-        <div class="col-md-4"><label class="form-label fw-bold">Vía periférica</label><input name="peripheral_route" class="form-control" value="{{ old('peripheral_route', $admissionData['peripheral_route'] ?? '') }}" placeholder="Detalle de vía periférica"></div>
+        <div class="col-md-4"><label class="form-label fw-bold">BRANULA</label><div class="input-group" x-data="{v: '{{ old('peripheral_route', $admissionData['peripheral_route'] ?? '') }}'}"><span class="input-group-text" x-text="['18','20','22'].includes(v) ? 'N°' : ''"></span><select name="peripheral_route" class="form-select" x-model="v"><option value=""></option><option value="18" @selected(old('peripheral_route', $admissionData['peripheral_route'] ?? '') === '18')>18</option><option value="20" @selected(old('peripheral_route', $admissionData['peripheral_route'] ?? '') === '20')>20</option><option value="22" @selected(old('peripheral_route', $admissionData['peripheral_route'] ?? '') === '22')>22</option><option value="Permeable" @selected(old('peripheral_route', $admissionData['peripheral_route'] ?? '') === 'Permeable')>Permeable</option></select></div></div>
     </div>
 @endif
-<div class="row text-center mt-5"><div class="col"><div class="border rounded mx-auto mb-2" style="height:90px;max-width:220px"></div>Firma del paciente</div><div class="col"><div class="border rounded mx-auto mb-2" style="height:90px;max-width:220px"></div>Huella del paciente</div></div>
+<div class="row text-center mt-5"><div class="col"><div class="border rounded mx-auto mb-2" style="height:90px;max-width:220px"></div>Firma del paciente</div><div class="col"><div class="border rounded mx-auto mb-2" style="height:130px;max-width:85px"></div>Huella del paciente</div></div>

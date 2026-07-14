@@ -9,6 +9,7 @@
         'surgeries' => 'Cirugías previas',
         'allergy' => 'Alergia',
         'fasting' => 'Ayuno',
+        'delivery_media' => 'CD / Link',
         'creatinine' => 'Creatinina',
         'rule_out' => 'Descartar',
         'condition' => 'Condición',
@@ -162,7 +163,7 @@
                     <div class="modal-body"><div class="row g-3">
                         <div class="col-md-6"><label class="form-label small fw-bold">Unidad</label><select class="form-select" x-model="form.unit"><option value="">Seleccionar...</option>@foreach($unidades as $unidad)<option value="{{ $unidad }}">{{ $unidad }}</option>@endforeach</select></div>
                         <div class="col-md-6"><label class="form-label small fw-bold">Alergia</label><input class="form-control" x-model="form.allergy"></div>
-                        <div class="col-md-6"><label class="form-label small fw-bold">Ayuno</label><input class="form-control" x-model="form.fasting"></div>
+                        <div class="col-md-6"><label class="form-label small fw-bold">Ayuno</label><select class="form-select" x-model="form.fasting"><option value=""></option><option value="SI">SI</option><option value="NO">NO</option></select></div>
                         <div class="col-md-6"><label class="form-label small fw-bold">Creatinina</label><input class="form-control" x-model="form.creatinine"></div>
                         <div class="col-12"><label class="form-label small fw-bold">Causa / motivo</label><textarea class="form-control" rows="2" x-model="form.cause"></textarea></div>
                         <div class="col-12"><label class="form-label small fw-bold">Sintomatología</label><textarea class="form-control" rows="2" x-model="form.symptomatology"></textarea></div>
@@ -185,9 +186,9 @@
                         </div>
                         <div class="col-12"><label class="form-label small fw-bold">Antecedentes</label><textarea class="form-control" rows="3" x-model="form.antecedents" placeholder="Antecedentes del paciente"></textarea></div>
                         <div class="col-md-6"><label class="form-label small fw-bold">Condición</label><select class="form-select" x-model="form.condition"><option value="NORMAL">NORMAL</option><option value="PATOLOGICO">PATOLOGICO</option></select></div>
-                        <div class="col-md-6"><label class="form-label small fw-bold">Vía periférica</label><input class="form-control" x-model="form.peripheral_route"></div>
+                        <div class="col-md-6"><label class="form-label small fw-bold">BRANULA</label><div class="input-group"><span class="input-group-text" x-text="['18','20','22'].includes(form.peripheral_route) ? 'N°' : ''"></span><select class="form-select" x-model="form.peripheral_route"><option value=""></option><option value="18">18</option><option value="20">20</option><option value="22">22</option><option value="Permeable">Permeable</option></select></div></div>
                         <div class="col-md-6"><label class="form-label small fw-bold">Informado por</label><input class="form-control" x-model="form.informed_by"></div>
-                        <div class="col-md-6"><label class="form-label small fw-bold">Se entrega</label><div class="d-flex flex-wrap gap-3"><template x-for="option in ['PLACAS','CD','INFORME']" :key="option"><div class="form-check"><input class="form-check-input" type="checkbox" name="delivery_options[]" :value="option" x-model="form.delivery_options"><label class="form-check-label" x-text="option"></label></div></template></div></div>
+                        <div class="col-md-6"><label class="form-label small fw-bold">CD / Link</label><select class="form-select" x-model="form.delivery_media"><option value=""></option><option value="CD">CD</option><option value="LINK">LINK</option><option value="AMBOS">AMBOS</option></select></div><div class="col-md-6"><label class="form-label small fw-bold">Se entrega</label><div class="d-flex flex-wrap gap-3"><template x-for="option in ['PLACAS','CD','INFORME']" :key="option"><div class="form-check"><input class="form-check-input" type="checkbox" name="delivery_options[]" :value="option" x-model="form.delivery_options"><label class="form-check-label" x-text="option"></label></div></template></div></div>
                         <div class="col-md-6"><label class="form-label small fw-bold">Cantidad de placas entregadas</label><input class="form-control" type="number" min="0" step="1" x-model="form.plates_count"></div>
                         <div class="col-12"><label class="form-label small fw-bold">Descartar</label><textarea class="form-control" rows="2" x-model="form.rule_out"></textarea></div>
                     </div></div>

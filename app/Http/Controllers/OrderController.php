@@ -297,13 +297,13 @@ class OrderController extends Controller
             'medications' => ['nullable', 'array'],
             'medications.*' => ['nullable', 'string', 'max:255'],
             'allergy' => ['nullable', 'string', 'max:255'],
-            'fasting' => ['nullable', 'string', 'max:255'],
+            'fasting' => ['nullable', Rule::in(['SI', 'NO'])],
             'creatinine' => ['nullable', 'string', 'max:255'],
             'observations' => ['nullable', 'string'],
             'rule_out' => ['nullable', 'string'],
             'condition' => ['nullable', Rule::in(['NORMAL', 'PATOLOGICO'])],
             'provenance' => ['nullable', 'string', 'max:255'],
-            'peripheral_route' => ['nullable', 'string', 'max:255'],
+            'peripheral_route' => ['nullable', Rule::in(['18', '20', '22', 'Permeable'])],
             'informed_by' => ['nullable', 'string', 'max:255'],
             'delivery' => ['nullable', 'string'],
             'plates_count' => ['nullable', 'integer', 'min:0'],
@@ -311,6 +311,7 @@ class OrderController extends Controller
             'delivery_quantities' => ['nullable', 'array'],
             'delivery_quantities.*' => ['nullable', 'integer', 'min:0'],
             'delivery_options.*' => ['nullable', Rule::in(['PLACAS', 'CD', 'INFORME'])],
+            'delivery_media' => ['nullable', Rule::in(['CD', 'LINK', 'AMBOS'])],
             'consumables' => ['nullable', 'array'],
             'consumables.*.reagent_id' => ['required', 'exists:reagents,id'],
             'consumables.*.cantidad' => ['required', 'numeric', 'min:0'],
@@ -345,8 +346,9 @@ class OrderController extends Controller
         $order->refresh()->load(['patient', 'agreement', 'medicoSolicitante', 'orderExams.exam', 'admissionForm']);
         $admissionData = $order->admissionForm?->data ?? [];
         $hasContrast = $order->orderExams->contains('tipo_contraste', 'Con contraste');
+        $contrastConsumables = $this->triageConsumables($order);
 
-        return view('orders.templates.ficha-ingreso', compact('order', 'hasContrast', 'admissionData'));
+        return view('orders.templates.ficha-ingreso', compact('order', 'hasContrast', 'admissionData', 'contrastConsumables'));
     }
 
     public function updateFichaIngreso(Request $request, Order $order): RedirectResponse
@@ -368,7 +370,7 @@ class OrderController extends Controller
             'rule_out' => ['nullable', 'string'],
             'condition' => ['nullable', Rule::in(['NORMAL', 'PATOLOGICO'])],
             'provenance' => ['nullable', 'string', 'max:255'],
-            'peripheral_route' => ['nullable', 'string', 'max:255'],
+            'peripheral_route' => ['nullable', Rule::in(['18', '20', '22', 'Permeable'])],
             'informed_by' => ['nullable', 'string', 'max:255'],
             'delivery' => ['nullable', 'string'],
             'plates_count' => ['nullable', 'integer', 'min:0'],
@@ -385,8 +387,12 @@ class OrderController extends Controller
             'medications' => ['nullable', 'array'],
             'medications.*' => ['nullable', 'string', 'max:255'],
             'allergy' => ['nullable', 'string', 'max:255'],
-            'fasting' => ['nullable', 'string', 'max:255'],
+            'fasting' => ['nullable', Rule::in(['SI', 'NO'])],
             'creatinine' => ['nullable', 'string', 'max:255'],
+            'delivery_media' => ['nullable', Rule::in(['CD', 'LINK', 'AMBOS'])],
+            'consumables' => ['nullable', 'array'],
+            'consumables.*.reagent_id' => ['required', 'exists:reagents,id'],
+            'consumables.*.cantidad' => ['required', 'numeric', 'min:0'],
         ]);
 
         $order->load(['patient', 'agreement', 'medicoSolicitante', 'orderExams.exam', 'admissionForm']);
@@ -401,7 +407,13 @@ class OrderController extends Controller
             $data['medications'] = collect($data['medications'])->map(fn ($item) => trim((string) $item))->filter()->values()->all();
             $data['medication'] = implode(PHP_EOL, $data['medications']);
         }
-        $order->admissionForm()->updateOrCreate([], ['data' => array_merge($current, $data)]);
+        $order->admissionForm()->updateOrCreate([], ['data' => array_merge($current, collect($data)->except('consumables')->all())]);
+        if (array_key_exists('consumables', $data)) {
+            $order->consumables()->delete();
+            foreach (collect($data['consumables'] ?? [])->filter(fn ($row) => (float) ($row['cantidad'] ?? 0) > 0) as $row) {
+                $order->consumables()->updateOrCreate(['reagent_id' => $row['reagent_id']], ['cantidad' => $row['cantidad']]);
+            }
+        }
 
         return redirect()->route('orders.ficha-ingreso.template', $order)->with('success', 'Ficha de ingreso guardada correctamente.');
     }
@@ -413,8 +425,9 @@ class OrderController extends Controller
         $order->refresh()->load(['patient', 'agreement', 'medicoSolicitante', 'orderExams.exam', 'admissionForm']);
         $admissionData = $order->admissionForm?->data ?? [];
         $hasContrast = $order->orderExams->contains('tipo_contraste', 'Con contraste');
+        $contrastConsumables = $this->triageConsumables($order);
 
-        return Pdf::loadView('orders.pdfs.ficha-ingreso', compact('order', 'hasContrast', 'admissionData'))->setPaper('a4')->stream('ficha-ingreso-'.$order->id.'.pdf');
+        return Pdf::loadView('orders.pdfs.ficha-ingreso', compact('order', 'hasContrast', 'admissionData', 'contrastConsumables'))->setPaper('a4')->stream('ficha-ingreso-'.$order->id.'.pdf');
     }
 
     public function declaracionJuradaTemplate(Order $order): View
