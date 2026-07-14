@@ -41,19 +41,18 @@
         <label class="form-label fw-bold">Se entrega</label>
         <div class="border rounded p-3 bg-light">
             <div class="row g-2 fw-bold small text-uppercase text-muted mb-1">
-                <div class="col-7">Documento</div>
-                <div class="col-5">Número</div>
+                <div class="col-5">Documento</div>
+                <div class="col-3 text-center">Marca</div>
+                <div class="col-4">Cantidad</div>
             </div>
             @foreach(($deliveryItems ?? ['PLACAS', 'CD', 'INFORME']) as $option)
                 <div class="row g-2 align-items-center mb-2">
-                    <div class="col-7">
-                        <div class="form-check fs-5">
-                            <input class="form-check-input" type="checkbox" name="delivery_options[]" value="{{ $option }}" id="delivery{{ $option }}" @checked(in_array($option, ($deliveryOptions ?? ['PLACAS', 'CD', 'INFORME']), true))>
-                            <label class="form-check-label fw-bold" for="delivery{{ $option }}">{{ $option }}</label>
-                        </div>
+                    <div class="col-5 fw-bold fs-5">{{ $option }}</div>
+                    <div class="col-3 text-center">
+                        <input class="form-check-input fs-5 m-0" type="checkbox" name="delivery_options[]" value="{{ $option }}" id="delivery{{ $option }}" aria-label="Marcar {{ $option }}" @checked(in_array($option, ($deliveryOptions ?? ['PLACAS', 'CD', 'INFORME']), true))>
                     </div>
-                    <div class="col-5">
-                        <input name="delivery_quantities[{{ $option }}]" type="number" min="0" step="1" class="form-control form-control-lg" value="{{ ($deliveryQuantities ?? [])[$option] ?? ($option === 'PLACAS' ? old('plates_count', $admissionData['plates_count'] ?? '') : '') }}" placeholder="N°">
+                    <div class="col-4">
+                        <input name="delivery_quantities[{{ $option }}]" type="number" min="0" step="1" class="form-control form-control-sm text-center" value="{{ ($deliveryQuantities ?? [])[$option] ?? ($option === 'PLACAS' ? old('plates_count', $admissionData['plates_count'] ?? '') : '') }}" placeholder="Cant.">
                     </div>
                 </div>
             @endforeach
