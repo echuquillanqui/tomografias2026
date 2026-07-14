@@ -13,8 +13,8 @@
         ? ($admissionData['surgeries_detail'] ?? 'Otros')
         : ($admissionData['surgeries'] ?? 'Ninguna');
 ?>
-<!doctype html><html><head><meta charset="utf-8"><style>@page{margin:34px 42px}.company-header{width:100%;border-bottom:1.4px solid #1f6fb2;margin-bottom:8px;padding-bottom:6px}.company-logo{max-height:44px;max-width:110px}.company-name{font-size:14px;font-weight:bold}.company-data{font-size:9.5px;color:#555}</style><style>
-body{font-family:DejaVu Sans,sans-serif;font-size:10.5px;line-height:1.32;color:#003b75;margin:0}.sheet{min-height:760px;border:1.4px solid #1f6fb2;border-radius:8px;padding:12px 14px 14px;background:#fff}.title{text-align:center;font-size:20px;line-height:1.1;font-weight:bold;text-decoration:underline;margin:6px 0 3px}.agreement{text-align:center;font-size:10.5px;line-height:1.15;font-weight:bold;margin-bottom:8px}.box{border:1px solid #1f6fb2;margin-bottom:7px}.row{display:table;width:100%;table-layout:fixed}.cell{display:table-cell;border-right:1px solid #1f6fb2;border-bottom:1px solid #1f6fb2;padding:5px 6px;vertical-align:top}.cell:last-child{border-right:0}.label{font-weight:bold;color:#0057a8}.yellow{background:#fff9a8}.head{background:#0c55a2;color:white;text-align:center;font-weight:bold;padding:4px}.red{color:red;font-weight:bold}.sig{height:62px;border:1px solid #1f6fb2;border-radius:8px}.muted{color:#666}.full{min-height:34px;padding:6px 7px;border:1px solid #1f6fb2;border-top:0}.section-title{background:#0c55a2;color:white;text-align:center;font-weight:bold;padding:4px;margin-top:8px}.delivery-table{width:100%;border-collapse:collapse;font-size:10.5px;margin-top:6px}.delivery-table th,.delivery-table td{border:1px solid #1f6fb2;padding:6px 7px}.delivery-table th{background:#eaf3fb;color:#0057a8;text-align:left}.delivery-check{font-weight:bold;font-size:11px}.delivery-number{text-align:center;font-weight:bold;font-size:11px}.signature-row{margin-top:14px}
+<!doctype html><html><head><meta charset="utf-8"><style>@page{margin:18px 24px}.company-header{width:100%;border-bottom:1.4px solid #1f6fb2;margin-bottom:8px;padding-bottom:6px}.company-logo{max-height:44px;max-width:110px}.company-name{font-size:14px;font-weight:bold}.company-data{font-size:9.5px;color:#555}</style><style>
+body{font-family:DejaVu Sans,sans-serif;font-size:9.2px;line-height:1.18;color:#003b75;margin:0}.sheet{border:1.4px solid #1f6fb2;border-radius:8px;padding:8px 10px 10px;background:#fff;page-break-inside:avoid}.title{text-align:center;font-size:17px;line-height:1.05;font-weight:bold;text-decoration:underline;margin:3px 0 2px}.agreement{text-align:center;font-size:9.2px;line-height:1.1;font-weight:bold;margin-bottom:5px}.box{border:1px solid #1f6fb2;margin-bottom:4px}.row{display:table;width:100%;table-layout:fixed}.cell{display:table-cell;border-right:1px solid #1f6fb2;border-bottom:1px solid #1f6fb2;padding:3px 5px;vertical-align:top}.cell:last-child{border-right:0}.label{font-weight:bold;color:#0057a8}.yellow{background:#fff9a8}.head{background:#0c55a2;color:white;text-align:center;font-weight:bold;padding:3px}.red{color:red;font-weight:bold}.sig{height:46px;border:1px solid #1f6fb2;border-radius:8px}.muted{color:#666}.full{min-height:22px;padding:4px 6px;border:1px solid #1f6fb2;border-top:0}.section-title{background:#0c55a2;color:white;text-align:center;font-weight:bold;padding:3px;margin-top:4px}.delivery-table{width:100%;border-collapse:collapse;font-size:9.2px;margin-top:4px}.delivery-table th,.delivery-table td{border:1px solid #1f6fb2;padding:4px 5px}.delivery-table th{background:#eaf3fb;color:#0057a8;text-align:center}.delivery-check{font-weight:bold}.delivery-number{text-align:center;font-weight:bold}.signature-row{margin-top:8px}
 </style></head><body><div class="sheet">
 <table class="company-header"><tr><td style="width:110px"><?php if($setting->logo_path && file_exists(storage_path('app/public/'.$setting->logo_path))): ?><img class="company-logo" src="<?= e(storage_path('app/public/'.$setting->logo_path)) ?>" alt="Logo"><?php endif; ?></td><td><div class="company-name"><?= e($setting->razon_social) ?></div><div class="company-data"><?= e(collect([$setting->ruc ? 'RUC '.$setting->ruc : null, $setting->direccion, $setting->telefono])->filter()->implode(' · ')) ?></div></td></tr></table>
 <h1 class="title">FICHA DE INGRESO</h1>
@@ -42,14 +42,22 @@ body{font-family:DejaVu Sans,sans-serif;font-size:10.5px;line-height:1.32;color:
 <?php endif; ?>
 <div class="section-title">DOCUMENTOS / ENTREGA</div>
 <table class="delivery-table">
-    <thead><tr><th style="width:65%">Documento</th><th style="width:35%">Número</th></tr></thead>
+    <thead>
+        <tr>
+            <?php foreach($deliveryItems as $option): ?>
+                <th><?= e($option) ?></th>
+            <?php endforeach; ?>
+        </tr>
+    </thead>
     <tbody>
-        <?php foreach($deliveryItems as $option): ?>
-            <tr>
-                <td class="delivery-check">(<?= in_array($option, $deliveryOptions, true) ? 'X' : ' ' ?>) <?= e($option) ?></td>
-                <td class="delivery-number"><?= e($deliveryQuantities[$option] ?? ($option === 'PLACAS' ? ($admissionData['plates_count'] ?? '—') : '—')) ?></td>
-            </tr>
-        <?php endforeach; ?>
+        <tr>
+            <?php foreach($deliveryItems as $option): ?>
+                <td>
+                    <span class="delivery-check">(<?= in_array($option, $deliveryOptions, true) ? 'X' : ' ' ?>)</span>
+                    <span class="delivery-number">N° <?= e($deliveryQuantities[$option] ?? ($option === 'PLACAS' ? ($admissionData['plates_count'] ?? '—') : '—')) ?></span>
+                </td>
+            <?php endforeach; ?>
+        </tr>
     </tbody>
 </table>
 <div class="row signature-row"><div class="cell" style="border:0;text-align:center"><div class="sig"></div>FIRMA DEL PACIENTE</div><div class="cell" style="border:0;text-align:center"><div class="sig"></div>HUELLA DEL PACIENTE</div></div>
