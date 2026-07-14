@@ -40,6 +40,7 @@ Route::middleware('auth')->group(function () {
     Route::resource('exams', ExamController::class)->except(['create', 'show', 'edit']);
     Route::resource('reagents', ReagentController::class)->except(['create', 'show', 'edit']);
     Route::resource('agreement-prices', AgreementPriceController::class)->except(['create', 'show', 'edit']);
+    Route::get('stock-movements/report/download', [StockMovementController::class, 'downloadReport'])->name('stock-movements.report.download');
     Route::resource('stock-movements', StockMovementController::class)->only(['index', 'store', 'destroy']);
     Route::get('cash-closings', [CashClosingController::class, 'index'])->name('cash-closings.index');
     Route::post('cash-closings/expenses', [CashClosingController::class, 'storeExpense'])->name('cash-closings.expenses.store');
