@@ -5,6 +5,9 @@
     $deliveryOptions = empty($deliveryOptions) ? $deliveryItems : (array) $deliveryOptions;
     $deliveryQuantities = old('delivery_quantities', $admissionData['delivery_quantities'] ?? []);
     $deliveryQuantities = is_array($deliveryQuantities) ? $deliveryQuantities : [];
+    $defaultProvenance = $order->agreement?->nombre_institucion ?? 'PARTICULAR';
+    $storedCondition = $admissionData['condition'] ?? '';
+    $conditionValue = $storedCondition === $defaultProvenance ? '' : $storedCondition;
 @endphp
 <div class="text-center mb-3">
     <h2 class="fw-bold text-decoration-underline">FICHA DE INGRESO</h2>
@@ -24,7 +27,10 @@
             <th>Edad</th><td><input name="patient_age" class="form-control form-control-sm" value="{{ old('patient_age', $admissionData['patient_age'] ?? ($order->patient->edad ?? ($order->patient->fecha_nacimiento?->age ?? '—'))) }}"></td>
         </tr>
         <tr><th>Solicitado por</th><td colspan="3"><input name="requested_by" class="form-control form-control-sm" value="{{ old('requested_by', $admissionData['requested_by'] ?? ($order->medicoSolicitante?->nombre_completo ?? '—')) }}"></td><th>Contraste</th><td><input name="contrast_label" class="form-control form-control-sm" value="{{ old('contrast_label', $admissionData['contrast_label'] ?? ($hasContrast ? 'CON CONTRASTE' : 'SIN CONTRASTE')) }}"></td></tr>
-        <tr><th>Condición</th><td colspan="5"><input name="condition" class="form-control form-control-sm" value="{{ old('condition', $admissionData['condition'] ?? ($order->agreement?->nombre_institucion ?? 'PARTICULAR')) }}"></td></tr>
+        <tr>
+            <th>Condición</th><td colspan="2"><input name="condition" class="form-control form-control-sm" value="{{ old('condition', $conditionValue) }}"></td>
+            <th>Procedencia</th><td colspan="2"><input name="provenance" class="form-control form-control-sm" value="{{ old('provenance', $admissionData['provenance'] ?? $defaultProvenance) }}"></td>
+        </tr>
         <tr><th>Estudio solicitado</th><td colspan="5"><textarea name="study" class="form-control form-control-sm" rows="2">{{ old('study', $admissionData['study'] ?? $order->orderExams->pluck('exam.nombre_examen')->join(', ')) }}</textarea></td></tr>
         <tr><th>Descartar</th><td colspan="5"><textarea name="rule_out" class="form-control form-control-sm" rows="2">{{ old('rule_out', $admissionData['rule_out'] ?? ($admissionData['observations'] ?? ($order->observaciones ?? '—'))) }}</textarea></td></tr>
     </tbody>
