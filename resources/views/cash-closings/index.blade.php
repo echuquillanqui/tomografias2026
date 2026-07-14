@@ -10,15 +10,13 @@
                 <p class="mb-0 opacity-75">Consolida las entradas por órdenes y registra egresos con sustento adjunto.</p>
             </div>
             <div class="align-self-lg-start">
-                <form method="GET" class="d-flex flex-column flex-sm-row gap-2 mb-2">
-                    <select name="period" class="form-select" aria-label="Periodo">
+                <form method="GET" class="d-flex flex-column flex-sm-row gap-2 mb-2" x-data="{ period: @js($period) }">
+                    <select name="period" class="form-select" aria-label="Periodo" x-model="period">
                         @foreach($periods as $value => $label)
                             <option value="{{ $value }}" @selected($period === $value)>{{ $label }}</option>
                         @endforeach
                     </select>
-                    <input type="date" name="base_date" value="{{ $baseDate }}" class="form-control" aria-label="Fecha base">
-                    <input type="date" name="from" value="{{ $from }}" class="form-control" aria-label="Desde" title="Desde (solo personalizado)">
-                    <input type="date" name="to" value="{{ $to }}" class="form-control" aria-label="Hasta" title="Hasta (solo personalizado)">
+                    <input x-show="period === 'day'" type="date" name="base_date" value="{{ $baseDate }}" class="form-control" aria-label="Fecha del día" title="Fecha (solo diario)">
                     <select name="tipo_pago" class="form-select" aria-label="Tipo de pago">
                         <option value="">Todos los pagos</option>
                         @foreach($tiposPago as $tipo)
@@ -65,7 +63,7 @@
             <div class="card clinic-card mb-4">
                 <div class="card-header bg-white border-0 pt-4 px-4"><h5 class="fw-bold mb-0">Registrar egreso</h5></div>
                 <div class="card-body px-4 pb-4">
-                    <form method="POST" action="{{ route('cash-closings.expenses.store', ['period' => $period, 'base_date' => $baseDate, 'from' => $from, 'to' => $to, 'tipo_pago' => $tipoPago]) }}" enctype="multipart/form-data">
+                    <form method="POST" action="{{ route('cash-closings.expenses.store', ['period' => $period, 'base_date' => $period === 'day' ? $baseDate : null, 'tipo_pago' => $tipoPago]) }}" enctype="multipart/form-data">
                         @csrf
                         <div class="mb-3"><label class="form-label fw-bold">Fecha</label><input type="date" name="fecha_egreso" value="{{ old('fecha_egreso', $to) }}" class="form-control" required></div>
                         <div class="mb-3"><label class="form-label fw-bold">Descripción</label><input name="descripcion" value="{{ old('descripcion') }}" class="form-control" maxlength="255" required placeholder="Ej. Compra de útiles, movilidad..."></div>

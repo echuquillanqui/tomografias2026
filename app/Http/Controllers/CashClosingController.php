@@ -23,7 +23,6 @@ class CashClosingController extends Controller
         'fortnight' => 'Quincena',
         'month' => 'Mensual',
         'year' => 'Anual',
-        'custom' => 'Personalizado',
     ];
 
     public function index(Request $request): View
@@ -127,15 +126,10 @@ class CashClosingController extends Controller
     private function resolveRange(Request $request): array
     {
         $period = array_key_exists($request->query('period'), self::PERIODS) ? $request->query('period') : 'day';
-        $baseDate = $request->date('base_date')?->toDateString() ?: now()->toDateString();
+        $baseDate = $period === 'day'
+            ? ($request->date('base_date')?->toDateString() ?: now()->toDateString())
+            : now()->toDateString();
         $base = Carbon::parse($baseDate);
-
-        if ($period === 'custom') {
-            $from = $request->date('from')?->toDateString() ?: $base->toDateString();
-            $to = $request->date('to')?->toDateString() ?: $from;
-
-            return [$from, $to, $period, $baseDate];
-        }
 
         return match ($period) {
             'week' => [$base->copy()->startOfWeek()->toDateString(), $base->copy()->endOfWeek()->toDateString(), $period, $baseDate],
