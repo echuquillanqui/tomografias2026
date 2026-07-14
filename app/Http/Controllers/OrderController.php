@@ -143,11 +143,7 @@ class OrderController extends Controller
 
     private function formData(Request $request, ?Order $order = null): array
     {
-        $medicos = User::select(['id', 'nombre_completo', 'tipo_medico', 'comision_porcentaje'])
-            ->where('rol', 'Médico')
-            ->where('activo', true)
-            ->orderBy('nombre_completo')
-            ->get();
+        $medicos = $this->activeDoctors();
 
         return [
             'patients' => Patient::select(['id', 'dni', 'nombres', 'apellidos', 'telefono', 'fecha_nacimiento', 'edad'])->orderBy('apellidos')->orderBy('nombres')->get(),
@@ -163,6 +159,20 @@ class OrderController extends Controller
             'motivosEliminacion' => self::MOTIVOS_ELIMINACION,
             'unidades' => self::UNIDADES,
         ];
+    }
+
+    private function activeDoctors()
+    {
+        return User::select(['id', 'nombre_completo', 'tipo_medico', 'comision_porcentaje'])
+            ->where('rol', 'Médico')
+            ->where('activo', true)
+            ->orderBy('nombre_completo')
+            ->get();
+    }
+
+    private function medicosInformantes()
+    {
+        return $this->activeDoctors()->whereIn('tipo_medico', ['De Informe', 'Ambos'])->values();
     }
 
     private function saveOrder(Order $order, Request $request): Order
@@ -310,7 +320,7 @@ class OrderController extends Controller
             'delivery_options' => ['nullable', 'array'],
             'delivery_quantities' => ['nullable', 'array'],
             'delivery_quantities.*' => ['nullable', 'integer', 'min:0'],
-            'delivery_options.*' => ['nullable', Rule::in(['PLACAS', 'CD', 'INFORME'])],
+            'delivery_options.*' => ['nullable', Rule::in(['PLACAS', 'INFORME'])],
             'delivery_media' => ['nullable', Rule::in(['CD', 'LINK', 'AMBOS'])],
             'consumables' => ['nullable', 'array'],
             'consumables.*.reagent_id' => ['required', 'exists:reagents,id'],
@@ -321,7 +331,7 @@ class OrderController extends Controller
         $this->syncPrintableDocuments($order);
         $current = $order->fresh('admissionForm')->admissionForm?->data ?? [];
         $formData = collect($data)->except('consumables')->all();
-        $formData['delivery_options'] = array_values($formData['delivery_options'] ?? ['PLACAS', 'CD', 'INFORME']);
+        $formData['delivery_options'] = array_values($formData['delivery_options'] ?? ['PLACAS', 'INFORME']);
         $formData['delivery_quantities'] = collect($formData['delivery_quantities'] ?? [])->map(fn ($item) => $item === null || $item === '' ? '' : (int) $item)->all();
         $formData['plates_count'] = $formData['delivery_quantities']['PLACAS'] ?? ($formData['plates_count'] ?? null);
         $formData['delivery'] = implode(', ', $formData['delivery_options']);
@@ -347,8 +357,9 @@ class OrderController extends Controller
         $admissionData = $order->admissionForm?->data ?? [];
         $hasContrast = $order->orderExams->contains('tipo_contraste', 'Con contraste');
         $contrastConsumables = $this->triageConsumables($order);
+        $medicosInformantes = $this->medicosInformantes();
 
-        return view('orders.templates.ficha-ingreso', compact('order', 'hasContrast', 'admissionData', 'contrastConsumables'));
+        return view('orders.templates.ficha-ingreso', compact('order', 'hasContrast', 'admissionData', 'contrastConsumables', 'medicosInformantes'));
     }
 
     public function updateFichaIngreso(Request $request, Order $order): RedirectResponse
@@ -381,7 +392,7 @@ class OrderController extends Controller
             'surgeries' => ['nullable', 'string', 'max:255'],
             'surgeries_detail' => ['nullable', 'string', 'max:255'],
             'delivery_options' => ['nullable', 'array'],
-            'delivery_options.*' => ['nullable', Rule::in(['PLACAS', 'CD', 'INFORME'])],
+            'delivery_options.*' => ['nullable', Rule::in(['PLACAS', 'INFORME'])],
             'medication' => ['nullable', 'string'],
             'antecedents' => ['nullable', 'string'],
             'medications' => ['nullable', 'array'],
@@ -398,7 +409,7 @@ class OrderController extends Controller
         $order->load(['patient', 'agreement', 'medicoSolicitante', 'orderExams.exam', 'admissionForm']);
         $this->syncPrintableDocuments($order);
         $current = $order->fresh('admissionForm')->admissionForm?->data ?? [];
-        $data['delivery_options'] = array_values($data['delivery_options'] ?? ['PLACAS', 'CD', 'INFORME']);
+        $data['delivery_options'] = array_values($data['delivery_options'] ?? ['PLACAS', 'INFORME']);
         $data['delivery_quantities'] = collect($data['delivery_quantities'] ?? [])->map(fn ($item) => $item === null || $item === '' ? '' : (int) $item)->all();
         $data['plates_count'] = $data['delivery_quantities']['PLACAS'] ?? ($data['plates_count'] ?? null);
         $data['delivery'] = implode(', ', $data['delivery_options']);
@@ -426,8 +437,9 @@ class OrderController extends Controller
         $admissionData = $order->admissionForm?->data ?? [];
         $hasContrast = $order->orderExams->contains('tipo_contraste', 'Con contraste');
         $contrastConsumables = $this->triageConsumables($order);
+        $medicosInformantes = $this->medicosInformantes();
 
-        return Pdf::loadView('orders.pdfs.ficha-ingreso', compact('order', 'hasContrast', 'admissionData', 'contrastConsumables'))->setPaper('a4')->stream('ficha-ingreso-'.$order->id.'.pdf');
+        return Pdf::loadView('orders.pdfs.ficha-ingreso', compact('order', 'hasContrast', 'admissionData', 'contrastConsumables', 'medicosInformantes'))->setPaper('a4')->stream('ficha-ingreso-'.$order->id.'.pdf');
     }
 
     public function declaracionJuradaTemplate(Order $order): View
@@ -502,8 +514,8 @@ class OrderController extends Controller
             'provenance' => $order->agreement?->nombre_institucion ?? 'PARTICULAR',
             'peripheral_route' => '',
             'informed_by' => '',
-            'delivery' => 'PLACAS, CD, INFORME',
-            'delivery_options' => ['PLACAS', 'CD', 'INFORME'],
+            'delivery' => 'PLACAS, INFORME',
+            'delivery_options' => ['PLACAS', 'INFORME'],
             'delivery_quantities' => [],
             'plates_count' => '',
             'cause' => '',

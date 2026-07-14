@@ -5,9 +5,9 @@
     $birthdate = $admissionData['patient_birthdate'] ?? (optional($order->patient->fecha_nacimiento)->format('d/m/Y') ?? '—');
     $patientAge = $admissionData['patient_age'] ?? ($order->patient->edad ?? ($order->patient->fecha_nacimiento?->age ?? '—'));
     $patientAgeLabel = is_numeric($patientAge) ? $patientAge.' años' : $patientAge;
-    $deliveryItems = ['PLACAS', 'CD', 'INFORME'];
+    $deliveryItems = ['PLACAS', 'INFORME'];
     $deliveryOptions = $admissionData['delivery_options'] ?? $deliveryItems;
-    $deliveryOptions = empty($deliveryOptions) ? $deliveryItems : (array) $deliveryOptions;
+    $deliveryOptions = empty($deliveryOptions) ? $deliveryItems : array_values(array_intersect((array) $deliveryOptions, $deliveryItems));
     $deliveryQuantities = $admissionData['delivery_quantities'] ?? [];
     $deliveryQuantities = is_array($deliveryQuantities) ? $deliveryQuantities : [];
     $formatDeliveryQuantity = function ($option) use ($deliveryQuantities, $admissionData) {
@@ -42,11 +42,10 @@ body{font-family:DejaVu Sans,sans-serif;font-size:9.2px;line-height:1.18;color:#
 <div class="full"><b>Antecedentes:</b> <?= nl2br(e($admissionData['antecedents'] ?? '')) ?></div>
 <?php if($hasContrast): ?>
 <div class="section-title">INSUMOS Y MATERIALES DE USO INTERNO PARA ESTUDIO CON CONTRASTE</div>
-<div class="box"><div class="full"><b>Vía periférica endovenosa</b></div><?php foreach(($contrastConsumables ?? []) as $consumable): ?><div class="row"><div class="cell"><span class="label"><?= e($consumable['name']) ?></span></div><div class="cell" style="width:18%"><?= e($consumable['cantidad']) ?></div><div class="cell" style="width:22%"><?= e($consumable['unit'] ?? '') ?></div></div><?php endforeach; ?><div class="full red">BRANULA: <?= in_array(($admissionData['peripheral_route'] ?? ''), ['18','20','22'], true) ? 'N° '.e($admissionData['peripheral_route']) : e($admissionData['peripheral_route'] ?? '') ?></div></div>
+<div class="box"><div class="row"><div class="cell label">Insumo / material</div><div class="cell label" style="width:18%">Cantidad</div><div class="cell label" style="width:18%">Unidad</div><div class="cell label" style="width:24%">Bránula</div></div><?php $branulaPdf = in_array(($admissionData['peripheral_route'] ?? ''), ['18','20','22'], true) ? 'N° '.($admissionData['peripheral_route'] ?? '') : ($admissionData['peripheral_route'] ?? ''); ?><?php foreach(($contrastConsumables ?? []) as $index => $consumable): ?><div class="row"><div class="cell"><span class="label"><?= e($consumable['name']) ?></span></div><div class="cell" style="width:18%"><?= e($consumable['cantidad']) ?></div><div class="cell" style="width:18%"><?= e($consumable['unit'] ?? '') ?></div><div class="cell red" style="width:24%"><?= $index === 0 ? e($branulaPdf) : '' ?></div></div><?php endforeach; ?><?php if(empty($contrastConsumables ?? [])): ?><div class="row"><div class="cell muted" style="width:58%">Sin insumos precargados.</div><div class="cell red" style="width:24%"><?= e($branulaPdf) ?></div></div><?php endif; ?></div>
 <div class="section-title">USO INTERNO / DATOS PARA CONTRASTE</div>
 <div class="row box"><div class="cell wrap-cell" style="width:66.666%"><span class="label">Alergia probable/medicamento:</span> <?= e($admissionData['allergy'] ?? '') ?></div><div class="cell"><span class="label">¿Está en ayunas?</span> <?= e($admissionData['fasting'] ?? '') ?></div></div>
-<div class="row box"><div class="cell wrap-cell"><span class="label">Prueba de creatinina:</span> <?= e($admissionData['creatinine'] ?? '') ?></div></div>
-<div class="row box"><div class="cell"><span class="label">BRANULA:</span> <?= in_array(($admissionData['peripheral_route'] ?? ''), ['18','20','22'], true) ? 'N° '.e($admissionData['peripheral_route']) : e($admissionData['peripheral_route'] ?? '') ?></div><div class="cell"><span class="label">Uso interno:</span> Contraste aplicado ( )</div></div>
+<div class="row box"><div class="cell wrap-cell" style="width:66.666%"><span class="label">Prueba de creatinina:</span> <?= e($admissionData['creatinine'] ?? '') ?></div><div class="cell"><span class="label">Informado por:</span> <?= e($admissionData['informed_by'] ?? '') ?></div></div>
 <?php endif; ?>
 <div class="section-title">DOCUMENTOS / ENTREGA</div>
 <table class="delivery-table">
@@ -64,6 +63,6 @@ body{font-family:DejaVu Sans,sans-serif;font-size:9.2px;line-height:1.18;color:#
         </tr>
     </tbody>
 </table>
-<div class="full"><b>CD / Link:</b> <?= e($admissionData['delivery_media'] ?? '') ?> &nbsp; <b>Informado por:</b> <?= e($admissionData['informed_by'] ?? '') ?></div>
+<div class="full"><b>CD / Link:</b> <?= e($admissionData['delivery_media'] ?? '') ?></div>
 <div class="row signature-row"><div class="cell" style="border:0;text-align:center"><div class="sig"></div>FIRMA DEL PACIENTE</div><div class="cell" style="border:0;text-align:center"><div class="sig fingerprint"></div>HUELLA DEL PACIENTE</div></div>
 </div></body></html>
