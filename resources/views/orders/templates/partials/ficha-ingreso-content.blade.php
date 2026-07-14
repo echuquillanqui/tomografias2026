@@ -1,9 +1,9 @@
 @php
     $admissionData = $admissionData ?? [];
-    $deliveryItems = ['PLACAS', 'CD', 'INFORME'];
+    $deliveryItems = ['PLACAS', 'INFORME'];
     $deliveryMediaOptions = ['CD', 'LINK', 'AMBOS'];
     $deliveryOptions = old('delivery_options', $admissionData['delivery_options'] ?? $deliveryItems);
-    $deliveryOptions = empty($deliveryOptions) ? $deliveryItems : (array) $deliveryOptions;
+    $deliveryOptions = empty($deliveryOptions) ? $deliveryItems : array_values(array_intersect((array) $deliveryOptions, $deliveryItems));
     $deliveryQuantities = old('delivery_quantities', $admissionData['delivery_quantities'] ?? []);
     $deliveryQuantities = is_array($deliveryQuantities) ? $deliveryQuantities : [];
     $formatDeliveryQuantity = function ($option) use ($deliveryQuantities, $admissionData) {
@@ -53,11 +53,11 @@
                 <div class="col-3 text-center">Marca</div>
                 <div class="col-4">Cantidad</div>
             </div>
-            @foreach(($deliveryItems ?? ['PLACAS', 'CD', 'INFORME']) as $option)
+            @foreach(($deliveryItems ?? ['PLACAS', 'INFORME']) as $option)
                 <div class="row g-2 align-items-center mb-2">
                     <div class="col-5 fw-bold fs-5">{{ $option }}</div>
                     <div class="col-3 text-center">
-                        <input class="form-check-input fs-5 m-0" type="checkbox" name="delivery_options[]" value="{{ $option }}" id="delivery{{ $option }}" aria-label="Marcar {{ $option }}" @checked(in_array($option, ($deliveryOptions ?? ['PLACAS', 'CD', 'INFORME']), true))>
+                        <input class="form-check-input fs-5 m-0" type="checkbox" name="delivery_options[]" value="{{ $option }}" id="delivery{{ $option }}" aria-label="Marcar {{ $option }}" @checked(in_array($option, ($deliveryOptions ?? ['PLACAS', 'INFORME']), true))>
                     </div>
                     <div class="col-4">
                         <input name="delivery_quantities[{{ $option }}]" type="number" min="0" step="1" class="form-control form-control-sm text-center" value="{{ $formatDeliveryQuantity($option) }}" placeholder="0">
@@ -67,17 +67,16 @@
         </div>
     </div>
     <div class="col-md-3"><label class="form-label fw-bold">CD / Link</label><select name="delivery_media" class="form-select"><option value=""></option>@foreach($deliveryMediaOptions as $media)<option value="{{ $media }}" @selected(old('delivery_media', $admissionData['delivery_media'] ?? '') === $media)>{{ $media }}</option>@endforeach</select></div>
-    <div class="col-md-3"><label class="form-label fw-bold">Informado por</label><input name="informed_by" class="form-control" value="{{ old('informed_by', $admissionData['informed_by'] ?? '') }}" placeholder="Nombre de quien informa"></div>
 </div>
 @if($hasContrast)
     <h5 class="bg-primary text-white text-center py-2 mt-4">INSUMOS Y MATERIALES DE USO INTERNO PARA ESTUDIO CON CONTRASTE</h5>
-    <div class="table-responsive mb-3"><table class="table table-bordered table-sm align-middle"><tbody><tr><th colspan="4">Vía periférica endovenosa</th></tr>@forelse(($contrastConsumables ?? []) as $index => $consumable)<tr><td>{{ $consumable['name'] }}<input type="hidden" name="consumables[{{ $index }}][reagent_id]" value="{{ $consumable['reagent_id'] }}"></td><td style="width:140px"><input name="consumables[{{ $index }}][cantidad]" type="number" min="0" step="0.01" class="form-control form-control-sm" value="{{ $consumable['cantidad'] }}"></td><td>{{ $consumable['unit'] ?? '' }}</td><td></td></tr>@empty<tr><td colspan="4" class="text-muted">Sin insumos precargados.</td></tr>@endforelse<tr><td colspan="4" class="fw-bold text-danger">BRANULA: OPCIONES N° 18, N° 20, N° 22 o Permeable</td></tr></tbody></table></div>
+    <div class="table-responsive mb-3"><table class="table table-bordered table-sm align-middle"><thead><tr><th>Insumo / material</th><th style="width:140px">Cantidad</th><th style="width:100px">Unidad</th><th style="width:240px">Bránula</th></tr></thead><tbody>@forelse(($contrastConsumables ?? []) as $index => $consumable)<tr><td>{{ $consumable['name'] }}<input type="hidden" name="consumables[{{ $index }}][reagent_id]" value="{{ $consumable['reagent_id'] }}"></td><td><input name="consumables[{{ $index }}][cantidad]" type="number" min="0" step="0.01" class="form-control form-control-sm" value="{{ $consumable['cantidad'] }}"></td><td>{{ $consumable['unit'] ?? '' }}</td>@if($loop->first)<td rowspan="{{ max(count($contrastConsumables ?? []), 1) }}"><div class="input-group" x-data="{v: '{{ old('peripheral_route', $admissionData['peripheral_route'] ?? '') }}'}"><span class="input-group-text" x-text="['18','20','22'].includes(v) ? 'N°' : ''"></span><select name="peripheral_route" class="form-select" x-model="v"><option value=""></option><option value="18" @selected(old('peripheral_route', $admissionData['peripheral_route'] ?? '') === '18')>18</option><option value="20" @selected(old('peripheral_route', $admissionData['peripheral_route'] ?? '') === '20')>20</option><option value="22" @selected(old('peripheral_route', $admissionData['peripheral_route'] ?? '') === '22')>22</option><option value="Permeable" @selected(old('peripheral_route', $admissionData['peripheral_route'] ?? '') === 'Permeable')>Permeable</option></select></div></td>@endif</tr>@empty<tr><td colspan="3" class="text-muted">Sin insumos precargados.</td><td><div class="input-group" x-data="{v: '{{ old('peripheral_route', $admissionData['peripheral_route'] ?? '') }}'}"><span class="input-group-text" x-text="['18','20','22'].includes(v) ? 'N°' : ''"></span><select name="peripheral_route" class="form-select" x-model="v"><option value=""></option><option value="18" @selected(old('peripheral_route', $admissionData['peripheral_route'] ?? '') === '18')>18</option><option value="20" @selected(old('peripheral_route', $admissionData['peripheral_route'] ?? '') === '20')>20</option><option value="22" @selected(old('peripheral_route', $admissionData['peripheral_route'] ?? '') === '22')>22</option><option value="Permeable" @selected(old('peripheral_route', $admissionData['peripheral_route'] ?? '') === 'Permeable')>Permeable</option></select></div></td></tr>@endforelse</tbody></table></div>
     <h5 class="bg-primary text-white text-center py-2 mt-4">USO INTERNO / DATOS PARA CONTRASTE</h5>
     <div class="row g-3">
         <div class="col-md-8"><label class="form-label fw-bold">Alergia probable/medicamento</label><textarea name="allergy" class="form-control" rows="2" placeholder="Alergia probable/medicamento">{{ old('allergy', $admissionData['allergy'] ?? '') }}</textarea></div>
         <div class="col-md-4"><label class="form-label fw-bold">¿Está en ayunas?</label><select name="fasting" class="form-select"><option value=""></option><option value="SI" @selected(old('fasting', $admissionData['fasting'] ?? '') === 'SI')>SI</option><option value="NO" @selected(old('fasting', $admissionData['fasting'] ?? '') === 'NO')>NO</option></select></div>
-        <div class="col-12"><label class="form-label fw-bold">Prueba de creatinina</label><input name="creatinine" class="form-control" value="{{ old('creatinine', $admissionData['creatinine'] ?? '') }}" placeholder="Valor de creatinina"></div>
-        <div class="col-md-4"><label class="form-label fw-bold">BRANULA</label><div class="input-group" x-data="{v: '{{ old('peripheral_route', $admissionData['peripheral_route'] ?? '') }}'}"><span class="input-group-text" x-text="['18','20','22'].includes(v) ? 'N°' : ''"></span><select name="peripheral_route" class="form-select" x-model="v"><option value=""></option><option value="18" @selected(old('peripheral_route', $admissionData['peripheral_route'] ?? '') === '18')>18</option><option value="20" @selected(old('peripheral_route', $admissionData['peripheral_route'] ?? '') === '20')>20</option><option value="22" @selected(old('peripheral_route', $admissionData['peripheral_route'] ?? '') === '22')>22</option><option value="Permeable" @selected(old('peripheral_route', $admissionData['peripheral_route'] ?? '') === 'Permeable')>Permeable</option></select></div></div>
+        <div class="col-md-8"><label class="form-label fw-bold">Prueba de creatinina</label><input name="creatinine" class="form-control" value="{{ old('creatinine', $admissionData['creatinine'] ?? '') }}" placeholder="Valor de creatinina"></div>
+        <div class="col-md-4"><label class="form-label fw-bold">Informado por</label><select name="informed_by" class="form-select"><option value=""></option>@foreach(($medicosInformantes ?? collect()) as $medico)<option value="{{ $medico->nombre_completo }}" @selected(old('informed_by', $admissionData['informed_by'] ?? '') === $medico->nombre_completo)>{{ $medico->nombre_completo }}</option>@endforeach</select></div>
     </div>
 @endif
 <div class="row text-center mt-5"><div class="col"><div class="border rounded mx-auto mb-2" style="height:90px;max-width:220px"></div>Firma del paciente</div><div class="col"><div class="border rounded mx-auto mb-2" style="height:130px;max-width:85px"></div>Huella del paciente</div></div>
