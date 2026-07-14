@@ -24,9 +24,24 @@
     </section>
 
     <div class="row g-3 mb-4">
-        <div class="col-md-4"><div class="card clinic-card h-100"><div class="card-body"><div class="text-muted small fw-bold">ENTRADAS</div><div class="display-6 fw-bold text-success">S/ {{ number_format($incomeTotal, 2) }}</div><div class="text-muted">{{ $orders->count() }} órdenes cobradas/no anuladas</div></div></div></div>
+        <div class="col-md-4">
+            <div class="card clinic-card h-100">
+                <div class="card-body">
+                    <div class="text-muted small fw-bold">INGRESOS</div>
+                    <div class="d-flex justify-content-between align-items-center border-bottom py-2">
+                        <span class="fw-semibold">Efectivo</span>
+                        <strong class="fs-4 text-success">S/ {{ number_format($cashIncome, 2) }}</strong>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center pt-2">
+                        <span class="fw-semibold">Yape/Plin</span>
+                        <strong class="fs-5 text-primary">S/ {{ number_format($yapePlinIncome, 2) }}</strong>
+                    </div>
+                    <div class="text-muted mt-2">{{ $orders->count() }} órdenes cobradas/no anuladas</div>
+                </div>
+            </div>
+        </div>
         <div class="col-md-4"><div class="card clinic-card h-100"><div class="card-body"><div class="text-muted small fw-bold">EGRESOS</div><div class="display-6 fw-bold text-danger">S/ {{ number_format($expenseTotal, 2) }}</div><div class="text-muted">{{ $expenses->count() }} salidas registradas</div></div></div></div>
-        <div class="col-md-4"><div class="card clinic-card h-100"><div class="card-body"><div class="text-muted small fw-bold">SALDO FINAL</div><div class="display-6 fw-bold {{ $balance < 0 ? 'text-danger' : 'text-primary' }}">S/ {{ number_format($balance, 2) }}</div><div class="text-muted">Entradas menos egresos</div></div></div></div>
+        <div class="col-md-4"><div class="card clinic-card h-100"><div class="card-body"><div class="text-muted small fw-bold">SALDO EFECTIVO</div><div class="display-6 fw-bold {{ $cashBalance < 0 ? 'text-danger' : 'text-primary' }}">S/ {{ number_format($cashBalance, 2) }}</div><div class="text-muted">Efectivo menos egresos</div></div></div></div>
     </div>
 
     <div class="row g-4">

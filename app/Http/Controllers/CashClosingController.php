@@ -39,8 +39,11 @@ class CashClosingController extends Controller
 
         $incomeTotal = $orders->sum('total');
         $expenseTotal = $expenses->sum('monto');
+        $cashIncome = $orders->where('tipo_pago', 'Efectivo')->sum('total');
+        $yapePlinIncome = $orders->where('tipo_pago', 'Yape/Plin')->sum('total');
 
-        return view('cash-closings.index', compact('from', 'to', 'tipoPago', 'orders', 'expenses', 'incomeTotal', 'expenseTotal') + [
+        return view('cash-closings.index', compact('from', 'to', 'tipoPago', 'orders', 'expenses', 'incomeTotal', 'expenseTotal', 'cashIncome', 'yapePlinIncome') + [
+            'cashBalance' => $cashIncome - $expenseTotal,
             'balance' => $incomeTotal - $expenseTotal,
             'incomeByPayment' => $orders->groupBy(fn (Order $order) => $order->tipo_pago ?? 'Sin método')
                 ->map(fn ($items) => $items->sum('total')),
