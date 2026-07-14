@@ -43,6 +43,8 @@ Route::middleware('auth')->group(function () {
     Route::get('stock-movements/report/download', [StockMovementController::class, 'downloadReport'])->name('stock-movements.report.download');
     Route::resource('stock-movements', StockMovementController::class)->only(['index', 'store', 'destroy']);
     Route::get('cash-closings', [CashClosingController::class, 'index'])->name('cash-closings.index');
+    Route::get('cash-closings/export/excel', [CashClosingController::class, 'exportExcel'])->name('cash-closings.export.excel');
+    Route::get('cash-closings/export/pdf', [CashClosingController::class, 'exportPdf'])->name('cash-closings.export.pdf');
     Route::post('cash-closings/expenses', [CashClosingController::class, 'storeExpense'])->name('cash-closings.expenses.store');
     Route::delete('cash-closings/expenses/{cashExpense}', [CashClosingController::class, 'destroyExpense'])->name('cash-closings.expenses.destroy');
     Route::get('system-settings', [SystemSettingController::class, 'index'])->name('system-settings.index');
