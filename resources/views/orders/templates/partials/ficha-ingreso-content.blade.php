@@ -5,6 +5,11 @@
     $deliveryOptions = empty($deliveryOptions) ? $deliveryItems : (array) $deliveryOptions;
     $deliveryQuantities = old('delivery_quantities', $admissionData['delivery_quantities'] ?? []);
     $deliveryQuantities = is_array($deliveryQuantities) ? $deliveryQuantities : [];
+    $formatDeliveryQuantity = function ($option) use ($deliveryQuantities, $admissionData) {
+        $value = ($deliveryQuantities ?? [])[$option] ?? ($option === 'PLACAS' ? old('plates_count', $admissionData['plates_count'] ?? null) : null);
+
+        return ($value === null || $value === '') ? 0 : $value;
+    };
     $defaultProvenance = $order->agreement?->nombre_institucion ?? 'PARTICULAR';
     $storedCondition = $admissionData['condition'] ?? '';
     $conditionValue = $storedCondition === $defaultProvenance ? '' : $storedCondition;
@@ -58,7 +63,7 @@
                         <input class="form-check-input fs-5 m-0" type="checkbox" name="delivery_options[]" value="{{ $option }}" id="delivery{{ $option }}" aria-label="Marcar {{ $option }}" @checked(in_array($option, ($deliveryOptions ?? ['PLACAS', 'CD', 'INFORME']), true))>
                     </div>
                     <div class="col-4">
-                        <input name="delivery_quantities[{{ $option }}]" type="number" min="0" step="1" class="form-control form-control-sm text-center" value="{{ ($deliveryQuantities ?? [])[$option] ?? ($option === 'PLACAS' ? old('plates_count', $admissionData['plates_count'] ?? '') : '') }}" placeholder="Cant.">
+                        <input name="delivery_quantities[{{ $option }}]" type="number" min="0" step="1" class="form-control form-control-sm text-center" value="{{ $formatDeliveryQuantity($option) }}" placeholder="0">
                     </div>
                 </div>
             @endforeach
