@@ -29,6 +29,7 @@
         <tr><th>Descartar</th><td colspan="5"><textarea name="rule_out" class="form-control form-control-sm" rows="2">{{ old('rule_out', $admissionData['rule_out'] ?? ($admissionData['observations'] ?? ($order->observaciones ?? '—'))) }}</textarea></td></tr>
     </tbody>
 </table>
+<h5 class="bg-primary text-white text-center py-2 mt-4">ANTECEDENTES</h5>
 <div class="row g-3">
     <div class="col-md-6"><label class="form-label fw-bold">Causa</label><textarea name="cause" class="form-control" rows="2" placeholder="Completar causa">{{ old('cause', $admissionData['cause'] ?? '') }}</textarea></div>
     <div class="col-md-6"><label class="form-label fw-bold">Sintomatología</label><textarea name="symptomatology" class="form-control" rows="2" placeholder="Completar sintomatología">{{ old('symptomatology', $admissionData['symptomatology'] ?? '') }}</textarea></div>
