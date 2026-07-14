@@ -25,8 +25,8 @@
         <div class="col-md-3"><label class="form-label">Hora</label><input name="hour" class="form-control" value="{{ old('hour', $declarationData['hour'] ?? '') }}"></div>
     </div>
     <div class="row text-center mt-5">
-        <div class="col"><div class="border rounded mx-auto mb-2" style="height:90px;max-width:220px"></div>Firma Paciente/Representante Legal</div>
-        <div class="col"><div class="border rounded mx-auto mb-2" style="height:90px;max-width:220px"></div>Huella digital<br>DNI Nº <input class="form-control form-control-sm d-inline-block" style="width:160px" value="{{ old('patient_dni', $declarationData['patient_dni'] ?? $order->patient->dni) }}" readonly></div>
+        <div class="col"><div class="border rounded mx-auto mb-2" style="height:120px;max-width:260px"></div>Firma Paciente/Representante Legal</div>
+        <div class="col"><div class="border rounded mx-auto mb-2" style="height:120px;max-width:260px"></div>Huella digital<br>DNI Nº <input class="form-control form-control-sm d-inline-block" style="width:160px" value="{{ old('patient_dni', $declarationData['patient_dni'] ?? $order->patient->dni) }}" readonly></div>
     </div>
     <div class="border rounded p-3 mt-4"><strong>REVOCATORIA:</strong><textarea name="revocation" class="form-control mt-2" rows="3" placeholder="Completar revocatoria si corresponde">{{ old('revocation', $declarationData['revocation'] ?? '') }}</textarea></div>
 </div>
