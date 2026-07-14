@@ -20,7 +20,7 @@
     ];
 
     $initialForm = collect($fields)->mapWithKeys(fn ($label, $key) => [
-        $key => old($key, $admissionData[$key] ?? ($key === 'unit' ? $order->unidad : ($key === 'surgeries' ? 'Ninguna' : ''))),
+        $key => old($key, $admissionData[$key] ?? ($key === 'unit' ? $order->unidad : ($key === 'surgeries' ? 'Ninguna' : ($key === 'condition' ? 'NORMAL' : '')))),
     ])->merge([
         'surgeries_detail' => old('surgeries_detail', $admissionData['surgeries_detail'] ?? ''),
         'delivery_options' => old('delivery_options', $admissionData['delivery_options'] ?? []),
@@ -184,7 +184,7 @@
                             </div>
                         </div>
                         <div class="col-12"><label class="form-label small fw-bold">Antecedentes</label><textarea class="form-control" rows="3" x-model="form.antecedents" placeholder="Antecedentes del paciente"></textarea></div>
-                        <div class="col-md-6"><label class="form-label small fw-bold">Condición</label><input class="form-control" x-model="form.condition"></div>
+                        <div class="col-md-6"><label class="form-label small fw-bold">Condición</label><select class="form-select" x-model="form.condition"><option value="NORMAL">NORMAL</option><option value="PATOLOGICO">PATOLOGICO</option></select></div>
                         <div class="col-md-6"><label class="form-label small fw-bold">Vía periférica</label><input class="form-control" x-model="form.peripheral_route"></div>
                         <div class="col-md-6"><label class="form-label small fw-bold">Informado por</label><input class="form-control" x-model="form.informed_by"></div>
                         <div class="col-md-6"><label class="form-label small fw-bold">Se entrega</label><div class="d-flex flex-wrap gap-3"><template x-for="option in ['PLACAS','CD','INFORME']" :key="option"><div class="form-check"><input class="form-check-input" type="checkbox" name="delivery_options[]" :value="option" x-model="form.delivery_options"><label class="form-check-label" x-text="option"></label></div></template></div></div>
