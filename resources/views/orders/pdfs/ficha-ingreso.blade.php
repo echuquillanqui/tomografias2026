@@ -32,6 +32,7 @@ body{font-family:DejaVu Sans,sans-serif;font-size:10.5px;line-height:1.32;color:
 <div class="full"><b>Sintomatología:</b> <?= e($admissionData['symptomatology'] ?? '') ?></div>
 <div class="full"><b>Intervenciones quirúrgicas:</b> <?= e($surgeries) ?></div>
 <div class="full"><b>Medicación:</b> <?= nl2br(e($admissionData['medication'] ?? '')) ?></div>
+<div class="full"><b>Antecedentes:</b> <?= nl2br(e($admissionData['antecedents'] ?? '')) ?></div>
 <div class="full"><b>Informado por:</b> <?= e($admissionData['informed_by'] ?? '') ?></div>
 <?php if($hasContrast): ?>
 <div class="section-title">USO INTERNO / DATOS PARA CONTRASTE</div>

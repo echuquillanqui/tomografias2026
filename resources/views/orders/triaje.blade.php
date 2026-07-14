@@ -12,6 +12,7 @@
         'creatinine' => 'Creatinina',
         'rule_out' => 'Descartar',
         'condition' => 'Condición',
+        'antecedents' => 'Antecedentes',
         'peripheral_route' => 'Vía periférica',
         'informed_by' => 'Informado por',
         'delivery' => 'Entrega',
@@ -182,6 +183,7 @@
                                 <div class="list-group-item text-muted" x-show="medications.length === 0">Sin medicamentos registrados.</div>
                             </div>
                         </div>
+                        <div class="col-12"><label class="form-label small fw-bold">Antecedentes</label><textarea class="form-control" rows="3" x-model="form.antecedents" placeholder="Antecedentes del paciente"></textarea></div>
                         <div class="col-md-6"><label class="form-label small fw-bold">Condición</label><input class="form-control" x-model="form.condition"></div>
                         <div class="col-md-6"><label class="form-label small fw-bold">Vía periférica</label><input class="form-control" x-model="form.peripheral_route"></div>
                         <div class="col-md-6"><label class="form-label small fw-bold">Informado por</label><input class="form-control" x-model="form.informed_by"></div>
