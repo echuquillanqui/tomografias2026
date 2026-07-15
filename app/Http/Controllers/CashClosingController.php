@@ -91,7 +91,7 @@ class CashClosingController extends Controller
         $end = Carbon::parse($to)->endOfDay();
 
         $orders = Order::with(['patient', 'agreement'])
-            ->whereBetween('fecha_orden', [$start->toDateString(), $end->toDateString()])
+            ->whereBetween('fecha_orden', [$start, $end])
             ->where('estado', '!=', 'Anulado')
             ->when($tipoPago, fn ($query) => $query->where('tipo_pago', $tipoPago))
             ->latest('fecha_orden')

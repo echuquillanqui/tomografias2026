@@ -102,8 +102,8 @@
                                 <input name="codigo_orden" class="form-control" value="{{ old('codigo_orden', $order->codigo_orden) }}" placeholder="Opcional / si aplica">
                             </div>
                             <div class="col-md-4">
-                                <label class="form-label small fw-bold">FECHA</label>
-                                <input name="fecha_orden" type="date" class="form-control" value="{{ old('fecha_orden', optional($order->fecha_orden)->format('Y-m-d') ?? now()->format('Y-m-d')) }}" required>
+                                <label class="form-label small fw-bold">FECHA Y HORA</label>
+                                <input name="fecha_orden" type="datetime-local" class="form-control" value="{{ old('fecha_orden', optional($order->fecha_orden)->format('Y-m-d\TH:i') ?? now()->format('Y-m-d\TH:i')) }}" required>
                             </div>
                             <div class="col-md-4">
                                 <label class="form-label small fw-bold">ESTADO</label>

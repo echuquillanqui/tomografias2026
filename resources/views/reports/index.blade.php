@@ -40,7 +40,7 @@
                             <td class="fw-bold">{{ $order->codigo_orden ?? 'Orden #'.$order->id }}</td>
                             <td>{{ $order->patient->nombres }} {{ $order->patient->apellidos }}<br><small class="text-muted">{{ $order->patient->dni }}</small></td>
                             <td>{{ $order->agreement->nombre_institucion }}</td>
-                            <td>{{ $order->fecha_orden->format('d/m/Y') }}</td>
+                            <td>{{ $order->fecha_orden->format('d/m/Y H:i') }}</td>
                             <td>{{ $order->order_exams_count }}</td>
                             <td>{{ $order->report?->medicoFirmante?->nombre_completo ?? $order->medicoInforme?->nombre_completo ?? '—' }}</td>
                             <td><span class="badge badge-role">{{ $order->estado }}</span></td>

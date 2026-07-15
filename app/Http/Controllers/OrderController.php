@@ -593,7 +593,7 @@ IMPRESSION;
 **Paciente:** {$patient->nombres} {$patient->apellidos}
 **DNI:** {$patient->dni}
 **Edad:** {$this->patientAge($patient)}
-**Fecha del estudio:** {$order->fecha_orden->format('d/m/Y')}
+**Fecha del estudio:** {$order->fecha_orden->format('d/m/Y H:i')}
 **Médico solicitante:** {$this->valueOrPlaceholder($order->medicoSolicitante?->nombre_completo, '[Nombre del médico solicitante]')}
 **Estudio solicitado:** Tomografía computarizada de {$region}
 **Contraste:** {$contrast}

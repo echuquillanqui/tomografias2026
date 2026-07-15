@@ -19,7 +19,7 @@
                 <div class="clinic-eyebrow mb-2">Plantilla editable de informe</div>
                 <h1 class="display-6 fw-bold">{{ $patientName }}</h1>
                 <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
-                    <p class="mb-0 opacity-75">{{ $order->codigo_orden ?? 'Orden #'.$order->id }} · {{ $order->fecha_orden->format('d/m/Y') }} · {{ $examNames ?: 'Estudio por definir' }}</p>
+                    <p class="mb-0 opacity-75">{{ $order->codigo_orden ?? 'Orden #'.$order->id }} · {{ $order->fecha_orden->format('d/m/Y H:i') }} · {{ $examNames ?: 'Estudio por definir' }}</p>
                     <span class="badge report-status-badge">{{ $order->estado }}</span>
                 </div>
                 <div class="report-patient-summary">

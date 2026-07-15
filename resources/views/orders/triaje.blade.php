@@ -81,7 +81,7 @@
                     <div class="col-md-2"><strong>DNI</strong><br>{{ $order->patient->dni }}</div>
                     <div class="col-md-2"><strong>Edad</strong><br>{{ $order->patient->edad ?? $order->patient->fecha_nacimiento?->age ?? '—' }}</div>
                     <div class="col-md-2"><strong>Teléfono</strong><br>{{ $order->patient->telefono ?? '—' }}</div>
-                    <div class="col-md-2"><strong>Fecha</strong><br>{{ $order->fecha_orden->format('d/m/Y') }}</div>
+                    <div class="col-md-2"><strong>Fecha</strong><br>{{ $order->fecha_orden->format('d/m/Y H:i') }}</div>
                 </div>
             </div>
         </div>
