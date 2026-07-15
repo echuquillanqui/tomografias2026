@@ -367,7 +367,6 @@ class OrderController extends Controller
         $data = $request->validate([
             'agreement' => ['nullable', 'string', 'max:255'],
             'request_number' => ['nullable', 'string', 'max:255'],
-            'date' => ['nullable', 'string', 'max:255'],
             'unit' => ['nullable', 'string', 'max:255'],
             'patient_name' => ['nullable', 'string', 'max:255'],
             'patient_dni' => ['nullable', 'string', 'max:255'],
@@ -409,6 +408,7 @@ class OrderController extends Controller
         $order->load(['patient', 'agreement', 'medicoSolicitante', 'orderExams.exam', 'admissionForm']);
         $this->syncPrintableDocuments($order);
         $current = $order->fresh('admissionForm')->admissionForm?->data ?? [];
+        $data['date'] = now()->format('d/m/Y H:i');
         $data['delivery_options'] = array_values($data['delivery_options'] ?? ['PLACAS', 'CD', 'INFORME']);
         $data['delivery_quantities'] = collect($data['delivery_quantities'] ?? [])->map(fn ($item) => $item === null || $item === '' ? '' : (int) $item)->all();
         $data['plates_count'] = $data['delivery_quantities']['PLACAS'] ?? ($data['plates_count'] ?? null);
