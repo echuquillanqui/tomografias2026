@@ -103,7 +103,8 @@
                             </div>
                             <div class="col-md-4">
                                 <label class="form-label small fw-bold">FECHA Y HORA</label>
-                                <input name="fecha_orden" type="datetime-local" class="form-control" value="{{ old('fecha_orden', optional($order->fecha_orden)->format('Y-m-d\TH:i') ?? now()->format('Y-m-d\TH:i')) }}" required>
+                                <input name="fecha_orden" type="text" inputmode="text" class="form-control" value="{{ old('fecha_orden', optional($order->fecha_orden)->format('d/m/Y H:i') ?? now()->format('d/m/Y H:i')) }}" placeholder="dd/mm/aaaa 14:30 o dd/mm/aaaa 2:30 PM" pattern="\d{1,2}/\d{1,2}/\d{4}\s+([01]?\d|2[0-3]):[0-5]\d(\s*[AaPp]\.?[Mm]\.?)?" required>
+                                <div class="form-text">Usa 24 horas (ej. 15/07/2026 14:30). También se acepta AM/PM y se convierte automáticamente.</div>
                             </div>
                             <div class="col-md-4">
                                 <label class="form-label small fw-bold">ESTADO</label>

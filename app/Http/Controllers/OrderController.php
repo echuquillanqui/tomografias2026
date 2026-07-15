@@ -14,6 +14,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Carbon\Carbon;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
@@ -161,6 +162,41 @@ class OrderController extends Controller
         ];
     }
 
+
+    private function normalizeOrderDateTime(?string $value): ?string
+    {
+        $value = trim((string) $value);
+        if ($value === '') {
+            return null;
+        }
+
+        $normalized = preg_replace('/\s+/', ' ', str_replace('.', '', strtoupper($value)));
+        $formats = [
+            'd/m/Y H:i',
+            'd/m/Y G:i',
+            'd/m/Y h:i A',
+            'd/m/Y g:i A',
+            'Y-m-d\TH:i',
+            'Y-m-d H:i',
+            'Y-m-d h:i A',
+            'Y-m-d g:i A',
+        ];
+
+        foreach ($formats as $format) {
+            try {
+                return Carbon::createFromFormat($format, $normalized)->format('Y-m-d H:i:s');
+            } catch (\Throwable) {
+                continue;
+            }
+        }
+
+        try {
+            return Carbon::parse($normalized)->format('Y-m-d H:i:s');
+        } catch (\Throwable) {
+            return $value;
+        }
+    }
+
     private function activeDoctors()
     {
         return User::select(['id', 'nombre_completo', 'tipo_medico', 'comision_porcentaje'])
@@ -177,7 +213,10 @@ class OrderController extends Controller
 
     private function saveOrder(Order $order, Request $request): Order
     {
-        $request->merge(['exams' => collect($request->input('exams', []))->filter(fn ($row) => ! empty($row['exam_id']))->values()->all()]);
+        $request->merge([
+            'exams' => collect($request->input('exams', []))->filter(fn ($row) => ! empty($row['exam_id']))->values()->all(),
+            'fecha_orden' => $this->normalizeOrderDateTime($request->input('fecha_orden')),
+        ]);
         $data = $request->validate([
             'patient_id' => ['required', 'exists:patients,id'],
             'codigo_orden' => ['nullable', 'string', 'max:255', Rule::unique('orders', 'codigo_orden')->ignore($order)],
