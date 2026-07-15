@@ -408,7 +408,7 @@ class OrderController extends Controller
         $order->load(['patient', 'agreement', 'medicoSolicitante', 'orderExams.exam', 'admissionForm']);
         $this->syncPrintableDocuments($order);
         $current = $order->fresh('admissionForm')->admissionForm?->data ?? [];
-        $data['date'] = now()->format('d/m/Y H:i');
+        $data['date'] = $order->fecha_orden?->format('d/m/Y H:i');
         $data['delivery_options'] = array_values($data['delivery_options'] ?? ['PLACAS', 'CD', 'INFORME']);
         $data['delivery_quantities'] = collect($data['delivery_quantities'] ?? [])->map(fn ($item) => $item === null || $item === '' ? '' : (int) $item)->all();
         $data['plates_count'] = $data['delivery_quantities']['PLACAS'] ?? ($data['plates_count'] ?? null);
@@ -529,8 +529,11 @@ class OrderController extends Controller
             'fasting' => '',
             'creatinine' => '',
         ];
+        $admissionData = array_merge($admissionDefaults, $order->admissionForm?->data ?? []);
+        $admissionData['date'] = $order->fecha_orden?->format('d/m/Y H:i');
+
         $order->admissionForm()->updateOrCreate([], [
-            'data' => array_merge($admissionDefaults, $order->admissionForm?->data ?? []),
+            'data' => $admissionData,
         ]);
 
         $now = now();
