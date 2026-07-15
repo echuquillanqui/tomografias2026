@@ -36,7 +36,7 @@
                             <td>{{ $o->unidad ?? '—' }}</td>
                             <td>{{ $o->patient->nombres }} {{ $o->patient->apellidos }}</td>
                             <td>{{ $o->agreement->nombre_institucion }}</td>
-                            <td>{{ $o->fecha_orden->format('d/m/Y') }}</td>
+                            <td>{{ $o->fecha_orden->format('d/m/Y H:i') }}</td>
                             <td>@if($o->agreement->mostrar_precio_orden) S/ {{ $o->total }} @else <span class="text-muted">Oculto</span> @endif</td>
                             <td>
                                 <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#payment{{ $o->id }}">

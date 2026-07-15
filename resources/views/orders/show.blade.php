@@ -7,7 +7,7 @@
             <div>
                 <div class="clinic-eyebrow mb-2">Detalle de orden</div>
                 <h1 class="display-6 fw-bold">{{ $order->codigo_orden ?? '—' }}</h1>
-                <p class="mb-0 opacity-75">{{ $order->patient->nombres }} {{ $order->patient->apellidos }} · {{ $order->fecha_orden->format('d/m/Y') }}</p>
+                <p class="mb-0 opacity-75">{{ $order->patient->nombres }} {{ $order->patient->apellidos }} · {{ $order->fecha_orden->format('d/m/Y H:i') }}</p>
             </div>
             <div>
                 <a class="btn btn-light" href="{{ route('orders.edit', $order) }}">Editar</a>
