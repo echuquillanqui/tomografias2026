@@ -125,6 +125,8 @@ class UserController extends Controller
             $data['rne'] = null;
             $data['comision_porcentaje'] = null;
             $data['firma_path'] = null;
+        } else {
+            $data['tipo_medico'] = 'De Informe';
         }
 
         return $data;

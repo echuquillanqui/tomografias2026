@@ -34,7 +34,7 @@
                         <label class="form-label">Rol</label>
                         <select name="rol" class="form-select @error('rol') is-invalid @enderror" data-role-select required>
                             @foreach ($roles as $role)
-                                <option value="{{ $role }}" @selected(old('rol', $user->rol ?? 'Recepción') === $role)>{{ $role }}</option>
+                                <option value="{{ $role }}" @selected(old('rol', $user->rol ?? 'Médico') === $role)>{{ $role }}</option>
                             @endforeach
                         </select>
                         @error('rol') <div class="invalid-feedback">{{ $message }}</div> @enderror
@@ -64,9 +64,8 @@
                     <div class="col-md-6">
                         <label class="form-label">Tipo de médico</label>
                         <select name="tipo_medico" class="form-select @error('tipo_medico') is-invalid @enderror">
-                            <option value="">Seleccione...</option>
                             @foreach ($tiposMedico as $tipo)
-                                <option value="{{ $tipo }}" @selected(old('tipo_medico', $user->tipo_medico ?? '') === $tipo)>{{ $tipo }}</option>
+                                <option value="{{ $tipo }}" @selected(old('tipo_medico', $user->tipo_medico ?? 'De Informe') === $tipo)>{{ $tipo }}</option>
                             @endforeach
                         </select>
                         @error('tipo_medico') <div class="invalid-feedback">{{ $message }}</div> @enderror
