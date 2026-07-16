@@ -28,7 +28,7 @@
                 <p><strong>Paciente:</strong><br>{{ $order->patient->dni }} - {{ $order->patient->nombres }} {{ $order->patient->apellidos }}</p>
                 <p><strong>Convenio:</strong><br>{{ $order->agreement->nombre_institucion }}</p>
                 <p><strong>Archivo de orden:</strong><br>@if($order->archivo_orden_path)<a target="_blank" href="{{ asset('storage/'.$order->archivo_orden_path) }}">Ver archivo</a>@else — @endif</p>
-                <p><strong>Médico solicitante:</strong><br>{{ $order->medicoSolicitante?->nombre_completo ?? '—' }}</p>
+                <p><strong>Médico solicitante:</strong><br>{{ $order->medicoSolicitante?->nombre ?? '—' }}</p>
                 <p><strong>Tipo de pago:</strong><br>{{ $order->tipo_pago ?? '—' }}</p>
                 <p><strong>Comprobante:</strong><br>{{ $order->tipo_comprobante ?? '—' }} @if($order->numero_comprobante) N° {{ $order->numero_comprobante }} @endif</p>
                 <p><strong>Médico informe:</strong><br>{{ $order->medicoInforme?->nombre_completo ?? '—' }}</p>

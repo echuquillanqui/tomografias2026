@@ -13,7 +13,7 @@ return new class extends Migration
             $table->string('codigo_orden')->nullable()->unique();
             $table->foreignId('patient_id')->constrained('patients')->restrictOnDelete();
             $table->foreignId('agreement_id')->constrained('agreements')->restrictOnDelete();
-            $table->foreignId('medico_solicitante_id')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('medico_solicitante_id')->nullable()->constrained('requesting_doctors')->nullOnDelete();
             $table->foreignId('medico_informe_id')->nullable()->constrained('users')->nullOnDelete();
             $table->string('archivo_orden_path')->nullable();
             $table->date('fecha_orden');

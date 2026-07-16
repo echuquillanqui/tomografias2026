@@ -18,7 +18,7 @@ class Order extends Model
 
     public function patient(): BelongsTo { return $this->belongsTo(Patient::class); }
     public function agreement(): BelongsTo { return $this->belongsTo(Agreement::class); }
-    public function medicoSolicitante(): BelongsTo { return $this->belongsTo(User::class, 'medico_solicitante_id'); }
+    public function medicoSolicitante(): BelongsTo { return $this->belongsTo(RequestingDoctor::class, 'medico_solicitante_id'); }
     public function medicoInforme(): BelongsTo { return $this->belongsTo(User::class, 'medico_informe_id'); }
     public function creator(): BelongsTo { return $this->belongsTo(User::class, 'created_by'); }
     public function orderExams(): HasMany { return $this->hasMany(OrderExam::class); }

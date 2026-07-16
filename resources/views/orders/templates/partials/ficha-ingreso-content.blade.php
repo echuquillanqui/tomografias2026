@@ -30,7 +30,7 @@
             <th>Edad</th><td><input name="patient_age" class="form-control form-control-sm" value="{{ $patientAgeLabel }}" placeholder="30 años"></td>
             <th>Celular</th><td><input name="patient_phone" class="form-control form-control-sm" value="{{ old('patient_phone', $admissionData['patient_phone'] ?? ($order->patient->telefono ?? '—')) }}"></td>
         </tr>
-        <tr><th>Solicitado por</th><td colspan="5"><input name="requested_by" class="form-control form-control-sm" value="{{ old('requested_by', $admissionData['requested_by'] ?? ($order->medicoSolicitante?->nombre_completo ?? '—')) }}"></td></tr>
+        <tr><th>Solicitado por</th><td colspan="5"><input name="requested_by" class="form-control form-control-sm" value="{{ old('requested_by', $admissionData['requested_by'] ?? ($order->medicoSolicitante?->nombre ?? '—')) }}"></td></tr>
         <tr>
             <th>Estudio solicitado</th><td colspan="3"><textarea name="study" class="form-control form-control-lg fw-bold" rows="2" placeholder="Ej.: TEM cerebral">{{ old('study', $admissionData['study'] ?? $order->orderExams->pluck('exam.nombre_examen')->join(', ')) }}</textarea></td>
             <th>Contraste</th><td><input name="contrast_label" class="form-control form-control-lg fw-bold text-danger text-center" value="{{ old('contrast_label', $admissionData['contrast_label'] ?? ($hasContrast ? 'CON CONTRASTE' : 'SIN CONTRASTE')) }}"></td>

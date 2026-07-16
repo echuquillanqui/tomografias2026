@@ -25,11 +25,12 @@
                             <li class="nav-item"><a class="nav-link fw-semibold {{ request()->routeIs('reports.*') ? 'active' : '' }}" href="{{ route('reports.index') }}">Informes</a></li>
                             <li class="nav-item"><a class="nav-link fw-semibold {{ request()->routeIs('cash-closings.*') ? 'active' : '' }}" href="{{ route('cash-closings.index') }}">Cuadre de caja</a></li>
                             <li class="nav-item dropdown">
-                                <a class="nav-link dropdown-toggle fw-semibold {{ request()->routeIs('agreements.*') || request()->routeIs('exams.*') || request()->routeIs('reagents.*') || request()->routeIs('agreement-prices.*') || request()->routeIs('stock-movements.*') || request()->routeIs('system-settings.*') ? 'active' : '' }}" href="#" role="button" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">Catálogos</a>
+                                <a class="nav-link dropdown-toggle fw-semibold {{ request()->routeIs('agreements.*') || request()->routeIs('exams.*') || request()->routeIs('requesting-doctors.*') || request()->routeIs('reagents.*') || request()->routeIs('agreement-prices.*') || request()->routeIs('stock-movements.*') || request()->routeIs('system-settings.*') ? 'active' : '' }}" href="#" role="button" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">Catálogos</a>
                                 <div class="dropdown-menu shadow border-0">
                                     <a class="dropdown-item" href="{{ route('agreements.index') }}">Convenios</a>
                                     <a class="dropdown-item" href="{{ route('exams.index') }}">Exámenes</a>
                                     <a class="dropdown-item" href="{{ route('agreement-prices.index') }}">Precios pactados</a>
+                                    <a class="dropdown-item" href="{{ route('requesting-doctors.index') }}">Médicos solicitantes</a>
                                     <a class="dropdown-item" href="{{ route('reagents.index') }}">Reactivos</a>
                                     <a class="dropdown-item" href="{{ route('stock-movements.index') }}">Movimientos stock</a>
                                 </div>

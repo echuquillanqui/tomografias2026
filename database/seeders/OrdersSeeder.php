@@ -8,6 +8,7 @@ use App\Models\Exam;
 use App\Models\Order;
 use App\Models\OrderExam;
 use App\Models\Patient;
+use App\Models\RequestingDoctor;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 
@@ -17,7 +18,7 @@ class OrdersSeeder extends Seeder
     {
         $patient = Patient::where('dni', '12345678')->firstOrFail();
         $agreement = Agreement::where('nombre_institucion', 'Particular')->firstOrFail();
-        $solicitante = User::where('email', 'solicitante@example.com')->firstOrFail();
+        $solicitante = RequestingDoctor::firstOrCreate(['nombre' => 'Dr. Médico Solicitante'], ['activo' => true]);
         $informante = User::where('email', 'informante@example.com')->firstOrFail();
         $creator = User::where('email', 'recepcion@example.com')->firstOrFail();
         $exam = Exam::where('nombre_examen', 'TEM Cerebral')->firstOrFail();

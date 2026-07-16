@@ -30,7 +30,7 @@ body{font-family:DejaVu Sans,sans-serif;font-size:9.2px;line-height:1.18;color:#
  <div class="head">DATOS DEL PACIENTE</div>
  <div class="row"><div class="cell" style="width:66.666%"><span class="label">Nombres:</span> <?= e($patientName) ?></div><div class="cell"><span class="label">DNI:</span> <?= e($admissionData['patient_dni'] ?? $order->patient->dni) ?></div></div>
  <div class="row"><div class="cell"><span class="label">Fecha de nacimiento:</span> <?= e($birthdate) ?></div><div class="cell"><span class="label">Edad:</span> <?= e($patientAgeLabel) ?></div><div class="cell"><span class="label">Cel:</span> <?= e($admissionData['patient_phone'] ?? ($order->patient->telefono ?? '—')) ?></div></div>
- <div class="row"><div class="cell yellow"><span class="label">Solicitado por:</span> <?= e($admissionData['requested_by'] ?? ($order->medicoSolicitante?->nombre_completo ?? '—')) ?></div></div>
+ <div class="row"><div class="cell yellow"><span class="label">Solicitado por:</span> <?= e($admissionData['requested_by'] ?? ($order->medicoSolicitante?->nombre ?? '—')) ?></div></div>
  <div class="row"><div class="cell study-cell" style="width:66.666%"><span class="label">Estudio solicitado:</span> <?= e($admissionData['study'] ?? $order->orderExams->pluck('exam.nombre_examen')->join(', ')) ?></div><div class="cell contrast-cell"><span class="red"><?= e($admissionData['contrast_label'] ?? ($hasContrast ? 'CON CONTRASTE' : 'SIN CONTRASTE')) ?></span></div></div>
 </div>
 <div class="full"><b>Descartar:</b> <?= e($admissionData['rule_out'] ?? ($admissionData['observations'] ?? ($order->observaciones ?? '—'))) ?></div>
