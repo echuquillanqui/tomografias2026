@@ -60,11 +60,6 @@ class User extends Authenticatable
         return $this->hasMany(Order::class, 'created_by');
     }
 
-    public function ordersAsSolicitante(): HasMany
-    {
-        return $this->hasMany(Order::class, 'medico_solicitante_id');
-    }
-
     public function ordersAsInformante(): HasMany
     {
         return $this->hasMany(Order::class, 'medico_informe_id');

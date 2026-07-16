@@ -8,6 +8,7 @@ use App\Http\Controllers\OrderController;
 use App\Http\Controllers\PatientController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ReagentController;
+use App\Http\Controllers\RequestingDoctorController;
 use App\Http\Controllers\StockMovementController;
 use App\Http\Controllers\SystemSettingController;
 use App\Http\Controllers\UserController;
@@ -39,6 +40,7 @@ Route::middleware('auth')->group(function () {
     Route::resource('agreements', AgreementController::class)->except(['create', 'show', 'edit']);
     Route::resource('exams', ExamController::class)->except(['create', 'show', 'edit']);
     Route::resource('reagents', ReagentController::class)->except(['create', 'show', 'edit']);
+    Route::resource('requesting-doctors', RequestingDoctorController::class)->except(['create', 'show', 'edit']);
     Route::resource('agreement-prices', AgreementPriceController::class)->except(['create', 'show', 'edit']);
     Route::get('stock-movements/report/download', [StockMovementController::class, 'downloadReport'])->name('stock-movements.report.download');
     Route::resource('stock-movements', StockMovementController::class)->only(['index', 'store', 'destroy']);

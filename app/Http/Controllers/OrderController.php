@@ -8,6 +8,7 @@ use App\Models\Exam;
 use App\Models\Order;
 use App\Models\Patient;
 use App\Models\Reagent;
+use App\Models\RequestingDoctor;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -144,16 +145,14 @@ class OrderController extends Controller
 
     private function formData(Request $request, ?Order $order = null): array
     {
-        $medicos = $this->activeDoctors();
-
         return [
             'patients' => Patient::select(['id', 'dni', 'nombres', 'apellidos', 'telefono', 'fecha_nacimiento', 'edad'])->orderBy('apellidos')->orderBy('nombres')->get(),
             'agreements' => Agreement::select(['id', 'nombre_institucion', 'mostrar_precio_orden'])->where('activo', true)->orderByRaw("CASE WHEN UPPER(nombre_institucion) = 'PARTICULAR' THEN 0 ELSE 1 END")->orderBy('nombre_institucion')->get(),
             'exams' => Exam::with('reagents:id,nombre,unidad')->select(['id', 'nombre_examen'])->where('activo', true)->orderBy('nombre_examen')->get(),
             'reagents' => Reagent::select(['id', 'nombre', 'unidad'])->where('activo', true)->orderBy('nombre')->get(),
             'agreementPrices' => AgreementPrice::select(['agreement_id', 'exam_id', 'tipo_contraste', 'precio_pactado'])->get(),
-            'medicosSolicitantes' => $medicos->whereIn('tipo_medico', ['Solicitante', 'Ambos'])->values(),
-            'medicosInformantes' => $medicos->whereIn('tipo_medico', ['De Informe', 'Ambos'])->values(),
+            'medicosSolicitantes' => RequestingDoctor::select(['id', 'nombre'])->where('activo', true)->orderBy('nombre')->get(),
+            'medicosInformantes' => $this->activeDoctors()->whereIn('tipo_medico', ['De Informe', 'Ambos'])->values(),
             'estados' => self::ESTADOS,
             'tiposPago' => self::TIPOS_PAGO,
             'tiposComprobante' => self::TIPOS_COMPROBANTE,
@@ -223,7 +222,7 @@ class OrderController extends Controller
             'unidad' => ['nullable', Rule::in(self::UNIDADES)],
             'archivo_orden' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png,webp', 'max:10240'],
             'agreement_id' => ['required', 'exists:agreements,id'],
-            'medico_solicitante_id' => ['nullable', 'exists:users,id'],
+            'medico_solicitante_id' => ['nullable', 'exists:requesting_doctors,id'],
             'medico_informe_id' => ['nullable', 'exists:users,id'],
             'fecha_orden' => ['required', 'date'],
             'estado' => ['required', Rule::in(self::ESTADOS)],
@@ -543,7 +542,7 @@ class OrderController extends Controller
             'patient_phone' => $order->patient->telefono,
             'patient_birthdate' => $order->patient->fecha_nacimiento?->format('d/m/Y'),
             'patient_age' => $patientAge,
-            'requested_by' => $order->medicoSolicitante?->nombre_completo,
+            'requested_by' => $order->medicoSolicitante?->nombre,
             'contrast_label' => $hasContrast ? 'CON CONTRASTE' : 'SIN CONTRASTE',
             'has_contrast' => $hasContrast,
             'study' => $examNames,
@@ -636,7 +635,7 @@ IMPRESSION;
 **DNI:** {$patient->dni}
 **Edad:** {$this->patientAge($patient)}
 **Fecha del estudio:** {$order->fecha_orden->format('d/m/Y H:i')}
-**Médico solicitante:** {$this->valueOrPlaceholder($order->medicoSolicitante?->nombre_completo, '[Nombre del médico solicitante]')}
+**Médico solicitante:** {$this->valueOrPlaceholder($order->medicoSolicitante?->nombre, '[Nombre del médico solicitante]')}
 **Estudio solicitado:** Tomografía computarizada de {$region}
 **Contraste:** {$contrast}
 

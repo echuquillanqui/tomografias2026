@@ -119,7 +119,7 @@
                                 <select name="medico_solicitante_id" class="form-select js-tom-select" data-placeholder="Buscar médico solicitante">
                                     <option value=""></option>
                                     @foreach($medicosSolicitantes as $m)
-                                        <option value="{{ $m->id }}" @selected(old('medico_solicitante_id', $order->medico_solicitante_id) == $m->id)>{{ $m->nombre_completo }}</option>
+                                        <option value="{{ $m->id }}" @selected(old('medico_solicitante_id', $order->medico_solicitante_id) == $m->id)>{{ $m->nombre }}</option>
                                     @endforeach
                                 </select>
                             </div>

@@ -15,7 +15,7 @@ class UserController extends Controller
 {
     private const ROLES = ['Admin', 'Recepción', 'Médico', 'Almacén'];
 
-    private const TIPOS_MEDICO = ['Solicitante', 'De Informe', 'Ambos'];
+    private const TIPOS_MEDICO = ['De Informe'];
 
     public function index(Request $request): View
     {

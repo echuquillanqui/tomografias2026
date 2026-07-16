@@ -37,7 +37,7 @@
                     </div>
                     <div class="report-summary-item">
                         <span>Médico solicitante</span>
-                        <strong>{{ $order->medicoSolicitante?->nombre_completo ?? '—' }}</strong>
+                        <strong>{{ $order->medicoSolicitante?->nombre ?? '—' }}</strong>
                     </div>
                 </div>
             </div>
