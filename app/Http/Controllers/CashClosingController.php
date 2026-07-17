@@ -92,7 +92,7 @@ class CashClosingController extends Controller
         $start = Carbon::parse($from)->startOfDay();
         $end = Carbon::parse($to)->endOfDay();
 
-        $orders = Order::with(['patient', 'agreement', 'medicoSolicitante', 'medicoInforme', 'orderExams.exam', 'admissionForm'])
+        $orders = Order::with(['patient', 'agreement', 'medicoSolicitante', 'medicoInforme', 'orderExams.exam', 'admissionForm', 'consumables.reagent'])
             ->whereBetween('fecha_orden', [$start, $end])
             ->where('estado', '!=', 'Anulado')
             ->when($tipoPago, fn ($query) => $query->where('tipo_pago', $tipoPago))
@@ -113,9 +113,50 @@ class CashClosingController extends Controller
         $digitalIncome = $yapePlinIncome + $transferIncome;
         $incomeByPayment = $orders->groupBy(fn (Order $order) => $order->tipo_pago ?? 'Sin método')
             ->map(fn ($items) => $items->sum('total'));
-        $plateSummary = $this->plateSummary($orders, $start, $end);
+        $operationalBaseDate = $request->date('operational_base_date')?->toDateString() ?: $baseDate;
+        $operationalTipoPago = in_array($request->query('operational_tipo_pago'), self::TIPOS_PAGO, true)
+            ? $request->query('operational_tipo_pago')
+            : null;
+        $operationalStart = Carbon::parse($operationalBaseDate)->startOfDay();
+        $operationalEnd = Carbon::parse($operationalBaseDate)->endOfDay();
+        $operationalOrders = Order::with(['patient', 'agreement', 'medicoSolicitante', 'medicoInforme', 'orderExams.exam', 'admissionForm', 'consumables.reagent'])
+            ->whereBetween('fecha_orden', [$operationalStart, $operationalEnd])
+            ->where('estado', '!=', 'Anulado')
+            ->when($operationalTipoPago, fn ($query) => $query->where('tipo_pago', $operationalTipoPago))
+            ->latest('fecha_orden')
+            ->get();
+        $operationalExpenses = CashExpense::with('creator')
+            ->whereBetween('fecha_egreso', [$operationalStart->toDateString(), $operationalEnd->toDateString()])
+            ->latest('fecha_egreso')
+            ->latest()
+            ->get();
+        $operationalIncomeTotal = $operationalOrders->sum('total');
+        $operationalExpenseTotal = $operationalExpenses->sum('monto');
+        $operationalYapePlinIncome = $operationalOrders->where('tipo_pago', 'Yape/Plin')->sum('total');
+        $operationalTransferIncome = $operationalOrders->where('tipo_pago', 'Transferencia')->sum('total');
+        $operationalPlateSummary = $this->stockSummary($operationalOrders, $operationalStart, $operationalEnd, 'placa', 'Placas', function (Order $order): float {
+            $data = $order->admissionForm?->data ?? [];
 
-        return compact('from', 'to', 'period', 'baseDate', 'tipoPago', 'orders', 'expenses', 'incomeTotal', 'expenseTotal', 'cashIncome', 'yapePlinIncome', 'transferIncome', 'digitalIncome', 'incomeByPayment', 'plateSummary') + [
+            return (float) ($data['delivery_quantities']['PLACAS'] ?? $data['plates_count'] ?? 0);
+        });
+        $operationalIopamidolSummary = $this->stockSummary($operationalOrders, $operationalStart, $operationalEnd, 'iopamidol', 'Iopamidol', function (Order $order): float {
+            return (float) $order->consumables
+                ->filter(fn ($consumable) => str_contains(strtolower($consumable->reagent->nombre ?? ''), 'iopamidol'))
+                ->sum('cantidad');
+        });
+
+        $plateSummary = $this->stockSummary($orders, $start, $end, 'placa', 'Placas', function (Order $order): float {
+            $data = $order->admissionForm?->data ?? [];
+
+            return (float) ($data['delivery_quantities']['PLACAS'] ?? $data['plates_count'] ?? 0);
+        });
+        $iopamidolSummary = $this->stockSummary($orders, $start, $end, 'iopamidol', 'Iopamidol', function (Order $order): float {
+            return (float) $order->consumables
+                ->filter(fn ($consumable) => str_contains(strtolower($consumable->reagent->nombre ?? ''), 'iopamidol'))
+                ->sum('cantidad');
+        });
+
+        return compact('from', 'to', 'period', 'baseDate', 'tipoPago', 'orders', 'expenses', 'incomeTotal', 'expenseTotal', 'cashIncome', 'yapePlinIncome', 'transferIncome', 'digitalIncome', 'incomeByPayment', 'plateSummary', 'iopamidolSummary', 'operationalBaseDate', 'operationalTipoPago', 'operationalOrders', 'operationalExpenses', 'operationalIncomeTotal', 'operationalExpenseTotal', 'operationalYapePlinIncome', 'operationalTransferIncome', 'operationalPlateSummary', 'operationalIopamidolSummary') + [
             'cashBalance' => $cashIncome - $expenseTotal,
             'balance' => $incomeTotal - $expenseTotal,
             'tiposPago' => self::TIPOS_PAGO,
@@ -126,52 +167,49 @@ class CashClosingController extends Controller
         ];
     }
 
-    private function plateSummary($orders, Carbon $start, Carbon $end): array
+    private function stockSummary($orders, Carbon $start, Carbon $end, string $reagentSearch, string $fallbackName, callable $deliveredResolver): array
     {
-        $platesDelivered = (int) $orders->sum(function (Order $order): int {
-            $data = $order->admissionForm?->data ?? [];
-            $quantity = $data['delivery_quantities']['PLACAS'] ?? $data['plates_count'] ?? 0;
+        $delivered = (float) $orders->sum(fn (Order $order): float => $deliveredResolver($order));
 
-            return (int) $quantity;
-        });
-
-        $plate = Reagent::query()
-            ->where('nombre', 'like', '%placa%')
+        $reagent = Reagent::query()
+            ->where('nombre', 'like', '%'.$reagentSearch.'%')
             ->orderBy('nombre')
             ->first();
 
-        if (! $plate) {
+        if (! $reagent) {
             return [
                 'initial' => 0,
                 'received' => 0,
-                'delivered' => $platesDelivered,
-                'final' => max(0, 0 - $platesDelivered),
-                'name' => 'Placas',
+                'delivered' => $delivered,
+                'final' => max(0, 0 - $delivered),
+                'name' => $fallbackName,
+                'unit' => '',
                 'tracked' => false,
             ];
         }
 
         $movements = StockMovement::query()
-            ->where('reagent_id', $plate->id)
+            ->where('reagent_id', $reagent->id)
             ->whereBetween('fecha_movimiento', [$start, $end])
             ->get();
 
         $received = (float) $movements->where('tipo_movimiento', 'Ingreso')->sum('cantidad');
-        $stockAtEnd = (float) $plate->stock_actual;
+        $stockAtEnd = (float) $reagent->stock_actual;
         $netAfterEnd = (float) StockMovement::query()
-            ->where('reagent_id', $plate->id)
+            ->where('reagent_id', $reagent->id)
             ->where('fecha_movimiento', '>', $end)
             ->get()
             ->sum(fn (StockMovement $movement) => $movement->tipo_movimiento === 'Ingreso' ? $movement->cantidad : -$movement->cantidad);
         $final = $stockAtEnd - $netAfterEnd;
-        $initial = $final - $received + $platesDelivered;
+        $initial = $final - $received + $delivered;
 
         return [
-            'initial' => max(0, (int) round($initial)),
-            'received' => (int) round($received),
-            'delivered' => $platesDelivered,
-            'final' => max(0, (int) round($final)),
-            'name' => $plate->nombre,
+            'initial' => max(0, $initial),
+            'received' => $received,
+            'delivered' => $delivered,
+            'final' => max(0, $final),
+            'name' => $reagent->nombre,
+            'unit' => $reagent->unidad,
             'tracked' => true,
         ];
     }
