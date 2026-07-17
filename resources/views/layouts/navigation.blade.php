@@ -23,7 +23,13 @@
                             </li>
                             <li class="nav-item"><a class="nav-link fw-semibold {{ request()->routeIs('orders.*') ? 'active' : '' }}" href="{{ route('orders.index') }}">Órdenes</a></li>
                             <li class="nav-item"><a class="nav-link fw-semibold {{ request()->routeIs('reports.*') ? 'active' : '' }}" href="{{ route('reports.index') }}">Informes</a></li>
-                            <li class="nav-item"><a class="nav-link fw-semibold {{ request()->routeIs('cash-closings.*') ? 'active' : '' }}" href="{{ route('cash-closings.index') }}">Cuadre de caja</a></li>
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle fw-semibold {{ request()->routeIs('cash-closings.*') ? 'active' : '' }}" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">Cuadre de caja</a>
+                                <div class="dropdown-menu shadow border-0">
+                                    <a class="dropdown-item {{ request()->routeIs('cash-closings.*') && request('tab') !== 'hoja' ? 'active' : '' }}" href="{{ route('cash-closings.index', ['tab' => 'resumen']) }}">Resumen y movimientos</a>
+                                    <a class="dropdown-item {{ request()->routeIs('cash-closings.*') && request('tab') === 'hoja' ? 'active' : '' }}" href="{{ route('cash-closings.index', ['tab' => 'hoja']) }}">Hoja de caja diaria</a>
+                                </div>
+                            </li>
                             <li class="nav-item dropdown">
                                 <a class="nav-link dropdown-toggle fw-semibold {{ request()->routeIs('agreements.*') || request()->routeIs('exams.*') || request()->routeIs('requesting-doctors.*') || request()->routeIs('reagents.*') || request()->routeIs('agreement-prices.*') || request()->routeIs('stock-movements.*') || request()->routeIs('system-settings.*') ? 'active' : '' }}" href="#" role="button" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">Catálogos</a>
                                 <div class="dropdown-menu shadow border-0">
