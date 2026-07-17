@@ -22,7 +22,11 @@
         <tr><td>Ingresos efectivo</td><td class="right">S/ {{ number_format($cashIncome, 2) }}</td><td>Egresos efectivo</td><td class="right">S/ {{ number_format($expenseTotal, 2) }}</td></tr>
         <tr><td>Saldo efectivo</td><td class="right">S/ {{ number_format($cashBalance, 2) }}</td><td>Yape/Plin</td><td class="right">S/ {{ number_format($yapePlinIncome, 2) }}</td></tr>
         <tr><td>Transferencias</td><td class="right">S/ {{ number_format($transferIncome, 2) }}</td><td>Total ingresos</td><td class="right">S/ {{ number_format($incomeTotal, 2) }}</td></tr>
+        <tr><td>Placas inicial</td><td class="right">{{ $plateSummary['initial'] }}</td><td>Placas final</td><td class="right">{{ $plateSummary['final'] }}</td></tr>
     </table>
+
+    <h2>Cuadre diario - placas</h2>
+    <table><thead><tr><th>Fecha</th><th>Paciente</th><th>Tomografía</th><th>Total</th><th>Placas usadas</th><th>Saldo placas</th><th>Gasto</th><th>Monto</th></tr></thead><tbody>@php $plateRunning = $plateSummary['initial']; $maxRows = max($orders->count(), $expenses->count()); @endphp @for($i = 0; $i < $maxRows; $i++) @php $order = $orders->values()->get($i); $expense = $expenses->values()->get($i); $plates = $order ? (int) (($order->admissionForm?->data['delivery_quantities']['PLACAS'] ?? $order->admissionForm?->data['plates_count'] ?? 0)) : 0; $plateRunning -= $plates; @endphp <tr><td>{{ $order?->fecha_orden?->format('d/m/Y') }}</td><td>{{ $order ? trim(($order->patient->nombres ?? '').' '.($order->patient->apellidos ?? '')) : '' }}</td><td>{{ $order?->orderExams?->pluck('exam.nombre_examen')->filter()->join(' + ') }}</td><td class="right">{{ $order ? 'S/ '.number_format($order->total, 2) : '' }}</td><td class="right">{{ $plates ?: '' }}</td><td class="right">{{ $order ? $plateRunning : '' }}</td><td>{{ $expense->descripcion ?? '' }}</td><td class="right">{{ $expense ? 'S/ '.number_format($expense->monto, 2) : '' }}</td></tr> @endfor</tbody></table>
 
     <h2>Ingresos en efectivo</h2>
     @include('cash-closings.exports.partials.orders-pdf-table', ['sheetOrders' => $cashOrders])

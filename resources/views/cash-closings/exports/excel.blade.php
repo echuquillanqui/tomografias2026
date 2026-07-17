@@ -15,6 +15,21 @@
             <Row><Cell><Data ss:Type="String">Yape/Plin</Data></Cell><Cell><Data ss:Type="Number">{{ $money($yapePlinIncome) }}</Data></Cell></Row>
             <Row><Cell><Data ss:Type="String">Transferencias</Data></Cell><Cell><Data ss:Type="Number">{{ $money($transferIncome) }}</Data></Cell></Row>
             <Row><Cell><Data ss:Type="String">Total ingresos</Data></Cell><Cell><Data ss:Type="Number">{{ $money($incomeTotal) }}</Data></Cell></Row>
+            <Row><Cell><Data ss:Type="String">Placas inicial</Data></Cell><Cell><Data ss:Type="Number">{{ $plateSummary['initial'] }}</Data></Cell></Row>
+            <Row><Cell><Data ss:Type="String">Placas utilizadas</Data></Cell><Cell><Data ss:Type="Number">{{ $plateSummary['delivered'] }}</Data></Cell></Row>
+            <Row><Cell><Data ss:Type="String">Placas final</Data></Cell><Cell><Data ss:Type="Number">{{ $plateSummary['final'] }}</Data></Cell></Row>
+        </Table>
+    </Worksheet>
+
+
+    <Worksheet ss:Name="Cuadre diario">
+        <Table>
+            <Row><Cell><Data ss:Type="String">N°</Data></Cell><Cell><Data ss:Type="String">Fecha</Data></Cell><Cell><Data ss:Type="String">Paciente</Data></Cell><Cell><Data ss:Type="String">DNI</Data></Cell><Cell><Data ss:Type="String">Tipo de tomografía</Data></Cell><Cell><Data ss:Type="String">S/C C/C</Data></Cell><Cell><Data ss:Type="String">Total cobrado</Data></Cell><Cell><Data ss:Type="String">Yape</Data></Cell><Cell><Data ss:Type="String">Transferencia</Data></Cell><Cell><Data ss:Type="String">Por cobrar</Data></Cell><Cell><Data ss:Type="String">Placas usadas</Data></Cell><Cell><Data ss:Type="String">Saldo placas</Data></Cell><Cell><Data ss:Type="String">Médico solicitante</Data></Cell><Cell><Data ss:Type="String">Doctor informe</Data></Cell><Cell><Data ss:Type="String">Gasto</Data></Cell><Cell><Data ss:Type="String">Monto gasto</Data></Cell></Row>
+            @php $plateRunning = $plateSummary['initial']; $maxRows = max($orders->count(), $expenses->count()); @endphp
+            @for($i = 0; $i < $maxRows; $i++)
+                @php $order = $orders->values()->get($i); $expense = $expenses->values()->get($i); $plates = $order ? (int) (($order->admissionForm?->data['delivery_quantities']['PLACAS'] ?? $order->admissionForm?->data['plates_count'] ?? 0)) : 0; $plateRunning -= $plates; @endphp
+                <Row><Cell><Data ss:Type="Number">{{ $i + 1 }}</Data></Cell><Cell><Data ss:Type="String">{{ $order?->fecha_orden?->format('d/m/Y') }}</Data></Cell><Cell><Data ss:Type="String">{{ $text($order ? trim(($order->patient->nombres ?? '').' '.($order->patient->apellidos ?? '')) : '') }}</Data></Cell><Cell><Data ss:Type="String">{{ $text($order->patient->dni ?? '') }}</Data></Cell><Cell><Data ss:Type="String">{{ $text($order?->orderExams?->pluck('exam.nombre_examen')->filter()->join(' + ') ?? '') }}</Data></Cell><Cell><Data ss:Type="String">{{ $text($order?->orderExams?->pluck('tipo_contraste')->filter()->join(', ') ?? '') }}</Data></Cell><Cell><Data ss:Type="Number">{{ $order ? $money($order->total) : 0 }}</Data></Cell><Cell><Data ss:Type="Number">{{ $order?->tipo_pago === 'Yape/Plin' ? $money($order->total) : 0 }}</Data></Cell><Cell><Data ss:Type="Number">{{ $order?->tipo_pago === 'Transferencia' ? $money($order->total) : 0 }}</Data></Cell><Cell><Data ss:Type="Number">{{ $order?->tipo_pago === 'Convenio' ? $money($order->total) : 0 }}</Data></Cell><Cell><Data ss:Type="Number">{{ $plates }}</Data></Cell><Cell><Data ss:Type="Number">{{ $order ? $plateRunning : 0 }}</Data></Cell><Cell><Data ss:Type="String">{{ $text($order->medicoSolicitante->nombre ?? '') }}</Data></Cell><Cell><Data ss:Type="String">{{ $text($order->medicoInforme->nombre_completo ?? 'SIN INFORME') }}</Data></Cell><Cell><Data ss:Type="String">{{ $text($expense->descripcion ?? '') }}</Data></Cell><Cell><Data ss:Type="Number">{{ $expense ? $money($expense->monto) : 0 }}</Data></Cell></Row>
+            @endfor
         </Table>
     </Worksheet>
 
