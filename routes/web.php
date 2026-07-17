@@ -48,6 +48,9 @@ Route::middleware('auth')->group(function () {
     Route::get('cash-closings/export/excel', [CashClosingController::class, 'exportExcel'])->name('cash-closings.export.excel');
     Route::get('cash-closings/export/pdf', [CashClosingController::class, 'exportPdf'])->name('cash-closings.export.pdf');
     Route::post('cash-closings/expenses', [CashClosingController::class, 'storeExpense'])->name('cash-closings.expenses.store');
+    Route::post('cash-closings/fixed-expenses', [CashClosingController::class, 'storeFixedExpense'])->name('cash-closings.fixed-expenses.store');
+    Route::put('cash-closings/fixed-expenses/{cashFixedExpense}', [CashClosingController::class, 'updateFixedExpense'])->name('cash-closings.fixed-expenses.update');
+    Route::post('cash-closings/fixed-expenses/execute', [CashClosingController::class, 'executeFixedExpenses'])->name('cash-closings.fixed-expenses.execute');
     Route::delete('cash-closings/expenses/{cashExpense}', [CashClosingController::class, 'destroyExpense'])->name('cash-closings.expenses.destroy');
     Route::get('system-settings', [SystemSettingController::class, 'index'])->name('system-settings.index');
     Route::put('system-settings', [SystemSettingController::class, 'update'])->name('system-settings.update');

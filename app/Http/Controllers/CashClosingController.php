@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\CashExpense;
+use App\Models\CashFixedExpense;
 use App\Models\Order;
 use App\Models\Reagent;
 use App\Models\StockMovement;
@@ -69,7 +70,67 @@ class CashClosingController extends Controller
         $data['created_by'] = auth()->id();
         CashExpense::create($data);
 
-        return redirect()->route('cash-closings.index', $request->only(['period', 'base_date', 'from', 'to', 'tipo_pago']))->with('success', 'Egreso registrado correctamente.');
+        return redirect()->route('cash-closings.index', $request->only(['period', 'base_date', 'from', 'to', 'tipo_pago', 'tab']))->with('success', 'Egreso registrado correctamente.');
+    }
+
+    public function storeFixedExpense(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'descripcion' => ['required', 'string', 'max:255'],
+            'monto' => ['required', 'numeric', 'min:0.01'],
+            'activo' => ['nullable', 'boolean'],
+        ]);
+
+        $data['activo'] = $request->boolean('activo', true);
+        $data['created_by'] = auth()->id();
+        CashFixedExpense::create($data);
+
+        return redirect()->route('cash-closings.index', array_merge($request->only(['period', 'base_date', 'tipo_pago']), ['tab' => 'fijos']))->with('success', 'Gasto fijo registrado correctamente.');
+    }
+
+    public function updateFixedExpense(Request $request, CashFixedExpense $cashFixedExpense): RedirectResponse
+    {
+        $data = $request->validate([
+            'descripcion' => ['required', 'string', 'max:255'],
+            'monto' => ['required', 'numeric', 'min:0.01'],
+            'activo' => ['nullable', 'boolean'],
+        ]);
+
+        $data['activo'] = $request->boolean('activo');
+        $cashFixedExpense->update($data);
+
+        return redirect()->route('cash-closings.index', array_merge($request->only(['period', 'base_date', 'tipo_pago']), ['tab' => 'fijos']))->with('success', 'Gasto fijo actualizado correctamente.');
+    }
+
+    public function executeFixedExpenses(Request $request): RedirectResponse
+    {
+        $periodDate = $request->date('period_date') ?: now();
+        $period = $periodDate->format('Y-m');
+        $expenseDate = $periodDate->copy()->endOfMonth()->toDateString();
+        $fixedExpenses = CashFixedExpense::where('activo', true)->get();
+        $created = 0;
+
+        foreach ($fixedExpenses as $fixedExpense) {
+            $expense = CashExpense::firstOrCreate(
+                ['cash_fixed_expense_id' => $fixedExpense->id, 'fixed_expense_period' => $period],
+                [
+                    'fecha_egreso' => $expenseDate,
+                    'descripcion' => 'Gasto fijo: '.$fixedExpense->descripcion,
+                    'monto' => $fixedExpense->monto,
+                    'created_by' => auth()->id(),
+                ]
+            );
+
+            if ($expense->wasRecentlyCreated) {
+                $created++;
+            }
+        }
+
+        $message = $created > 0
+            ? $created.' gasto(s) fijo(s) ejecutado(s) para '.$period.'.'
+            : 'Los gastos fijos de '.$period.' ya habían sido ejecutados.';
+
+        return redirect()->route('cash-closings.index', ['period' => 'month', 'tab' => 'fijos'])->with('success', $message);
     }
 
     public function destroyExpense(CashExpense $cashExpense): RedirectResponse
@@ -99,7 +160,7 @@ class CashClosingController extends Controller
             ->latest('fecha_orden')
             ->get();
 
-        $expenses = CashExpense::with('creator')
+        $expenses = CashExpense::with(['creator', 'fixedExpense'])
             ->whereBetween('fecha_egreso', [$start->toDateString(), $end->toDateString()])
             ->latest('fecha_egreso')
             ->latest()
@@ -125,7 +186,7 @@ class CashClosingController extends Controller
             ->when($operationalTipoPago, fn ($query) => $query->where('tipo_pago', $operationalTipoPago))
             ->latest('fecha_orden')
             ->get();
-        $operationalExpenses = CashExpense::with('creator')
+        $operationalExpenses = CashExpense::with(['creator', 'fixedExpense'])
             ->whereBetween('fecha_egreso', [$operationalStart->toDateString(), $operationalEnd->toDateString()])
             ->latest('fecha_egreso')
             ->latest()
@@ -156,6 +217,11 @@ class CashClosingController extends Controller
                 ->sum('cantidad');
         });
 
+        $fixedExpenses = CashFixedExpense::withCount('expenses')->latest()->get();
+        $currentFixedExpensePeriod = now()->format('Y-m');
+        $monthlyFixedExpensesPending = $this->pendingFixedExpenses($currentFixedExpensePeriod);
+        $shouldShowFixedExpenseModal = now()->isLastOfMonth() && $monthlyFixedExpensesPending->isNotEmpty();
+
         return compact('from', 'to', 'period', 'baseDate', 'tipoPago', 'orders', 'expenses', 'incomeTotal', 'expenseTotal', 'cashIncome', 'yapePlinIncome', 'transferIncome', 'digitalIncome', 'incomeByPayment', 'plateSummary', 'iopamidolSummary', 'operationalBaseDate', 'operationalTipoPago', 'operationalOrders', 'operationalExpenses', 'operationalIncomeTotal', 'operationalExpenseTotal', 'operationalYapePlinIncome', 'operationalTransferIncome', 'operationalPlateSummary', 'operationalIopamidolSummary') + [
             'cashBalance' => $cashIncome - $expenseTotal,
             'balance' => $incomeTotal - $expenseTotal,
@@ -164,7 +230,19 @@ class CashClosingController extends Controller
             'cashOrders' => $orders->where('tipo_pago', 'Efectivo'),
             'yapePlinOrders' => $orders->where('tipo_pago', 'Yape/Plin'),
             'transferOrders' => $orders->where('tipo_pago', 'Transferencia'),
+            'fixedExpenses' => $fixedExpenses,
+            'currentFixedExpensePeriod' => $currentFixedExpensePeriod,
+            'monthlyFixedExpensesPending' => $monthlyFixedExpensesPending,
+            'shouldShowFixedExpenseModal' => $shouldShowFixedExpenseModal,
         ];
+    }
+
+    private function pendingFixedExpenses(string $period)
+    {
+        return CashFixedExpense::where('activo', true)
+            ->whereDoesntHave('expenses', fn ($query) => $query->where('fixed_expense_period', $period))
+            ->orderBy('descripcion')
+            ->get();
     }
 
     private function stockSummary($orders, Carbon $start, Carbon $end, string $reagentSearch, string $fallbackName, callable $deliveredResolver): array
