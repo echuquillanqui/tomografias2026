@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('content')
-@php $activeCashTab = request('tab') === 'hoja' ? 'hoja' : 'resumen'; @endphp
+@php $activeCashTab = in_array(request('tab'), ['hoja', 'fijos'], true) ? request('tab') : 'resumen'; @endphp
 <div class="container">
     <section class="clinic-page-hero mb-4">
         <div class="d-flex flex-column flex-lg-row justify-content-between gap-3">
@@ -68,11 +68,12 @@
         </div>
         <div class="dropdown">
             <button class="btn btn-clinic-primary dropdown-toggle fw-bold" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                {{ $activeCashTab === 'hoja' ? 'Hoja de caja diaria' : 'Resumen y movimientos' }}
+                {{ $activeCashTab === 'hoja' ? 'Hoja de caja diaria' : ($activeCashTab === 'fijos' ? 'Gastos fijos' : 'Resumen y movimientos') }}
             </button>
             <div class="dropdown-menu dropdown-menu-end shadow border-0">
                 <a class="dropdown-item {{ $activeCashTab === 'resumen' ? 'active' : '' }}" href="{{ route('cash-closings.index', array_merge(request()->except('tab'), ['tab' => 'resumen'])) }}">Resumen y movimientos</a>
                 <a class="dropdown-item {{ $activeCashTab === 'hoja' ? 'active' : '' }}" href="{{ route('cash-closings.index', array_merge(request()->except('tab'), ['tab' => 'hoja'])) }}">Hoja de caja diaria</a>
+                <a class="dropdown-item {{ $activeCashTab === 'fijos' ? 'active' : '' }}" href="{{ route('cash-closings.index', array_merge(request()->except('tab'), ['tab' => 'fijos'])) }}">Gastos fijos</a>
             </div>
         </div>
     </div>
@@ -111,6 +112,40 @@
         </div>
         </div>
         </div>
+
+        <div class="tab-pane fade {{ $activeCashTab === 'fijos' ? 'show active' : '' }}" id="gastos-fijos" role="tabpanel" aria-labelledby="fijos-tab">
+            <div class="alert alert-warning d-flex flex-column flex-lg-row justify-content-between gap-2 align-items-lg-center">
+                <div><strong>Gastos fijos mensuales:</strong> se mostrarán en un modal el último día de cada mes al iniciar el sistema para ejecutarlos una sola vez en el cuadre mensual.</div>
+                <form method="POST" action="{{ route('cash-closings.fixed-expenses.execute') }}" class="m-0">
+                    @csrf
+                    <input type="hidden" name="period_date" value="{{ now()->toDateString() }}">
+                    <button class="btn btn-warning fw-bold">Ejecutar mes actual</button>
+                </form>
+            </div>
+            <div class="row g-4">
+                <div class="col-lg-4">
+                    <div class="card clinic-card">
+                        <div class="card-header bg-white border-0 pt-4 px-4"><h5 class="fw-bold mb-0">Nuevo gasto fijo</h5></div>
+                        <div class="card-body px-4 pb-4">
+                            <form method="POST" action="{{ route('cash-closings.fixed-expenses.store', ['period' => $period, 'base_date' => $period === 'day' ? $baseDate : null, 'tipo_pago' => $tipoPago]) }}">
+                                @csrf
+                                <div class="mb-3"><label class="form-label fw-bold">Descripción</label><input name="descripcion" value="{{ old('descripcion') }}" class="form-control" maxlength="255" required placeholder="Ej. Alquiler, servicios, internet..."></div>
+                                <div class="mb-3"><label class="form-label fw-bold">Monto mensual</label><div class="input-group"><span class="input-group-text">S/</span><input type="number" step="0.01" min="0.01" name="monto" value="{{ old('monto') }}" class="form-control" required></div></div>
+                                <div class="form-check form-switch mb-3"><input class="form-check-input" type="checkbox" name="activo" value="1" id="fixedActivo" checked><label class="form-check-label fw-bold" for="fixedActivo">Activo</label></div>
+                                <button class="btn btn-clinic-primary w-100">Guardar gasto fijo</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-8">
+                    <div class="card clinic-card">
+                        <div class="card-header bg-white border-0 pt-4 px-4"><h5 class="fw-bold mb-0">Gastos fijos configurados</h5></div>
+                        <div class="card-body p-0"><div class="table-responsive"><table class="table table-clinic align-middle mb-0"><thead><tr><th>Descripción</th><th>Monto</th><th>Estado</th><th>Ejecuciones</th><th>Actualizar</th></tr></thead><tbody>@forelse($fixedExpenses as $fixedExpense)<tr><form method="POST" action="{{ route('cash-closings.fixed-expenses.update', $fixedExpense) }}">@csrf @method('PUT')<td><input name="descripcion" value="{{ $fixedExpense->descripcion }}" class="form-control form-control-sm" required maxlength="255"></td><td><div class="input-group input-group-sm"><span class="input-group-text">S/</span><input type="number" step="0.01" min="0.01" name="monto" value="{{ $fixedExpense->monto }}" class="form-control" required></div></td><td><div class="form-check form-switch"><input class="form-check-input" type="checkbox" name="activo" value="1" @checked($fixedExpense->activo)><span class="badge {{ $fixedExpense->activo ? 'text-bg-success' : 'text-bg-secondary' }}">{{ $fixedExpense->activo ? 'Activo' : 'Inactivo' }}</span></div></td><td>{{ $fixedExpense->expenses_count }}</td><td><button class="btn btn-sm btn-outline-primary fw-bold">Guardar</button></td></form></tr>@empty<tr><td colspan="5" class="text-center py-4">Aún no hay gastos fijos configurados.</td></tr>@endforelse</tbody></table></div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="tab-pane fade {{ $activeCashTab === 'hoja' ? 'show active' : '' }}" id="hoja-caja" role="tabpanel" aria-labelledby="hoja-tab">
             <div class="card clinic-card overflow-hidden">
                 <div class="card-header border-0 text-white" style="background: linear-gradient(135deg, #0f766e, #0ea5e9);">
