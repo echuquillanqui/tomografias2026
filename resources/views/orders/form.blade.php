@@ -146,102 +146,117 @@
                 </div>
 
                 <div class="card border-0 shadow-sm clinic-card">
-                    <div class="card-header bg-white py-3 border-bottom text-primary fw-bold">BÚSQUEDA DE EXÁMENES</div>
-                    <div class="card-body">
-                        <div class="order-search-panel order-search-panel--exam mb-4">
-                            <div class="order-search-panel__icon"><i class="bi bi-clipboard2-pulse"></i></div>
-                            <div class="flex-grow-1">
-                                <label class="form-label small fw-bold">AGREGAR EXAMEN</label>
-                                <select id="item_select" placeholder="Buscar exámenes... (mínimo 2 letras)"></select>
-                                <div class="form-text">Escribe al menos 2 letras y selecciona un examen para agregarlo a la orden.</div>
-                            </div>
-                        </div>
-
-                        <div class="table-responsive">
-                            <table class="table table-clinic-order align-middle mb-0">
-                                <thead class="table-light">
-                                    <tr class="small text-muted">
-                                        <th>DESCRIPCIÓN</th>
-                                        <th>CONTRASTE</th>
-                                        <th>ESTADO</th>
-                                        <th class="text-end">PRECIO</th>
-                                        <th class="text-center">ACCIÓN</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <template x-for="item in filteredCart()" :key="item.uid">
-                                        <tr>
-                                            <td>
-                                                <div class="fw-bold" x-text="item.name"></div>
-                                                <span class="fw-bold text-uppercase text-primary" x-text="' [' + item.area + ']'"></span>
-                                                <input type="hidden" :name="`exams[${cart.indexOf(item)}][exam_id]`" :value="item.id">
-                                            </td>
-                                            <td style="min-width: 160px;">
-                                                <select class="form-select form-select-sm" :name="`exams[${cart.indexOf(item)}][tipo_contraste]`" x-model="item.tipo_contraste" @change="handleContrastChange(item)">
-                                                    <option>Sin contraste</option>
-                                                    <option>Con contraste</option>
-                                                </select>
-                                            </td>
-                                            <td style="min-width: 150px;">
-                                                <select class="form-select form-select-sm" :name="`exams[${cart.indexOf(item)}][estado]`" x-model="item.estado">
-                                                    <option>Pendiente</option>
-                                                    <option>Realizado</option>
-                                                    <option>Informado</option>
-                                                    <option>Anulado</option>
-                                                </select>
-                                            </td>
-                                            <td class="text-end" style="max-width: 140px;">
-                                                <input type="number" min="0" step="0.01" class="form-control form-control-sm text-end fw-bold" :name="`exams[${cart.indexOf(item)}][precio]`" x-model.number="item.price" required>
-                                            </td>
-                                            <td class="text-center">
-                                                <button type="button" @click="removeByUid(item.uid)" class="btn btn-sm btn-outline-danger border-0">
-                                                    <i class="bi bi-trash3-fill"></i>
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    </template>
-                                    <tr x-show="filteredCart().length === 0">
-                                        <td colspan="5" class="text-center text-muted py-3">No hay exámenes seleccionados.</td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="card border-0 shadow-sm clinic-card mt-4">
-                    <div class="card-header bg-white py-3 border-bottom text-primary fw-bold d-flex justify-content-between align-items-center">
-                        <span>CONSUMIBLES DE LA ORDEN</span>
-                        <button type="button" class="btn btn-sm btn-outline-primary" @click="preloadConsumablesFromCart(true)">Precargar desde exámenes con contraste</button>
+                    <div class="card-header bg-white py-3 border-bottom">
+                        <ul class="nav nav-tabs card-header-tabs order-form-tabs" id="orderDetailsTabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active fw-bold" id="exams-tab" data-bs-toggle="tab" data-bs-target="#exams-pane" type="button" role="tab" aria-controls="exams-pane" aria-selected="true">
+                                    BÚSQUEDA DE EXÁMENES
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link fw-bold" id="consumables-tab" data-bs-toggle="tab" data-bs-target="#consumables-pane" type="button" role="tab" aria-controls="consumables-pane" aria-selected="false">
+                                    CONSUMIBLES DE LA ORDEN
+                                    <span class="badge bg-primary ms-2" x-text="consumables.length"></span>
+                                </button>
+                            </li>
+                        </ul>
                     </div>
                     <div class="card-body">
-                        <div class="alert alert-info py-2 small">Los consumibles configurados solo se precargan cuando el examen está marcado con contraste. Si cambias a sin contraste, se retiran de la orden.</div>
-                        <div class="row g-2 mb-3">
-                            <div class="col-8">
-                                <select x-model="selectedReagent" class="form-select">
-                                    <option value="">Agregar consumible...</option>
-                                    <template x-for="reagent in reagents" :key="reagent.id">
-                                        <option :value="reagent.id" x-text="reagent.name + (reagent.unit ? ' (' + reagent.unit + ')' : '')"></option>
-                                    </template>
-                                </select>
+                        <div class="tab-content" id="orderDetailsTabsContent">
+                            <div class="tab-pane fade show active" id="exams-pane" role="tabpanel" aria-labelledby="exams-tab" tabindex="0">
+                                <div class="order-search-panel order-search-panel--exam mb-4">
+                                    <div class="order-search-panel__icon"><i class="bi bi-clipboard2-pulse"></i></div>
+                                    <div class="flex-grow-1">
+                                        <label class="form-label small fw-bold">AGREGAR EXAMEN</label>
+                                        <select id="item_select" placeholder="Buscar exámenes... (mínimo 2 letras)"></select>
+                                        <div class="form-text">Escribe al menos 2 letras y selecciona un examen para agregarlo a la orden.</div>
+                                    </div>
+                                </div>
+
+                                <div class="table-responsive">
+                                    <table class="table table-clinic-order align-middle mb-0">
+                                        <thead class="table-light">
+                                            <tr class="small text-muted">
+                                                <th>DESCRIPCIÓN</th>
+                                                <th>CONTRASTE</th>
+                                                <th>ESTADO</th>
+                                                <th class="text-end">PRECIO</th>
+                                                <th class="text-center">ACCIÓN</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <template x-for="item in filteredCart()" :key="item.uid">
+                                                <tr>
+                                                    <td>
+                                                        <div class="fw-bold" x-text="item.name"></div>
+                                                        <span class="fw-bold text-uppercase text-primary" x-text="' [' + item.area + ']'"></span>
+                                                        <input type="hidden" :name="`exams[${cart.indexOf(item)}][exam_id]`" :value="item.id">
+                                                    </td>
+                                                    <td style="min-width: 160px;">
+                                                        <select class="form-select form-select-sm" :name="`exams[${cart.indexOf(item)}][tipo_contraste]`" x-model="item.tipo_contraste" @change="handleContrastChange(item)">
+                                                            <option>Sin contraste</option>
+                                                            <option>Con contraste</option>
+                                                        </select>
+                                                    </td>
+                                                    <td style="min-width: 150px;">
+                                                        <select class="form-select form-select-sm" :name="`exams[${cart.indexOf(item)}][estado]`" x-model="item.estado">
+                                                            <option>Pendiente</option>
+                                                            <option>Realizado</option>
+                                                            <option>Informado</option>
+                                                            <option>Anulado</option>
+                                                        </select>
+                                                    </td>
+                                                    <td class="text-end" style="max-width: 140px;">
+                                                        <input type="number" min="0" step="0.01" class="form-control form-control-sm text-end fw-bold" :name="`exams[${cart.indexOf(item)}][precio]`" x-model.number="item.price" required>
+                                                    </td>
+                                                    <td class="text-center">
+                                                        <button type="button" @click="removeByUid(item.uid)" class="btn btn-sm btn-outline-danger border-0">
+                                                            <i class="bi bi-trash3-fill"></i>
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            </template>
+                                            <tr x-show="filteredCart().length === 0">
+                                                <td colspan="5" class="text-center text-muted py-3">No hay exámenes seleccionados.</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
-                            <div class="col-4"><button type="button" class="btn btn-outline-primary w-100" @click="addConsumable()">Agregar</button></div>
-                        </div>
-                        <div class="table-responsive">
-                            <table class="table align-middle mb-0">
-                                <thead><tr><th>Consumible</th><th style="width:150px;">Cantidad</th><th>Unidad</th><th></th></tr></thead>
-                                <tbody>
-                                    <template x-for="(item, index) in consumables" :key="item.reagent_id">
-                                        <tr>
-                                            <td><span x-text="item.name"></span><input type="hidden" :name="`consumables[${index}][reagent_id]`" :value="item.reagent_id"></td>
-                                            <td><input type="number" min="0" step="0.01" class="form-control form-control-sm" :name="`consumables[${index}][cantidad]`" x-model.number="item.cantidad"></td>
-                                            <td x-text="item.unit || '—'"></td>
-                                            <td class="text-end"><button type="button" class="btn btn-sm btn-outline-danger border-0" @click="consumables.splice(index, 1)"><i class="bi bi-trash3-fill"></i></button></td>
-                                        </tr>
-                                    </template>
-                                    <tr x-show="consumables.length === 0"><td colspan="4" class="text-center text-muted">Sin consumibles.</td></tr>
-                                </tbody>
-                            </table>
+
+                            <div class="tab-pane fade" id="consumables-pane" role="tabpanel" aria-labelledby="consumables-tab" tabindex="0">
+                                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+                                    <div class="alert alert-info py-2 small mb-0 flex-grow-1">Los consumibles configurados solo se precargan cuando el examen está marcado con contraste. Si cambias a sin contraste, se retiran de la orden.</div>
+                                    <button type="button" class="btn btn-sm btn-outline-primary" @click="preloadConsumablesFromCart(true)">Precargar desde exámenes con contraste</button>
+                                </div>
+                                <div class="row g-2 mb-3">
+                                    <div class="col-8">
+                                        <select x-model="selectedReagent" class="form-select">
+                                            <option value="">Agregar consumible...</option>
+                                            <template x-for="reagent in reagents" :key="reagent.id">
+                                                <option :value="reagent.id" x-text="reagent.name + (reagent.unit ? ' (' + reagent.unit + ')' : '')"></option>
+                                            </template>
+                                        </select>
+                                    </div>
+                                    <div class="col-4"><button type="button" class="btn btn-outline-primary w-100" @click="addConsumable()">Agregar</button></div>
+                                </div>
+                                <div class="table-responsive">
+                                    <table class="table align-middle mb-0">
+                                        <thead><tr><th>Consumible</th><th style="width:150px;">Cantidad</th><th>Unidad</th><th></th></tr></thead>
+                                        <tbody>
+                                            <template x-for="(item, index) in consumables" :key="item.reagent_id">
+                                                <tr>
+                                                    <td><span x-text="item.name"></span><input type="hidden" :name="`consumables[${index}][reagent_id]`" :value="item.reagent_id"></td>
+                                                    <td><input type="number" min="0" step="0.01" class="form-control form-control-sm" :name="`consumables[${index}][cantidad]`" x-model.number="item.cantidad"></td>
+                                                    <td x-text="item.unit || '—'"></td>
+                                                    <td class="text-end"><button type="button" class="btn btn-sm btn-outline-danger border-0" @click="consumables.splice(index, 1)"><i class="bi bi-trash3-fill"></i></button></td>
+                                                </tr>
+                                            </template>
+                                            <tr x-show="consumables.length === 0"><td colspan="4" class="text-center text-muted">Sin consumibles.</td></tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
