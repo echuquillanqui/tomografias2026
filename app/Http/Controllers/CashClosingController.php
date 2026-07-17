@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\CashExpense;
 use App\Models\Order;
+use App\Models\Reagent;
+use App\Models\StockMovement;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -90,7 +92,7 @@ class CashClosingController extends Controller
         $start = Carbon::parse($from)->startOfDay();
         $end = Carbon::parse($to)->endOfDay();
 
-        $orders = Order::with(['patient', 'agreement'])
+        $orders = Order::with(['patient', 'agreement', 'medicoSolicitante', 'medicoInforme', 'orderExams.exam', 'admissionForm'])
             ->whereBetween('fecha_orden', [$start, $end])
             ->where('estado', '!=', 'Anulado')
             ->when($tipoPago, fn ($query) => $query->where('tipo_pago', $tipoPago))
@@ -111,8 +113,9 @@ class CashClosingController extends Controller
         $digitalIncome = $yapePlinIncome + $transferIncome;
         $incomeByPayment = $orders->groupBy(fn (Order $order) => $order->tipo_pago ?? 'Sin método')
             ->map(fn ($items) => $items->sum('total'));
+        $plateSummary = $this->plateSummary($orders, $start, $end);
 
-        return compact('from', 'to', 'period', 'baseDate', 'tipoPago', 'orders', 'expenses', 'incomeTotal', 'expenseTotal', 'cashIncome', 'yapePlinIncome', 'transferIncome', 'digitalIncome', 'incomeByPayment') + [
+        return compact('from', 'to', 'period', 'baseDate', 'tipoPago', 'orders', 'expenses', 'incomeTotal', 'expenseTotal', 'cashIncome', 'yapePlinIncome', 'transferIncome', 'digitalIncome', 'incomeByPayment', 'plateSummary') + [
             'cashBalance' => $cashIncome - $expenseTotal,
             'balance' => $incomeTotal - $expenseTotal,
             'tiposPago' => self::TIPOS_PAGO,
@@ -120,6 +123,56 @@ class CashClosingController extends Controller
             'cashOrders' => $orders->where('tipo_pago', 'Efectivo'),
             'yapePlinOrders' => $orders->where('tipo_pago', 'Yape/Plin'),
             'transferOrders' => $orders->where('tipo_pago', 'Transferencia'),
+        ];
+    }
+
+    private function plateSummary($orders, Carbon $start, Carbon $end): array
+    {
+        $platesDelivered = (int) $orders->sum(function (Order $order): int {
+            $data = $order->admissionForm?->data ?? [];
+            $quantity = $data['delivery_quantities']['PLACAS'] ?? $data['plates_count'] ?? 0;
+
+            return (int) $quantity;
+        });
+
+        $plate = Reagent::query()
+            ->where('nombre', 'like', '%placa%')
+            ->orderBy('nombre')
+            ->first();
+
+        if (! $plate) {
+            return [
+                'initial' => 0,
+                'received' => 0,
+                'delivered' => $platesDelivered,
+                'final' => max(0, 0 - $platesDelivered),
+                'name' => 'Placas',
+                'tracked' => false,
+            ];
+        }
+
+        $movements = StockMovement::query()
+            ->where('reagent_id', $plate->id)
+            ->whereBetween('fecha_movimiento', [$start, $end])
+            ->get();
+
+        $received = (float) $movements->where('tipo_movimiento', 'Ingreso')->sum('cantidad');
+        $stockAtEnd = (float) $plate->stock_actual;
+        $netAfterEnd = (float) StockMovement::query()
+            ->where('reagent_id', $plate->id)
+            ->where('fecha_movimiento', '>', $end)
+            ->get()
+            ->sum(fn (StockMovement $movement) => $movement->tipo_movimiento === 'Ingreso' ? $movement->cantidad : -$movement->cantidad);
+        $final = $stockAtEnd - $netAfterEnd;
+        $initial = $final - $received + $platesDelivered;
+
+        return [
+            'initial' => max(0, (int) round($initial)),
+            'received' => (int) round($received),
+            'delivered' => $platesDelivered,
+            'final' => max(0, (int) round($final)),
+            'name' => $plate->nombre,
+            'tracked' => true,
         ];
     }
 

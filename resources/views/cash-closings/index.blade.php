@@ -34,7 +34,7 @@
     </section>
 
     <div class="row g-3 mb-4">
-        <div class="col-md-4">
+        <div class="col-md-6 col-xl-3">
             <div class="card clinic-card h-100">
                 <div class="card-body">
                     <div class="text-muted small fw-bold">INGRESOS</div>
@@ -54,8 +54,50 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-4"><div class="card clinic-card h-100"><div class="card-body"><div class="text-muted small fw-bold">EGRESOS</div><div class="display-6 fw-bold text-danger">S/ {{ number_format($expenseTotal, 2) }}</div><div class="text-muted">{{ $expenses->count() }} salidas registradas</div></div></div></div>
-        <div class="col-md-4"><div class="card clinic-card h-100"><div class="card-body"><div class="text-muted small fw-bold">SALDO EFECTIVO</div><div class="display-6 fw-bold {{ $cashBalance < 0 ? 'text-danger' : 'text-primary' }}">S/ {{ number_format($cashBalance, 2) }}</div><div class="text-muted">Efectivo menos egresos</div></div></div></div>
+        <div class="col-md-6 col-xl-3"><div class="card clinic-card h-100"><div class="card-body"><div class="text-muted small fw-bold">EGRESOS</div><div class="display-6 fw-bold text-danger">S/ {{ number_format($expenseTotal, 2) }}</div><div class="text-muted">{{ $expenses->count() }} salidas registradas</div></div></div></div>
+        <div class="col-md-6 col-xl-3"><div class="card clinic-card h-100"><div class="card-body"><div class="text-muted small fw-bold">SALDO EFECTIVO</div><div class="display-6 fw-bold {{ $cashBalance < 0 ? 'text-danger' : 'text-primary' }}">S/ {{ number_format($cashBalance, 2) }}</div><div class="text-muted">Efectivo menos egresos</div></div></div></div>
+        <div class="col-md-6 col-xl-3"><div class="card clinic-card h-100 border-0 shadow-sm" style="background: linear-gradient(135deg, #fff7ed, #ffffff);"><div class="card-body"><div class="text-muted small fw-bold">PLACAS AL INICIAR</div><div class="display-6 fw-bold text-warning">{{ $plateSummary['initial'] }}</div><div class="text-muted">Saldo final: <strong>{{ $plateSummary['final'] }}</strong> · Usadas: <strong>{{ $plateSummary['delivered'] }}</strong></div></div></div></div>
+    </div>
+
+
+    <div class="card clinic-card mb-4 overflow-hidden">
+        <div class="card-header border-0 text-white" style="background: linear-gradient(135deg, #0f766e, #0ea5e9);">
+            <div class="d-flex flex-column flex-lg-row justify-content-between gap-2 align-items-lg-center">
+                <div>
+                    <div class="small text-uppercase fw-bold opacity-75">Pestaña de reporte diario</div>
+                    <h5 class="fw-bold mb-0">Cuadre operativo estilo hoja de caja</h5>
+                </div>
+                <div class="d-flex flex-wrap gap-2">
+                    <span class="badge bg-warning text-dark">Placas inicial: {{ $plateSummary['initial'] }}</span>
+                    <span class="badge bg-light text-dark">Placas final: {{ $plateSummary['final'] }}</span>
+                    <span class="badge bg-success">Total efectivo día: S/ {{ number_format($cashIncome - $expenseTotal, 2) }}</span>
+                </div>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-sm table-bordered align-middle mb-0 small">
+                    <thead class="text-center">
+                        <tr class="table-success"><th>N°</th><th>Fecha</th><th>Paciente</th><th>DNI</th><th>Tipo de tomografía</th><th>S/C C/C</th><th>Total cobrado</th><th>Yape</th><th>Transfer.</th><th>Por cobrar</th><th>Placas utilizadas</th><th>Saldo placas</th><th>Médico solicitante</th><th>Doctor informe</th><th>Gasto</th><th>Monto</th></tr>
+                    </thead>
+                    <tbody>
+                        @php $plateRunning = $plateSummary['initial']; $maxRows = max($orders->count(), $expenses->count()); @endphp
+                        @for($i = 0; $i < $maxRows; $i++)
+                            @php
+                                $order = $orders->values()->get($i);
+                                $expense = $expenses->values()->get($i);
+                                $plates = $order ? (int) (($order->admissionForm?->data['delivery_quantities']['PLACAS'] ?? $order->admissionForm?->data['plates_count'] ?? 0)) : 0;
+                                $plateRunning -= $plates;
+                            @endphp
+                            <tr>
+                                <td class="text-center fw-bold">{{ $i + 1 }}</td><td>{{ $order?->fecha_orden?->format('d/m/Y') ?? '' }}</td><td class="fw-semibold">{{ $order ? trim(($order->patient->nombres ?? '').' '.($order->patient->apellidos ?? '')) : '' }}</td><td>{{ $order->patient->dni ?? '' }}</td><td>{{ $order?->orderExams?->pluck('exam.nombre_examen')->filter()->join(' + ') }}</td><td class="text-primary fw-bold">{{ $order?->orderExams?->pluck('tipo_contraste')->filter()->join(', ') }}</td><td class="text-end fw-bold">{{ $order ? number_format($order->total, 2) : '' }}</td><td class="text-end">{{ $order?->tipo_pago === 'Yape/Plin' ? number_format($order->total, 2) : '—' }}</td><td class="text-end">{{ $order?->tipo_pago === 'Transferencia' ? number_format($order->total, 2) : '—' }}</td><td class="text-end">{{ $order?->tipo_pago === 'Convenio' ? number_format($order->total, 2) : '—' }}</td><td class="text-center">{{ $plates ?: '' }}</td><td class="text-center fw-bold bg-warning-subtle">{{ $order ? $plateRunning : '' }}</td><td>{{ $order->medicoSolicitante->nombre ?? '' }}</td><td>{{ $order->medicoInforme->nombre_completo ?? 'SIN INFORME' }}</td><td>{{ $expense->descripcion ?? '' }}</td><td class="text-end text-danger fw-bold">{{ $expense ? number_format($expense->monto, 2) : '' }}</td>
+                            </tr>
+                        @endfor
+                    </tbody>
+                    <tfoot><tr class="table-warning fw-bold"><td colspan="6" class="text-end">TOTAL INGRESOS</td><td class="text-end">{{ number_format($incomeTotal, 2) }}</td><td class="text-end">{{ number_format($yapePlinIncome, 2) }}</td><td class="text-end">{{ number_format($transferIncome, 2) }}</td><td></td><td class="text-center">{{ $plateSummary['delivered'] }}</td><td class="text-center">{{ $plateSummary['final'] }}</td><td colspan="2" class="text-end">TOTAL GASTOS DÍA</td><td colspan="2" class="text-end text-danger">S/ {{ number_format($expenseTotal, 2) }}</td></tr></tfoot>
+                </table>
+            </div>
+        </div>
     </div>
 
     <div class="row g-4">
