@@ -1,6 +1,7 @@
 @extends('layouts.app')
 
 @section('content')
+@php $activeCashTab = request('tab') === 'hoja' ? 'hoja' : 'resumen'; @endphp
 <div class="container">
     <section class="clinic-page-hero mb-4">
         <div class="d-flex flex-column flex-lg-row justify-content-between gap-3">
@@ -60,16 +61,57 @@
     </div>
 
 
-    <ul class="nav nav-pills gap-2 mb-3" role="tablist">
-        <li class="nav-item" role="presentation"><button class="nav-link {{ request('tab') === 'hoja' ? '' : 'active' }} fw-bold" id="resumen-tab" data-bs-toggle="pill" data-bs-target="#resumen-caja" type="button" role="tab">Resumen y movimientos</button></li>
-        <li class="nav-item" role="presentation"><button class="nav-link {{ request('tab') === 'hoja' ? 'active' : '' }} fw-bold" id="hoja-tab" data-bs-toggle="pill" data-bs-target="#hoja-caja" type="button" role="tab">Hoja de caja diaria</button></li>
-    </ul>
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 mb-3">
+        <div>
+            <div class="clinic-eyebrow">Sub opciones</div>
+            <h5 class="fw-bold mb-0">Selecciona qué módulo de caja revisar</h5>
+        </div>
+        <div class="dropdown">
+            <button class="btn btn-clinic-primary dropdown-toggle fw-bold" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                {{ $activeCashTab === 'hoja' ? 'Hoja de caja diaria' : 'Resumen y movimientos' }}
+            </button>
+            <div class="dropdown-menu dropdown-menu-end shadow border-0">
+                <a class="dropdown-item {{ $activeCashTab === 'resumen' ? 'active' : '' }}" href="{{ route('cash-closings.index', array_merge(request()->except('tab'), ['tab' => 'resumen'])) }}">Resumen y movimientos</a>
+                <a class="dropdown-item {{ $activeCashTab === 'hoja' ? 'active' : '' }}" href="{{ route('cash-closings.index', array_merge(request()->except('tab'), ['tab' => 'hoja'])) }}">Hoja de caja diaria</a>
+            </div>
+        </div>
+    </div>
 
     <div class="tab-content mb-4">
-        <div class="tab-pane fade {{ request('tab') === 'hoja' ? '' : 'show active' }}" id="resumen-caja" role="tabpanel" aria-labelledby="resumen-tab">
-            <div class="alert alert-primary mb-0">Usa esta sub opción para registrar egresos y revisar el resumen general del periodo filtrado.</div>
+        <div class="tab-pane fade {{ $activeCashTab === 'resumen' ? 'show active' : '' }}" id="resumen-caja" role="tabpanel" aria-labelledby="resumen-tab">
+            <div class="alert alert-primary">Usa esta sub opción para registrar egresos y revisar el resumen general del periodo filtrado.</div>
+    <div class="row g-4">
+        <div class="col-lg-4">
+            <div class="card clinic-card mb-4">
+                <div class="card-header bg-white border-0 pt-4 px-4"><h5 class="fw-bold mb-0">Registrar egreso</h5></div>
+                <div class="card-body px-4 pb-4">
+                    <form method="POST" action="{{ route('cash-closings.expenses.store', ['period' => $period, 'base_date' => $period === 'day' ? $baseDate : null, 'tipo_pago' => $tipoPago]) }}" enctype="multipart/form-data">
+                        @csrf
+                        <div class="mb-3"><label class="form-label fw-bold">Fecha</label><input type="date" name="fecha_egreso" value="{{ old('fecha_egreso', $to) }}" class="form-control" required></div>
+                        <div class="mb-3"><label class="form-label fw-bold">Descripción</label><input name="descripcion" value="{{ old('descripcion') }}" class="form-control" maxlength="255" required placeholder="Ej. Compra de útiles, movilidad..."></div>
+                        <div class="mb-3"><label class="form-label fw-bold">Monto</label><div class="input-group"><span class="input-group-text">S/</span><input type="number" step="0.01" min="0.01" name="monto" value="{{ old('monto') }}" class="form-control" required></div></div>
+                        <div class="mb-3"><label class="form-label fw-bold">Archivo sustentatorio</label><input type="file" name="archivo" class="form-control" accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx,.xls,.xlsx"><div class="form-text">PDF, imagen u Office hasta 10 MB.</div></div>
+                        <button class="btn btn-clinic-primary w-100">Guardar egreso</button>
+                    </form>
+                </div>
+            </div>
+            <div class="card clinic-card"><div class="card-body"><h6 class="fw-bold">Entradas por método de pago</h6><div class="alert alert-info py-2 small">El Excel se descarga con pestañas separadas para efectivo, egresos, Yape/Plin y transferencias.</div>@forelse($incomeByPayment as $payment => $amount)<div class="d-flex justify-content-between border-bottom py-2"><span>{{ $payment }}</span><strong>S/ {{ number_format($amount, 2) }}</strong></div>@empty<p class="text-muted mb-0">Sin entradas en el rango.</p>@endforelse</div></div>
         </div>
-        <div class="tab-pane fade {{ request('tab') === 'hoja' ? 'show active' : '' }}" id="hoja-caja" role="tabpanel" aria-labelledby="hoja-tab">
+
+        <div class="col-lg-8">
+            <div class="card clinic-card mb-4">
+                <div class="card-header bg-white border-0 pt-4 px-4"><h5 class="fw-bold mb-0">Egresos del periodo</h5></div>
+                <div class="card-body p-0"><div class="table-responsive"><table class="table table-clinic align-middle mb-0"><thead><tr><th>Fecha</th><th>Descripción</th><th>Monto</th><th>Archivo</th><th>Usuario</th><th></th></tr></thead><tbody>@forelse($expenses as $expense)<tr><td>{{ $expense->fecha_egreso->format('d/m/Y') }}</td><td class="fw-semibold">{{ $expense->descripcion }}</td><td class="text-danger fw-bold">S/ {{ number_format($expense->monto, 2) }}</td><td>@if($expense->archivo_path)<a target="_blank" href="{{ asset('storage/'.$expense->archivo_path) }}">Ver archivo</a>@else — @endif</td><td>{{ $expense->creator->username ?? '—' }}</td><td class="text-end"><form method="POST" action="{{ route('cash-closings.expenses.destroy', $expense) }}" onsubmit="return confirm('¿Eliminar este egreso?')">@csrf @method('DELETE')<button class="btn btn-sm btn-outline-danger">Eliminar</button></form></td></tr>@empty<tr><td colspan="6" class="text-center py-4">Sin egresos registrados.</td></tr>@endforelse</tbody></table></div></div>
+            </div>
+
+            <div class="card clinic-card">
+                <div class="card-header bg-white border-0 pt-4 px-4"><h5 class="fw-bold mb-0">Entradas por órdenes</h5></div>
+                <div class="card-body p-0"><div class="table-responsive"><table class="table table-clinic align-middle mb-0"><thead><tr><th>Fecha</th><th>Orden</th><th>Paciente</th><th>Convenio</th><th>Pago</th><th>Total</th></tr></thead><tbody>@forelse($orders as $order)<tr><td>{{ $order->fecha_orden->format('d/m/Y H:i') }}</td><td><a href="{{ route('orders.show', $order) }}" class="fw-bold">{{ $order->codigo_orden ?? '#'.$order->id }}</a></td><td>{{ $order->patient->nombres }} {{ $order->patient->apellidos }}</td><td>{{ $order->agreement->nombre_institucion }}</td><td>{{ $order->tipo_pago ?? '—' }}</td><td class="text-success fw-bold">S/ {{ number_format($order->total, 2) }}</td></tr>@empty<tr><td colspan="6" class="text-center py-4">Sin órdenes en el rango.</td></tr>@endforelse</tbody></table></div></div>
+            </div>
+        </div>
+        </div>
+        </div>
+        <div class="tab-pane fade {{ $activeCashTab === 'hoja' ? 'show active' : '' }}" id="hoja-caja" role="tabpanel" aria-labelledby="hoja-tab">
             <div class="card clinic-card overflow-hidden">
                 <div class="card-header border-0 text-white" style="background: linear-gradient(135deg, #0f766e, #0ea5e9);">
                     <div class="d-flex flex-column flex-lg-row justify-content-between gap-2 align-items-lg-center">
@@ -116,37 +158,6 @@
                         </table>
                     </div>
                 </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="row g-4">
-        <div class="col-lg-4">
-            <div class="card clinic-card mb-4">
-                <div class="card-header bg-white border-0 pt-4 px-4"><h5 class="fw-bold mb-0">Registrar egreso</h5></div>
-                <div class="card-body px-4 pb-4">
-                    <form method="POST" action="{{ route('cash-closings.expenses.store', ['period' => $period, 'base_date' => $period === 'day' ? $baseDate : null, 'tipo_pago' => $tipoPago]) }}" enctype="multipart/form-data">
-                        @csrf
-                        <div class="mb-3"><label class="form-label fw-bold">Fecha</label><input type="date" name="fecha_egreso" value="{{ old('fecha_egreso', $to) }}" class="form-control" required></div>
-                        <div class="mb-3"><label class="form-label fw-bold">Descripción</label><input name="descripcion" value="{{ old('descripcion') }}" class="form-control" maxlength="255" required placeholder="Ej. Compra de útiles, movilidad..."></div>
-                        <div class="mb-3"><label class="form-label fw-bold">Monto</label><div class="input-group"><span class="input-group-text">S/</span><input type="number" step="0.01" min="0.01" name="monto" value="{{ old('monto') }}" class="form-control" required></div></div>
-                        <div class="mb-3"><label class="form-label fw-bold">Archivo sustentatorio</label><input type="file" name="archivo" class="form-control" accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx,.xls,.xlsx"><div class="form-text">PDF, imagen u Office hasta 10 MB.</div></div>
-                        <button class="btn btn-clinic-primary w-100">Guardar egreso</button>
-                    </form>
-                </div>
-            </div>
-            <div class="card clinic-card"><div class="card-body"><h6 class="fw-bold">Entradas por método de pago</h6><div class="alert alert-info py-2 small">El Excel se descarga con pestañas separadas para efectivo, egresos, Yape/Plin y transferencias.</div>@forelse($incomeByPayment as $payment => $amount)<div class="d-flex justify-content-between border-bottom py-2"><span>{{ $payment }}</span><strong>S/ {{ number_format($amount, 2) }}</strong></div>@empty<p class="text-muted mb-0">Sin entradas en el rango.</p>@endforelse</div></div>
-        </div>
-
-        <div class="col-lg-8">
-            <div class="card clinic-card mb-4">
-                <div class="card-header bg-white border-0 pt-4 px-4"><h5 class="fw-bold mb-0">Egresos del periodo</h5></div>
-                <div class="card-body p-0"><div class="table-responsive"><table class="table table-clinic align-middle mb-0"><thead><tr><th>Fecha</th><th>Descripción</th><th>Monto</th><th>Archivo</th><th>Usuario</th><th></th></tr></thead><tbody>@forelse($expenses as $expense)<tr><td>{{ $expense->fecha_egreso->format('d/m/Y') }}</td><td class="fw-semibold">{{ $expense->descripcion }}</td><td class="text-danger fw-bold">S/ {{ number_format($expense->monto, 2) }}</td><td>@if($expense->archivo_path)<a target="_blank" href="{{ asset('storage/'.$expense->archivo_path) }}">Ver archivo</a>@else — @endif</td><td>{{ $expense->creator->username ?? '—' }}</td><td class="text-end"><form method="POST" action="{{ route('cash-closings.expenses.destroy', $expense) }}" onsubmit="return confirm('¿Eliminar este egreso?')">@csrf @method('DELETE')<button class="btn btn-sm btn-outline-danger">Eliminar</button></form></td></tr>@empty<tr><td colspan="6" class="text-center py-4">Sin egresos registrados.</td></tr>@endforelse</tbody></table></div></div>
-            </div>
-
-            <div class="card clinic-card">
-                <div class="card-header bg-white border-0 pt-4 px-4"><h5 class="fw-bold mb-0">Entradas por órdenes</h5></div>
-                <div class="card-body p-0"><div class="table-responsive"><table class="table table-clinic align-middle mb-0"><thead><tr><th>Fecha</th><th>Orden</th><th>Paciente</th><th>Convenio</th><th>Pago</th><th>Total</th></tr></thead><tbody>@forelse($orders as $order)<tr><td>{{ $order->fecha_orden->format('d/m/Y H:i') }}</td><td><a href="{{ route('orders.show', $order) }}" class="fw-bold">{{ $order->codigo_orden ?? '#'.$order->id }}</a></td><td>{{ $order->patient->nombres }} {{ $order->patient->apellidos }}</td><td>{{ $order->agreement->nombre_institucion }}</td><td>{{ $order->tipo_pago ?? '—' }}</td><td class="text-success fw-bold">S/ {{ number_format($order->total, 2) }}</td></tr>@empty<tr><td colspan="6" class="text-center py-4">Sin órdenes en el rango.</td></tr>@endforelse</tbody></table></div></div>
             </div>
         </div>
     </div>
