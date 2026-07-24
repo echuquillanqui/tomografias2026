@@ -13,7 +13,8 @@
     if (empty($deliveryMediaSelected) && in_array('CD', $deliveryOptions, true)) {
         $deliveryMediaSelected = ['CD'];
     }
-    $deliveryMediaSelected = array_values(array_intersect((array) $deliveryMediaSelected, $deliveryMediaOptions));
+    $automaticDeliveryMedia = strtoupper(trim((string) ($order->agreement->nombre_institucion ?? 'PARTICULAR'))) === 'PARTICULAR' ? 'CD' : 'LINK';
+    $deliveryMediaSelected = [$automaticDeliveryMedia];
     $deliveryQuantities = old('delivery_quantities', $admissionData['delivery_quantities'] ?? []);
     $deliveryQuantities = is_array($deliveryQuantities) ? $deliveryQuantities : [];
     $formatDeliveryQuantity = function ($option) use ($deliveryQuantities, $admissionData) {

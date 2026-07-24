@@ -26,6 +26,8 @@ class OrderController extends Controller
     private const TIPOS_COMPROBANTE = ['Boleta', 'Factura'];
     private const MOTIVOS_ELIMINACION = ['error de digitacion', 'equivocacion', 'error por sistema', 'otros'];
     private const UNIDADES = ['Topico', 'Sala de control (Tecnologo)'];
+    private const DELIVERY_MEDIA_CD = 'CD';
+    private const DELIVERY_MEDIA_LINK = 'LINK';
 
     public function index(Request $request): View
     {
@@ -373,10 +375,10 @@ class OrderController extends Controller
         $formData = collect($data)->except('consumables')->all();
         $formData['delivery_options'] = array_values($formData['delivery_options'] ?? ['PLACAS', 'INFORME']);
         $formData['delivery_media_options'] = array_values(array_intersect($formData['delivery_media_options'] ?? [], ['CD', 'LINK']));
-        $formData['delivery_media'] = count($formData['delivery_media_options']) === 2 ? 'AMBOS' : ($formData['delivery_media_options'][0] ?? null);
+        $formData = $this->applyAutomaticDeliveryMedia($order, $formData);
         $formData['delivery_quantities'] = collect($formData['delivery_quantities'] ?? [])->map(fn ($item) => $item === null || $item === '' ? '' : (int) $item)->all();
         $formData['plates_count'] = $formData['delivery_quantities']['PLACAS'] ?? ($formData['plates_count'] ?? null);
-        $formData['delivery'] = implode(', ', array_merge($formData['delivery_options'], $formData['delivery_media_options']));
+        $formData['delivery'] = $this->deliveryLabel($formData);
         if (($formData['surgeries'] ?? '') !== 'Otros') $formData['surgeries_detail'] = '';
         $medications = collect($formData['medications'] ?? [])->map(fn ($item) => trim((string) $item))->filter()->values()->all();
         $formData['medications'] = $medications;
@@ -455,10 +457,10 @@ class OrderController extends Controller
         $data['date'] = $order->fecha_orden?->format('d/m/Y H:i');
         $data['delivery_options'] = array_values($data['delivery_options'] ?? ['PLACAS', 'INFORME']);
         $data['delivery_media_options'] = array_values(array_intersect($data['delivery_media_options'] ?? [], ['CD', 'LINK']));
-        $data['delivery_media'] = count($data['delivery_media_options']) === 2 ? 'AMBOS' : ($data['delivery_media_options'][0] ?? null);
+        $data = $this->applyAutomaticDeliveryMedia($order, $data);
         $data['delivery_quantities'] = collect($data['delivery_quantities'] ?? [])->map(fn ($item) => $item === null || $item === '' ? '' : (int) $item)->all();
         $data['plates_count'] = $data['delivery_quantities']['PLACAS'] ?? ($data['plates_count'] ?? null);
-        $data['delivery'] = implode(', ', array_merge($data['delivery_options'], $data['delivery_media_options']));
+        $data['delivery'] = $this->deliveryLabel($data);
         if (($data['surgeries'] ?? '') !== 'Otros') $data['surgeries_detail'] = '';
         if (array_key_exists('medications', $data)) {
             $data['medications'] = collect($data['medications'])->map(fn ($item) => trim((string) $item))->filter()->values()->all();
@@ -531,6 +533,28 @@ class OrderController extends Controller
     }
 
 
+    private function applyAutomaticDeliveryMedia(Order $order, array $data): array
+    {
+        $deliveryMedia = $this->automaticDeliveryMediaFor($order);
+
+        $data['delivery_media_options'] = [$deliveryMedia];
+        $data['delivery_media'] = $deliveryMedia;
+
+        return $data;
+    }
+
+    private function automaticDeliveryMediaFor(Order $order): string
+    {
+        return mb_strtoupper(trim((string) $order->agreement?->nombre_institucion)) === 'PARTICULAR'
+            ? self::DELIVERY_MEDIA_CD
+            : self::DELIVERY_MEDIA_LINK;
+    }
+
+    private function deliveryLabel(array $data): string
+    {
+        return implode(', ', array_merge($data['delivery_options'] ?? [], $data['delivery_media_options'] ?? []));
+    }
+
     private function syncPrintableDocuments(Order $order): void
     {
         $order->loadMissing(['patient', 'agreement', 'medicoSolicitante', 'orderExams.exam']);
@@ -560,8 +584,10 @@ class OrderController extends Controller
             'provenance' => $order->agreement?->nombre_institucion ?? 'PARTICULAR',
             'peripheral_route' => '',
             'informed_by' => '',
-            'delivery' => 'PLACAS, CD, INFORME',
-            'delivery_options' => ['PLACAS', 'CD', 'INFORME'],
+            'delivery' => '',
+            'delivery_options' => ['PLACAS', 'INFORME'],
+            'delivery_media_options' => [$this->automaticDeliveryMediaFor($order)],
+            'delivery_media' => $this->automaticDeliveryMediaFor($order),
             'delivery_quantities' => [],
             'plates_count' => '',
             'cause' => '',
@@ -576,6 +602,8 @@ class OrderController extends Controller
             'creatinine' => '',
         ];
         $admissionData = array_merge($admissionDefaults, $order->admissionForm?->data ?? []);
+        $admissionData = $this->applyAutomaticDeliveryMedia($order, $admissionData);
+        $admissionData['delivery'] = $this->deliveryLabel($admissionData);
         $admissionData['date'] = $order->fecha_orden?->format('d/m/Y H:i');
 
         $order->admissionForm()->updateOrCreate([], [
