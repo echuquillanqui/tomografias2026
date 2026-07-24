@@ -20,8 +20,11 @@
         'plates_count' => 'Cantidad de placas entregadas',
     ];
 
+    $automaticDeliveryMedia = strtoupper(trim((string) ($order->agreement->nombre_institucion ?? 'PARTICULAR'))) === 'PARTICULAR' ? 'CD' : 'LINK';
     $initialForm = collect($fields)->mapWithKeys(fn ($label, $key) => [
-        $key => old($key, $admissionData[$key] ?? ($key === 'unit' ? $order->unidad : ($key === 'surgeries' ? 'Ninguna' : ($key === 'condition' ? 'NORMAL' : '')))),
+        $key => $key === 'delivery_media'
+            ? $automaticDeliveryMedia
+            : old($key, $admissionData[$key] ?? ($key === 'unit' ? $order->unidad : ($key === 'surgeries' ? 'Ninguna' : ($key === 'condition' ? 'NORMAL' : '')))),
     ])->merge([
         'surgeries_detail' => old('surgeries_detail', $admissionData['surgeries_detail'] ?? ''),
         'delivery_options' => old('delivery_options', $admissionData['delivery_options'] ?? []),
