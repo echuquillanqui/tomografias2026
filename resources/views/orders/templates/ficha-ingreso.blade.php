@@ -48,5 +48,9 @@
     .ficha-ingreso-card .table td {
         padding: .85rem;
     }
+
+    [x-cloak] {
+        display: none !important;
+    }
 </style>
 @endpush

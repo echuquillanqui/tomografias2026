@@ -359,6 +359,8 @@ class OrderController extends Controller
             'delivery_quantities' => ['nullable', 'array'],
             'delivery_quantities.*' => ['nullable', 'integer', 'min:0'],
             'delivery_options.*' => ['nullable', Rule::in(['PLACAS', 'CD', 'INFORME'])],
+            'delivery_media_options' => ['nullable', 'array'],
+            'delivery_media_options.*' => ['nullable', Rule::in(['CD', 'LINK'])],
             'delivery_media' => ['nullable', Rule::in(['CD', 'LINK', 'AMBOS'])],
             'consumables' => ['nullable', 'array'],
             'consumables.*.reagent_id' => ['required', 'exists:reagents,id'],
@@ -369,10 +371,12 @@ class OrderController extends Controller
         $this->syncPrintableDocuments($order);
         $current = $order->fresh('admissionForm')->admissionForm?->data ?? [];
         $formData = collect($data)->except('consumables')->all();
-        $formData['delivery_options'] = array_values($formData['delivery_options'] ?? ['PLACAS', 'CD', 'INFORME']);
+        $formData['delivery_options'] = array_values($formData['delivery_options'] ?? ['PLACAS', 'INFORME']);
+        $formData['delivery_media_options'] = array_values(array_intersect($formData['delivery_media_options'] ?? [], ['CD', 'LINK']));
+        $formData['delivery_media'] = count($formData['delivery_media_options']) === 2 ? 'AMBOS' : ($formData['delivery_media_options'][0] ?? null);
         $formData['delivery_quantities'] = collect($formData['delivery_quantities'] ?? [])->map(fn ($item) => $item === null || $item === '' ? '' : (int) $item)->all();
         $formData['plates_count'] = $formData['delivery_quantities']['PLACAS'] ?? ($formData['plates_count'] ?? null);
-        $formData['delivery'] = implode(', ', $formData['delivery_options']);
+        $formData['delivery'] = implode(', ', array_merge($formData['delivery_options'], $formData['delivery_media_options']));
         if (($formData['surgeries'] ?? '') !== 'Otros') $formData['surgeries_detail'] = '';
         $medications = collect($formData['medications'] ?? [])->map(fn ($item) => trim((string) $item))->filter()->values()->all();
         $formData['medications'] = $medications;
@@ -430,6 +434,8 @@ class OrderController extends Controller
             'surgeries_detail' => ['nullable', 'string', 'max:255'],
             'delivery_options' => ['nullable', 'array'],
             'delivery_options.*' => ['nullable', Rule::in(['PLACAS', 'CD', 'INFORME'])],
+            'delivery_media_options' => ['nullable', 'array'],
+            'delivery_media_options.*' => ['nullable', Rule::in(['CD', 'LINK'])],
             'medication' => ['nullable', 'string'],
             'antecedents' => ['nullable', 'string'],
             'medications' => ['nullable', 'array'],
@@ -447,10 +453,12 @@ class OrderController extends Controller
         $this->syncPrintableDocuments($order);
         $current = $order->fresh('admissionForm')->admissionForm?->data ?? [];
         $data['date'] = $order->fecha_orden?->format('d/m/Y H:i');
-        $data['delivery_options'] = array_values($data['delivery_options'] ?? ['PLACAS', 'CD', 'INFORME']);
+        $data['delivery_options'] = array_values($data['delivery_options'] ?? ['PLACAS', 'INFORME']);
+        $data['delivery_media_options'] = array_values(array_intersect($data['delivery_media_options'] ?? [], ['CD', 'LINK']));
+        $data['delivery_media'] = count($data['delivery_media_options']) === 2 ? 'AMBOS' : ($data['delivery_media_options'][0] ?? null);
         $data['delivery_quantities'] = collect($data['delivery_quantities'] ?? [])->map(fn ($item) => $item === null || $item === '' ? '' : (int) $item)->all();
         $data['plates_count'] = $data['delivery_quantities']['PLACAS'] ?? ($data['plates_count'] ?? null);
-        $data['delivery'] = implode(', ', $data['delivery_options']);
+        $data['delivery'] = implode(', ', array_merge($data['delivery_options'], $data['delivery_media_options']));
         if (($data['surgeries'] ?? '') !== 'Otros') $data['surgeries_detail'] = '';
         if (array_key_exists('medications', $data)) {
             $data['medications'] = collect($data['medications'])->map(fn ($item) => trim((string) $item))->filter()->values()->all();

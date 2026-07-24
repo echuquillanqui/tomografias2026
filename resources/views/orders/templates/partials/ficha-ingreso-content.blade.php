@@ -1,9 +1,19 @@
 @php
     $admissionData = $admissionData ?? [];
-    $deliveryItems = ['PLACAS', 'CD', 'INFORME'];
-    $deliveryMediaOptions = ['CD', 'LINK', 'AMBOS'];
-    $deliveryOptions = old('delivery_options', $admissionData['delivery_options'] ?? $deliveryItems);
-    $deliveryOptions = empty($deliveryOptions) ? $deliveryItems : array_values(array_intersect((array) $deliveryOptions, $deliveryItems));
+    $deliveryItems = ['PLACAS', 'INFORME'];
+    $deliveryMediaOptions = ['CD', 'LINK'];
+    $legacyDeliveryItems = ['PLACAS', 'CD', 'INFORME'];
+    $deliveryOptions = old('delivery_options', $admissionData['delivery_options'] ?? $legacyDeliveryItems);
+    $deliveryOptions = empty($deliveryOptions) ? $legacyDeliveryItems : array_values(array_intersect((array) $deliveryOptions, $legacyDeliveryItems));
+    $deliveryMediaSelected = old('delivery_media_options', $admissionData['delivery_media_options'] ?? []);
+    if (empty($deliveryMediaSelected)) {
+        $savedDeliveryMedia = old('delivery_media', $admissionData['delivery_media'] ?? '');
+        $deliveryMediaSelected = $savedDeliveryMedia === 'AMBOS' ? ['CD', 'LINK'] : (in_array($savedDeliveryMedia, $deliveryMediaOptions, true) ? [$savedDeliveryMedia] : []);
+    }
+    if (empty($deliveryMediaSelected) && in_array('CD', $deliveryOptions, true)) {
+        $deliveryMediaSelected = ['CD'];
+    }
+    $deliveryMediaSelected = array_values(array_intersect((array) $deliveryMediaSelected, $deliveryMediaOptions));
     $deliveryQuantities = old('delivery_quantities', $admissionData['delivery_quantities'] ?? []);
     $deliveryQuantities = is_array($deliveryQuantities) ? $deliveryQuantities : [];
     $formatDeliveryQuantity = function ($option) use ($deliveryQuantities, $admissionData) {
@@ -55,10 +65,13 @@
                     <input name="delivery_quantities[{{ $option }}]" type="number" min="0" step="1" class="form-control form-control-sm text-center" style="width:90px" value="{{ $formatDeliveryQuantity($option) }}" placeholder="Cant.">
                 </div>
             @endforeach
-            <div class="d-flex align-items-center gap-2 flex-nowrap">
-                <label class="form-label fw-bold mb-0">CD / Link</label>
-                <select name="delivery_media" class="form-select form-select-sm" style="width:130px"><option value=""></option>@foreach($deliveryMediaOptions as $media)<option value="{{ $media }}" @selected(old('delivery_media', $admissionData['delivery_media'] ?? '') === $media)>{{ $media }}</option>@endforeach</select>
-            </div>
+            @foreach($deliveryMediaOptions as $media)
+                <div class="d-flex align-items-center gap-2 flex-nowrap" x-data="{ checked: {{ in_array($media, $deliveryMediaSelected, true) ? 'true' : 'false' }} }">
+                    <span class="fw-bold fs-5">{{ $media }}</span>
+                    <input class="form-check-input fs-5 m-0" type="checkbox" name="delivery_media_options[]" value="{{ $media }}" id="deliveryMedia{{ $media }}" aria-label="Marcar {{ $media }}" x-model="checked">
+                    <input name="delivery_quantities[{{ $media }}]" type="number" min="0" step="1" class="form-control form-control-sm text-center" style="width:90px" value="{{ $formatDeliveryQuantity($media) }}" placeholder="Cant." x-show="checked" x-cloak>
+                </div>
+            @endforeach
         </div>
     </div>
 </div>
