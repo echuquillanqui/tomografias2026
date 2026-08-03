@@ -535,10 +535,24 @@ class OrderController extends Controller
 
     private function applyAutomaticDeliveryMedia(Order $order, array $data): array
     {
-        $deliveryMedia = $this->automaticDeliveryMediaFor($order);
+        $selectedMedia = array_values(array_intersect(
+            (array) ($data['delivery_media_options'] ?? []),
+            [self::DELIVERY_MEDIA_CD, self::DELIVERY_MEDIA_LINK]
+        ));
 
-        $data['delivery_media_options'] = [$deliveryMedia];
-        $data['delivery_media'] = $deliveryMedia;
+        if ($selectedMedia === []) {
+            $legacyMedia = $data['delivery_media'] ?? null;
+            $selectedMedia = $legacyMedia === 'AMBOS'
+                ? [self::DELIVERY_MEDIA_CD, self::DELIVERY_MEDIA_LINK]
+                : (in_array($legacyMedia, [self::DELIVERY_MEDIA_CD, self::DELIVERY_MEDIA_LINK], true) ? [$legacyMedia] : []);
+        }
+
+        if ($selectedMedia === []) {
+            $selectedMedia = [$this->automaticDeliveryMediaFor($order)];
+        }
+
+        $data['delivery_media_options'] = $selectedMedia;
+        $data['delivery_media'] = count($selectedMedia) === 2 ? 'AMBOS' : $selectedMedia[0];
 
         return $data;
     }

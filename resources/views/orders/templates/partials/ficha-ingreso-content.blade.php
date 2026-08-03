@@ -14,7 +14,9 @@
         $deliveryMediaSelected = ['CD'];
     }
     $automaticDeliveryMedia = strtoupper(trim((string) ($order->agreement->nombre_institucion ?? 'PARTICULAR'))) === 'PARTICULAR' ? 'CD' : 'LINK';
-    $deliveryMediaSelected = [$automaticDeliveryMedia];
+    if (empty($deliveryMediaSelected)) {
+        $deliveryMediaSelected = [$automaticDeliveryMedia];
+    }
     $deliveryQuantities = old('delivery_quantities', $admissionData['delivery_quantities'] ?? []);
     $deliveryQuantities = is_array($deliveryQuantities) ? $deliveryQuantities : [];
     $formatDeliveryQuantity = function ($option) use ($deliveryQuantities, $admissionData) {

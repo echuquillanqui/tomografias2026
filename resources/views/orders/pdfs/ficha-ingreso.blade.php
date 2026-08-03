@@ -18,6 +18,9 @@
     if (empty($deliveryMediaSelected) && in_array('CD', $deliveryOptions, true)) {
         $deliveryMediaSelected = ['CD'];
     }
+    if (empty($deliveryMediaSelected)) {
+        $deliveryMediaSelected = [strtoupper(trim((string) ($order->agreement->nombre_institucion ?? 'PARTICULAR'))) === 'PARTICULAR' ? 'CD' : 'LINK'];
+    }
     $deliveryMediaSelected = array_values(array_intersect((array) $deliveryMediaSelected, $deliveryMediaItems));
     $deliveryQuantities = $admissionData['delivery_quantities'] ?? [];
     $deliveryQuantities = is_array($deliveryQuantities) ? $deliveryQuantities : [];
@@ -72,15 +75,13 @@ body{font-family:DejaVu Sans,sans-serif;font-size:9.2px;line-height:1.18;color:#
                 </td>
             <?php endforeach; ?>
             <?php foreach($deliveryMediaItems as $option): ?>
-                <?php if(in_array($option, $deliveryMediaSelected, true)): ?>
-                    <td>
-                        <span class="delivery-item">
-                            <span class="delivery-name"><?= e($option) ?></span>
-                            <span class="delivery-check">(X)</span>
-                            <?php $quantity = $formatDeliveryQuantity($option); ?><?php if($quantity !== ''): ?><span class="delivery-quantity"><?= e($quantity) ?></span><?php endif; ?>
-                        </span>
-                    </td>
-                <?php endif; ?>
+                <td>
+                    <span class="delivery-item">
+                        <span class="delivery-name"><?= e($option) ?></span>
+                        <span class="delivery-check">(<?= in_array($option, $deliveryMediaSelected, true) ? 'X' : '—' ?>)</span>
+                        <?php $quantity = $formatDeliveryQuantity($option); ?><?php if($quantity !== ''): ?><span class="delivery-quantity"><?= e($quantity) ?></span><?php endif; ?>
+                    </span>
+                </td>
             <?php endforeach; ?>
         </tr>
     </tbody>
