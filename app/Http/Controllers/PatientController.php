@@ -101,10 +101,16 @@ class PatientController extends Controller
         }
 
         if ($response->failed()) {
+            if ($response->notFound()) {
+                return response()->json([
+                    'message' => 'RENIEC no devolvió datos para este DNI. En menores de edad el padrón consultado por Decolecta puede no tener información; registre sus nombres y apellidos manualmente.',
+                    'manual_entry' => true,
+                ], 404);
+            }
+
             return response()->json([
-                'message' => 'No se pudieron consultar los datos del DNI en RENIEC.',
-                'details' => $response->json(),
-            ], $response->status() === 404 ? 404 : 422);
+                'message' => 'El servicio RENIEC no pudo procesar la consulta en este momento.',
+            ], 503);
         }
 
         return response()->json($response->json());

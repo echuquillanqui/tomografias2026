@@ -451,13 +451,18 @@ function orderSystem() {
             try {
                 const response = await fetch(`{{ route('patients.reniec') }}?numero=${encodeURIComponent(dni)}`, { headers: { Accept: 'application/json' } });
                 const data = await response.json();
-                if (!response.ok) throw new Error(data.message || 'No se encontró información para el DNI.');
+                if (!response.ok) {
+                    const error = new Error(data.message || 'No se encontró información para el DNI.');
+                    error.manualEntry = Boolean(data.manual_entry);
+                    throw error;
+                }
                 this.patientForm.nombres = data.first_name || '';
                 this.patientForm.apellidos = [data.first_last_name, data.second_last_name].filter(Boolean).join(' ');
                 this.lastReniecDni = dni;
                 this.$nextTick(() => this.$refs.patientNames?.focus());
             } catch (error) {
                 this.patientError = error.message || 'No se pudo consultar RENIEC.';
+                if (error.manualEntry) this.$nextTick(() => this.$refs.patientNames?.focus());
             } finally {
                 this.reniecLoading = false;
             }
