@@ -336,6 +336,9 @@ class OrderController extends Controller
 
     public function updateTriaje(Request $request, Order $order): RedirectResponse
     {
+        $this->normalizeIntegerInput($request, ['plates_count']);
+        $this->normalizeIntegerArrayInput($request, 'delivery_quantities');
+
         $data = $request->validate([
             'unit' => ['nullable', 'string', 'max:255'],
             'cause' => ['nullable', 'string'],
@@ -451,6 +454,9 @@ class OrderController extends Controller
             'consumables.*.cantidad' => ['required', 'numeric', 'min:0'],
         ];
 
+        $this->normalizeIntegerInput($request, ['plates_count']);
+        $this->normalizeIntegerArrayInput($request, 'delivery_quantities');
+
         $data = $request->validate($rules, [], $this->fichaIngresoValidationAttributes());
 
         $order->load(['patient', 'agreement', 'medicoSolicitante', 'orderExams.exam', 'admissionForm']);
@@ -535,6 +541,43 @@ class OrderController extends Controller
     }
 
 
+
+    private function normalizeIntegerInput(Request $request, array $fields): void
+    {
+        $normalized = [];
+
+        foreach ($fields as $field) {
+            $value = $request->input($field);
+
+            if ($this->isIntegerLikeValue($value)) {
+                $normalized[$field] = (string) (int) $value;
+            }
+        }
+
+        if ($normalized !== []) {
+            $request->merge($normalized);
+        }
+    }
+
+    private function normalizeIntegerArrayInput(Request $request, string $field): void
+    {
+        $values = $request->input($field);
+
+        if (! is_array($values)) {
+            return;
+        }
+
+        $request->merge([
+            $field => collect($values)
+                ->map(fn ($value) => $this->isIntegerLikeValue($value) ? (string) (int) $value : $value)
+                ->all(),
+        ]);
+    }
+
+    private function isIntegerLikeValue(mixed $value): bool
+    {
+        return is_string($value) && preg_match('/^\s*[+-]?\d+\s*$/', $value) === 1;
+    }
 
     private function fichaIngresoValidationAttributes(): array
     {
