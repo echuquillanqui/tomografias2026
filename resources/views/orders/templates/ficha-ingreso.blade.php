@@ -17,7 +17,18 @@
         <div class="alert alert-success">{{ session('success') }}</div>
     @endif
 
-    <form method="POST" action="{{ route('orders.ficha-ingreso.update', $order) }}">
+    @if ($errors->any())
+        <div class="alert alert-danger shadow-sm" role="alert">
+            <div class="fw-bold mb-2">No se pudo guardar la ficha. Revisa los campos marcados en rojo:</div>
+            <ul class="mb-0">
+                @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
+
+    <form method="POST" action="{{ route('orders.ficha-ingreso.update', $order) }}" novalidate data-highlight-invalid-form>
         @csrf
         @method('PUT')
         <div class="card clinic-card shadow-sm ficha-ingreso-card mx-auto">
@@ -52,5 +63,42 @@
     [x-cloak] {
         display: none !important;
     }
+
+    .ficha-ingreso-card .is-invalid,
+    .ficha-ingreso-card :invalid.invalid-submitted {
+        border-color: #dc3545 !important;
+        box-shadow: 0 0 0 .2rem rgba(220, 53, 69, .15);
+    }
 </style>
+@endpush
+
+@push('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const invalidFields = @json($errors->keys());
+        const fieldSelector = (name) => `[name="${CSS.escape(name)}"]`;
+        const dotKeyToInputName = (key) => key.replace(/\.([^.]*)/g, '[$1]');
+
+        document.querySelectorAll('[data-highlight-invalid-form]').forEach((form) => {
+            invalidFields.forEach((key) => {
+                const names = [key, dotKeyToInputName(key)];
+                names.forEach((name) => form.querySelectorAll(fieldSelector(name)).forEach((field) => {
+                    field.classList.add('is-invalid');
+                    field.setAttribute('aria-invalid', 'true');
+                }));
+            });
+
+            form.addEventListener('submit', () => {
+                form.querySelectorAll('input, select, textarea').forEach((field) => {
+                    if (!field.checkValidity()) field.classList.add('invalid-submitted');
+                });
+            });
+
+            form.querySelectorAll('input, select, textarea').forEach((field) => {
+                field.addEventListener('input', () => field.classList.toggle('invalid-submitted', !field.checkValidity()));
+                field.addEventListener('change', () => field.classList.toggle('invalid-submitted', !field.checkValidity()));
+            });
+        });
+    });
+</script>
 @endpush
