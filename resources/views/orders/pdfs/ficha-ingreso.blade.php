@@ -27,7 +27,11 @@
     $formatDeliveryQuantity = function ($option) use ($deliveryQuantities, $admissionData) {
         $value = $deliveryQuantities[$option] ?? ($option === 'PLACAS' ? ($admissionData['plates_count'] ?? null) : null);
 
-        return ($value === null || $value === '') ? '' : $value;
+        if ($value === null || $value === '') {
+            return '';
+        }
+
+        return ctype_digit((string) $value) ? str_pad((string) $value, 2, '0', STR_PAD_LEFT) : $value;
     };
     $surgeries = ($admissionData['surgeries'] ?? 'Ninguna') === 'Otros'
         ? ($admissionData['surgeries_detail'] ?? 'Otros')
