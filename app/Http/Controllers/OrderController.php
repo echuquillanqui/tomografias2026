@@ -408,7 +408,7 @@ class OrderController extends Controller
 
     public function updateFichaIngreso(Request $request, Order $order): RedirectResponse
     {
-        $data = $request->validate([
+        $rules = [
             'agreement' => ['nullable', 'string', 'max:255'],
             'request_number' => ['nullable', 'string', 'max:255'],
             'unit' => ['nullable', 'string', 'max:255'],
@@ -449,7 +449,9 @@ class OrderController extends Controller
             'consumables' => ['nullable', 'array'],
             'consumables.*.reagent_id' => ['required', 'exists:reagents,id'],
             'consumables.*.cantidad' => ['required', 'numeric', 'min:0'],
-        ]);
+        ];
+
+        $data = $request->validate($rules, [], $this->fichaIngresoValidationAttributes());
 
         $order->load(['patient', 'agreement', 'medicoSolicitante', 'orderExams.exam', 'admissionForm']);
         $this->syncPrintableDocuments($order);
@@ -532,6 +534,32 @@ class OrderController extends Controller
         return Pdf::loadView('orders.pdfs.declaracion-jurada', compact('order', 'declarationData'))->setPaper('a4')->stream('declaracion-jurada-'.$order->id.'.pdf');
     }
 
+
+
+    private function fichaIngresoValidationAttributes(): array
+    {
+        return [
+            'agreement' => 'convenio',
+            'request_number' => 'número de solicitud',
+            'unit' => 'unidad',
+            'patient_name' => 'paciente',
+            'patient_dni' => 'DNI',
+            'patient_phone' => 'celular',
+            'patient_birthdate' => 'fecha de nacimiento',
+            'patient_age' => 'edad',
+            'requested_by' => 'solicitado por',
+            'contrast_label' => 'contraste',
+            'study' => 'estudio solicitado',
+            'rule_out' => 'descartar',
+            'peripheral_route' => 'bránula',
+            'delivery_quantities.*' => 'cantidad de entrega',
+            'consumables.*.reagent_id' => 'insumo',
+            'consumables.*.cantidad' => 'cantidad de insumo',
+            'informed_by' => 'informado por',
+            'fasting' => 'ayuno',
+            'creatinine' => 'creatinina',
+        ];
+    }
 
     private function applyAutomaticDeliveryMedia(Order $order, array $data): array
     {
