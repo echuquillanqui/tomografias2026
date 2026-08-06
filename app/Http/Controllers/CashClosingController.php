@@ -45,6 +45,52 @@ class CashClosingController extends Controller
         ]);
     }
 
+    public function exportMonthlyDailyExcel(Request $request): StreamedResponse
+    {
+        $month = $request->query('base_month');
+        $month = is_string($month) && preg_match('/^\d{4}-(0[1-9]|1[0-2])$/', $month) === 1
+            ? Carbon::createFromFormat('Y-m-d', $month.'-01')
+            : ($request->date('base_date') ?: now())->startOfMonth();
+
+        $monthlyRequest = Request::create('', 'GET', array_merge($request->query(), [
+            'period' => 'month',
+            'base_month' => $month->format('Y-m'),
+        ]));
+        $monthlyData = $this->reportData($monthlyRequest);
+        $dailyClosings = collect();
+
+        for ($date = $month->copy()->startOfMonth(); $date->lte($month->copy()->endOfMonth()); $date->addDay()) {
+            $start = $date->copy()->startOfDay();
+            $end = $date->copy()->endOfDay();
+            $orders = $monthlyData['orders']->filter(fn (Order $order) => $order->fecha_orden->betweenIncluded($start, $end))->values();
+            $expenses = $monthlyData['expenses']->filter(fn ($expense) => $expense->fecha_egreso->isSameDay($date))->values();
+
+            $dailyClosings->push([
+                'date' => $date->copy(),
+                'orders' => $orders,
+                'expenses' => $expenses,
+                'incomeTotal' => $orders->sum('total'),
+                'expenseTotal' => $expenses->sum('monto'),
+                'yapePlinIncome' => $orders->where('tipo_pago', 'Yape/Plin')->sum('total'),
+                'transferIncome' => $orders->where('tipo_pago', 'Transferencia')->sum('total'),
+                'plateSummary' => $this->stockSummary($orders, $start, $end, 'placa', 'Placas', function (Order $order): float {
+                    $data = $order->admissionForm?->data ?? [];
+
+                    return (float) ($data['delivery_quantities']['PLACAS'] ?? $data['plates_count'] ?? 0);
+                }),
+                'iopamidolSummary' => $this->stockSummary($orders, $start, $end, 'iopamidol', 'Iopamidol', fn (Order $order): float => (float) $order->consumables
+                    ->filter(fn ($consumable) => str_contains(strtolower($consumable->reagent->nombre ?? ''), 'iopamidol'))
+                    ->sum('cantidad')),
+            ]);
+        }
+
+        $filename = 'cuadres-diarios-'.$month->format('Y-m').'.xls';
+
+        return response()->streamDownload(function () use ($dailyClosings, $month) {
+            echo view('cash-closings.exports.monthly-daily-excel', compact('dailyClosings', 'month'))->render();
+        }, $filename, ['Content-Type' => 'application/vnd.ms-excel; charset=UTF-8']);
+    }
+
     public function exportPdf(Request $request): Response
     {
         $data = $this->reportData($request);
