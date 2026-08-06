@@ -70,7 +70,7 @@ class CashClosingController extends Controller
         $data['created_by'] = auth()->id();
         CashExpense::create($data);
 
-        return redirect()->route('cash-closings.index', $request->only(['period', 'base_date', 'from', 'to', 'tipo_pago', 'tab']))->with('success', 'Egreso registrado correctamente.');
+        return redirect()->route('cash-closings.index', $request->only(['period', 'base_date', 'base_month', 'from', 'to', 'tipo_pago', 'tab']))->with('success', 'Egreso registrado correctamente.');
     }
 
     public function storeFixedExpense(Request $request): RedirectResponse
@@ -85,7 +85,7 @@ class CashClosingController extends Controller
         $data['created_by'] = auth()->id();
         CashFixedExpense::create($data);
 
-        return redirect()->route('cash-closings.index', array_merge($request->only(['period', 'base_date', 'tipo_pago']), ['tab' => 'fijos']))->with('success', 'Gasto fijo registrado correctamente.');
+        return redirect()->route('cash-closings.index', array_merge($request->only(['period', 'base_date', 'base_month', 'tipo_pago']), ['tab' => 'fijos']))->with('success', 'Gasto fijo registrado correctamente.');
     }
 
     public function updateFixedExpense(Request $request, CashFixedExpense $cashFixedExpense): RedirectResponse
@@ -99,7 +99,7 @@ class CashClosingController extends Controller
         $data['activo'] = $request->boolean('activo');
         $cashFixedExpense->update($data);
 
-        return redirect()->route('cash-closings.index', array_merge($request->only(['period', 'base_date', 'tipo_pago']), ['tab' => 'fijos']))->with('success', 'Gasto fijo actualizado correctamente.');
+        return redirect()->route('cash-closings.index', array_merge($request->only(['period', 'base_date', 'base_month', 'tipo_pago']), ['tab' => 'fijos']))->with('success', 'Gasto fijo actualizado correctamente.');
     }
 
     public function executeFixedExpenses(Request $request): RedirectResponse
@@ -295,9 +295,12 @@ class CashClosingController extends Controller
     private function resolveRange(Request $request): array
     {
         $period = array_key_exists($request->query('period'), self::PERIODS) ? $request->query('period') : 'day';
-        $baseDate = $period === 'day'
-            ? ($request->date('base_date')?->toDateString() ?: now()->toDateString())
-            : now()->toDateString();
+        $selectedMonth = $request->query('base_month');
+        $baseDate = match (true) {
+            $period === 'day' => $request->date('base_date')?->toDateString() ?: now()->toDateString(),
+            $period === 'month' && is_string($selectedMonth) && preg_match('/^\d{4}-(0[1-9]|1[0-2])$/', $selectedMonth) === 1 => $selectedMonth.'-01',
+            default => now()->toDateString(),
+        };
         $base = Carbon::parse($baseDate);
 
         return match ($period) {

@@ -18,6 +18,7 @@
                         @endforeach
                     </select>
                     <input x-show="period === 'day'" type="date" name="base_date" value="{{ $baseDate }}" class="form-control" aria-label="Fecha del día" title="Fecha (solo diario)">
+                    <input x-show="period === 'month'" type="month" name="base_month" value="{{ \Illuminate\Support\Carbon::parse($baseDate)->format('Y-m') }}" class="form-control" aria-label="Mes del reporte" title="Mes del reporte mensual">
                     <select name="tipo_pago" class="form-select" aria-label="Tipo de pago">
                         <option value="">Todos los pagos</option>
                         @foreach($tiposPago as $tipo)
@@ -86,7 +87,7 @@
             <div class="card clinic-card mb-4">
                 <div class="card-header bg-white border-0 pt-4 px-4"><h5 class="fw-bold mb-0">Registrar egreso</h5></div>
                 <div class="card-body px-4 pb-4">
-                    <form method="POST" action="{{ route('cash-closings.expenses.store', ['period' => $period, 'base_date' => $period === 'day' ? $baseDate : null, 'tipo_pago' => $tipoPago]) }}" enctype="multipart/form-data">
+                    <form method="POST" action="{{ route('cash-closings.expenses.store', ['period' => $period, 'base_date' => $period === 'day' ? $baseDate : null, 'base_month' => $period === 'month' ? \Illuminate\Support\Carbon::parse($baseDate)->format('Y-m') : null, 'tipo_pago' => $tipoPago]) }}" enctype="multipart/form-data">
                         @csrf
                         <div class="mb-3"><label class="form-label fw-bold">Fecha</label><input type="date" name="fecha_egreso" value="{{ old('fecha_egreso', $to) }}" class="form-control" required></div>
                         <div class="mb-3"><label class="form-label fw-bold">Descripción</label><input name="descripcion" value="{{ old('descripcion') }}" class="form-control" maxlength="255" required placeholder="Ej. Compra de útiles, movilidad..."></div>
@@ -127,7 +128,7 @@
                     <div class="card clinic-card">
                         <div class="card-header bg-white border-0 pt-4 px-4"><h5 class="fw-bold mb-0">Nuevo gasto fijo</h5></div>
                         <div class="card-body px-4 pb-4">
-                            <form method="POST" action="{{ route('cash-closings.fixed-expenses.store', ['period' => $period, 'base_date' => $period === 'day' ? $baseDate : null, 'tipo_pago' => $tipoPago]) }}">
+                            <form method="POST" action="{{ route('cash-closings.fixed-expenses.store', ['period' => $period, 'base_date' => $period === 'day' ? $baseDate : null, 'base_month' => $period === 'month' ? \Illuminate\Support\Carbon::parse($baseDate)->format('Y-m') : null, 'tipo_pago' => $tipoPago]) }}">
                                 @csrf
                                 <div class="mb-3"><label class="form-label fw-bold">Descripción</label><input name="descripcion" value="{{ old('descripcion') }}" class="form-control" maxlength="255" required placeholder="Ej. Alquiler, servicios, internet..."></div>
                                 <div class="mb-3"><label class="form-label fw-bold">Monto mensual</label><div class="input-group"><span class="input-group-text">S/</span><input type="number" step="0.01" min="0.01" name="monto" value="{{ old('monto') }}" class="form-control" required></div></div>
