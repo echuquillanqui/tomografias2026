@@ -25,6 +25,7 @@
                         <th>Fecha</th>
                         <th>Total</th>
                         <th>Pago</th>
+                        <th>Comprobante</th>
                         <th>Estado</th>
                         <th></th>
                     </tr>
@@ -44,6 +45,14 @@
                                 </button>
                             </td>
                             <td>
+                                @if($o->tipo_comprobante || $o->numero_comprobante)
+                                    <span class="fw-semibold">{{ $o->tipo_comprobante ?? 'Comprobante' }}</span>
+                                    <span class="text-muted d-block">N° {{ $o->numero_comprobante ?? '—' }}</span>
+                                @else
+                                    <span class="text-muted">—</span>
+                                @endif
+                            </td>
+                            <td>
                                 <button type="button" class="btn btn-sm badge badge-role border-0" data-bs-toggle="modal" data-bs-target="#status{{ $o->id }}">
                                     {{ $o->estado }}
                                 </button>
@@ -61,7 +70,7 @@
                             </td>
                         </tr>
                     @empty
-                        <tr><td colspan="9" class="text-center py-5">Sin órdenes.</td></tr>
+                        <tr><td colspan="10" class="text-center py-5">Sin órdenes.</td></tr>
                     @endforelse
                 </tbody>
             </table>
@@ -87,6 +96,21 @@
                             <option value="{{ $tipo }}" @selected(($o->tipo_pago ?? 'Efectivo') === $tipo)>{{ $tipo }}</option>
                         @endforeach
                     </select>
+                    <div class="row g-3 mt-1">
+                        <div class="col-sm-6">
+                            <label class="form-label small fw-bold">TIPO DE COMPROBANTE</label>
+                            <select name="tipo_comprobante" class="form-select">
+                                <option value="">Sin comprobante</option>
+                                @foreach($tiposComprobante as $tipo)
+                                    <option value="{{ $tipo }}" @selected($o->tipo_comprobante === $tipo)>{{ $tipo }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-sm-6">
+                            <label class="form-label small fw-bold">NÚMERO DE COMPROBANTE</label>
+                            <input name="numero_comprobante" class="form-control" value="{{ $o->numero_comprobante }}" placeholder="Ej. B001-123">
+                        </div>
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
