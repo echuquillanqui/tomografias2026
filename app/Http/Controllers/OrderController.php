@@ -104,11 +104,13 @@ class OrderController extends Controller
     {
         $data = $request->validate([
             'tipo_pago' => ['required', Rule::in(self::TIPOS_PAGO)],
+            'tipo_comprobante' => ['nullable', Rule::in(self::TIPOS_COMPROBANTE)],
+            'numero_comprobante' => ['nullable', 'string', 'max:255'],
         ]);
 
         $order->update($data);
 
-        return redirect()->route('orders.index')->with('success', 'Tipo de pago actualizado correctamente.');
+        return redirect()->route('orders.index')->with('success', 'Datos de pago y comprobante actualizados correctamente.');
     }
 
 
