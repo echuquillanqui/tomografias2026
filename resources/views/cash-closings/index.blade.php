@@ -2,7 +2,7 @@
 
 @section('content')
 @php $activeCashTab = in_array(request('tab'), ['hoja', 'fijos'], true) ? request('tab') : 'resumen'; @endphp
-<div class="container">
+<div class="container-fluid">
     <section class="clinic-page-hero mb-4">
         <div class="d-flex flex-column flex-lg-row justify-content-between gap-3">
             <div>
