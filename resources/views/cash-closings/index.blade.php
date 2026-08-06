@@ -29,6 +29,7 @@
                 </form>
                 <div class="d-flex flex-wrap gap-2 justify-content-lg-end">
                     <a class="btn btn-outline-light btn-sm fw-bold" href="{{ route('cash-closings.export.excel', request()->query()) }}">Descargar Excel</a>
+                    <a class="btn btn-outline-light btn-sm fw-bold" href="{{ route('cash-closings.export.monthly-daily-excel', request()->query()) }}">Excel mensual por día</a>
                     <a class="btn btn-outline-light btn-sm fw-bold" href="{{ route('cash-closings.export.pdf', request()->query()) }}" target="_blank">Descargar PDF</a>
                 </div>
             </div>
