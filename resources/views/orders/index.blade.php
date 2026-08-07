@@ -13,6 +13,39 @@
         </div>
     </section>
 
+    <form method="GET" action="{{ route('orders.index') }}" class="card clinic-card mb-4"
+          x-data="{ loading: false, timer: null, submitFilters() { clearTimeout(this.timer); this.timer = setTimeout(() => { this.loading = true; this.$root.requestSubmit(); }, 350); } }"
+          x-on:submit="loading = true">
+        <div class="card-body">
+            <div class="row g-3 align-items-end">
+                <div class="col-md-4 col-lg-3">
+                    <label for="order-date-filter" class="form-label small fw-bold">FECHA DE LA ORDEN</label>
+                    <input id="order-date-filter" name="date" type="date" class="form-control" value="{{ $date }}"
+                           max="9999-12-31" required x-on:change="loading = true; $root.requestSubmit()">
+                </div>
+                <div class="col-md-8 col-lg-7">
+                    <label for="order-search-filter" class="form-label small fw-bold">PACIENTE</label>
+                    <div class="input-group">
+                        <span class="input-group-text" aria-hidden="true">&#128269;</span>
+                        <input id="order-search-filter" name="search" type="search" class="form-control"
+                               value="{{ $search }}" placeholder="Buscar por nombres, apellidos o DNI"
+                               autocomplete="off" x-on:input="submitFilters()">
+                    </div>
+                </div>
+                <div class="col-lg-2 d-grid">
+                    <a class="btn btn-outline-secondary" href="{{ route('orders.index') }}">Limpiar filtros</a>
+                </div>
+            </div>
+            <div class="small text-muted mt-2" aria-live="polite">
+                <span x-show="!loading">{{ $orders->total() }} {{ $orders->total() === 1 ? 'orden encontrada' : 'órdenes encontradas' }}</span>
+                <span x-show="loading" x-cloak>Actualizando resultados...</span>
+            </div>
+        </div>
+        <noscript>
+            <div class="card-footer bg-white text-end"><button class="btn btn-clinic-primary">Buscar</button></div>
+        </noscript>
+    </form>
+
     <div class="card clinic-card">
         <div class="card-body p-0">
             <table class="table table-clinic mb-0 align-middle">
