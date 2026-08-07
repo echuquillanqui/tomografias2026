@@ -33,7 +33,7 @@
         <h2 class="fw-bold text-decoration-underline mb-0">FICHA DE INGRESO</h2>
     </div>
     <div class="col-md-4 mt-2 mt-md-0">
-        <input name="agreement" class="form-control form-control-lg text-center fw-bold border-0 bg-transparent shadow-none" style="color:#0057a8" value="{{ old('agreement', $admissionData['agreement'] ?? ($order->agreement->nombre_institucion ?? 'PARTICULAR')) }}">
+        <input name="agreement" class="form-control form-control-lg text-center fw-bold text-uppercase border-0 bg-transparent shadow-none" style="color:#0057a8" value="{{ mb_strtoupper(old('agreement', $admissionData['agreement'] ?? ($order->agreement->nombre_institucion ?? 'PARTICULAR'))) }}">
     </div>
 </div>
 <table class="table table-bordered align-middle">
@@ -94,4 +94,4 @@
     </div>
 @endif
 <div class="mt-4"><label class="form-label fw-bold">Informado por</label><select name="informed_by" class="form-select"><option value=""></option>@foreach(($medicosInformantes ?? collect()) as $medico)<option value="{{ $medico->nombre_completo }}" @selected(old('informed_by', $admissionData['informed_by'] ?? '') === $medico->nombre_completo)>{{ $medico->nombre_completo }}</option>@endforeach</select></div>
-<div class="row text-center mt-5"><div class="col"><div class="border rounded mx-auto mb-2" style="height:120px;max-width:260px"></div>Firma del paciente<div class="border rounded mx-auto mt-4 mb-2" style="height:90px;max-width:260px"></div>Recibí conforme</div><div class="col"><div class="border rounded mx-auto mb-2" style="height:130px;max-width:140px"></div>Huella del paciente</div></div>
+<div class="row text-center mt-5"><div class="col"><div class="border rounded mx-auto mb-2" style="height:130px;max-width:260px"></div>Firma del paciente<div class="border rounded mx-auto mt-4 mb-2" style="height:90px;max-width:260px"></div>Recibí conforme</div><div class="col"><div class="border rounded mx-auto mb-2" style="height:140px;max-width:140px"></div>Huella del paciente</div></div>
