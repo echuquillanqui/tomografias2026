@@ -33,7 +33,7 @@
         <h2 class="fw-bold text-decoration-underline mb-0">FICHA DE INGRESO</h2>
     </div>
     <div class="col-md-4 mt-2 mt-md-0">
-        <input name="agreement" class="form-control form-control-lg text-center fw-bold" style="background:#fff4c7;color:#0057a8;border-color:#1f6fb2" value="{{ old('agreement', $admissionData['agreement'] ?? ($order->agreement->nombre_institucion ?? 'PARTICULAR')) }}">
+        <input name="agreement" class="form-control form-control-lg text-center fw-bold border-0 bg-transparent shadow-none" style="color:#0057a8" value="{{ old('agreement', $admissionData['agreement'] ?? ($order->agreement->nombre_institucion ?? 'PARTICULAR')) }}">
     </div>
 </div>
 <table class="table table-bordered align-middle">
