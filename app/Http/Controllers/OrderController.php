@@ -67,6 +67,47 @@ class OrderController extends Controller
         ]);
     }
 
+    public function triajesIndex(Request $request): View
+    {
+        $search = trim((string) $request->query('search'));
+
+        $orders = Order::with(['patient', 'orderExams.exam', 'consumables.reagent'])
+            ->when($search !== '', fn ($query) => $query->where(function ($query) use ($search) {
+                $query->where('codigo_orden', 'like', "%{$search}%")
+                    ->orWhereHas('patient', fn ($patient) => $patient
+                        ->where('dni', 'like', "%{$search}%")
+                        ->orWhere('nombres', 'like', "%{$search}%")
+                        ->orWhere('apellidos', 'like', "%{$search}%"));
+            }))
+            ->latest('fecha_orden')
+            ->paginate(10)
+            ->withQueryString();
+
+        return view('orders.triajes-index', compact('orders', 'search'));
+    }
+
+    public function updateTriageConsumables(Request $request, Order $order): RedirectResponse
+    {
+        $data = $request->validate([
+            'consumables' => ['nullable', 'array'],
+            'consumables.*.reagent_id' => ['required', 'integer', 'exists:reagents,id'],
+            'consumables.*.cantidad' => ['required', 'numeric', 'min:0'],
+        ]);
+
+        DB::transaction(function () use ($order, $data): void {
+            $order->consumables()->delete();
+            foreach (collect($data['consumables'] ?? [])->filter(fn ($row) => (float) $row['cantidad'] > 0) as $row) {
+                $order->consumables()->create([
+                    'reagent_id' => $row['reagent_id'],
+                    'cantidad' => $row['cantidad'],
+                ]);
+            }
+        });
+
+        return redirect()->route('triajes.index', $request->only(['search', 'page']))
+            ->with('success', 'Consumibles de la orden actualizados correctamente.');
+    }
+
     public function create(Request $request): View
     {
         return view('orders.form', $this->formData($request) + [
