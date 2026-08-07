@@ -91,5 +91,5 @@ body{font-family:DejaVu Sans,sans-serif;font-size:9.2px;line-height:1.18;color:#
     </tbody>
 </table>
 <div class="box"><div class="row"><div class="cell"><span class="label">Informado por:</span> <?= e($admissionData['informed_by'] ?? '') ?></div></div></div>
-<div class="row signature-row"><div class="cell" style="border:0;text-align:center"><div class="sig"></div>FIRMA DEL PACIENTE<div class="sig receipt-sig"></div>RECIBÍ CONFORME</div><div class="cell" style="border:0;text-align:center"><div class="sig fingerprint"></div>HUELLA DEL PACIENTE</div></div>
+<div class="row signature-row"><div class="cell" style="border:0;text-align:center"><div class="sig"></div>FIRMA DE PACIENTE O APODERADO<div class="sig receipt-sig"></div>RECIBÍ CONFORME</div><div class="cell" style="border:0;text-align:center"><div class="sig fingerprint"></div>HUELLA DEL PACIENTE</div></div>
 </div></body></html>
