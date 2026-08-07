@@ -32,12 +32,25 @@ class OrderController extends Controller
     public function index(Request $request): View
     {
         $search = trim((string) $request->query('search'));
+        $date = (string) $request->query('date', now()->toDateString());
+        if (! Carbon::hasFormat($date, 'Y-m-d')) {
+            $date = now()->toDateString();
+        }
+
+        $searchTerms = preg_split('/\s+/', $search, -1, PREG_SPLIT_NO_EMPTY);
         $orders = Order::with(['patient', 'agreement', 'medicoSolicitante', 'medicoInforme'])
             ->withCount('orderExams')
-            ->when($search !== '', fn ($q) => $q->where('codigo_orden', 'like', "%{$search}%")
-                ->orWhereHas('patient', fn ($qq) => $qq->where('dni', 'like', "%{$search}%")
-                    ->orWhere('nombres', 'like', "%{$search}%")
-                    ->orWhere('apellidos', 'like', "%{$search}%")))
+            ->whereDate('fecha_orden', $date)
+            ->when($searchTerms !== [], function ($query) use ($searchTerms) {
+                foreach ($searchTerms as $term) {
+                    $query->where(fn ($q) => $q
+                        ->where('codigo_orden', 'like', "%{$term}%")
+                        ->orWhereHas('patient', fn ($patient) => $patient
+                            ->where('dni', 'like', "%{$term}%")
+                            ->orWhere('nombres', 'like', "%{$term}%")
+                            ->orWhere('apellidos', 'like', "%{$term}%")));
+                }
+            })
             ->latest('fecha_orden')
             ->paginate(10)
             ->withQueryString();
@@ -45,6 +58,7 @@ class OrderController extends Controller
         return view('orders.index', [
             'orders' => $orders,
             'search' => $search,
+            'date' => $date,
             'estados' => self::ESTADOS,
             'tiposPago' => self::TIPOS_PAGO,
             'tiposComprobante' => self::TIPOS_COMPROBANTE,
