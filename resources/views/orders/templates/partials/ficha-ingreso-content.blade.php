@@ -27,9 +27,14 @@
     $rawPatientAge = old('patient_age', $admissionData['patient_age'] ?? ($order->patient->edad ?? ($order->patient->fecha_nacimiento?->age ?? '—')));
     $patientAgeLabel = is_numeric($rawPatientAge) ? $rawPatientAge.' años' : $rawPatientAge;
 @endphp
-<div class="text-center mb-3">
-    <h2 class="fw-bold text-decoration-underline">FICHA DE INGRESO</h2>
-    <div class="fw-bold"><input name="agreement" class="form-control form-control-sm text-center fw-bold" value="{{ old('agreement', $admissionData['agreement'] ?? ($order->agreement->nombre_institucion ?? 'PARTICULAR')) }}"></div>
+<div class="row align-items-end mb-3">
+    <div class="col-md-4 d-none d-md-block" aria-hidden="true"></div>
+    <div class="col-md-4 text-center">
+        <h2 class="fw-bold text-decoration-underline mb-0">FICHA DE INGRESO</h2>
+    </div>
+    <div class="col-md-4 mt-2 mt-md-0">
+        <input name="agreement" class="form-control form-control-lg text-center fw-bold" style="background:#fff4c7;color:#0057a8;border-color:#1f6fb2" value="{{ old('agreement', $admissionData['agreement'] ?? ($order->agreement->nombre_institucion ?? 'PARTICULAR')) }}">
+    </div>
 </div>
 <table class="table table-bordered align-middle">
     <tbody>
