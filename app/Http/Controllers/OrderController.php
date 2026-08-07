@@ -70,8 +70,13 @@ class OrderController extends Controller
     public function triajesIndex(Request $request): View
     {
         $search = trim((string) $request->query('search'));
+        $date = (string) $request->query('date', now()->toDateString());
+        if (! Carbon::hasFormat($date, 'Y-m-d')) {
+            $date = now()->toDateString();
+        }
 
-        $orders = Order::with(['patient', 'orderExams.exam', 'consumables.reagent'])
+        $orders = Order::with(['patient', 'orderExams.exam'])
+            ->whereDate('fecha_orden', $date)
             ->when($search !== '', fn ($query) => $query->where(function ($query) use ($search) {
                 $query->where('codigo_orden', 'like', "%{$search}%")
                     ->orWhereHas('patient', fn ($patient) => $patient
@@ -83,7 +88,7 @@ class OrderController extends Controller
             ->paginate(10)
             ->withQueryString();
 
-        return view('orders.triajes-index', compact('orders', 'search'));
+        return view('orders.triajes-index', compact('orders', 'search', 'date'));
     }
 
     public function updateTriageConsumables(Request $request, Order $order): RedirectResponse
@@ -104,7 +109,7 @@ class OrderController extends Controller
             }
         });
 
-        return redirect()->route('triajes.index', $request->only(['search', 'page']))
+        return redirect()->route('triajes.index', $request->only(['search', 'date', 'page']))
             ->with('success', 'Consumibles de la orden actualizados correctamente.');
     }
 
