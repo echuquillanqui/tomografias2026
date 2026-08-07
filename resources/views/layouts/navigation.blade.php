@@ -22,7 +22,13 @@
                                 <a class="nav-link fw-semibold {{ request()->routeIs('patients.*') ? 'active' : '' }}" href="{{ route('patients.index') }}">Pacientes</a>
                             </li>
                             <li class="nav-item"><a class="nav-link fw-semibold {{ request()->routeIs('orders.*') ? 'active' : '' }}" href="{{ route('orders.index') }}">Órdenes</a></li>
-                            <li class="nav-item"><a class="nav-link fw-semibold {{ request()->routeIs('reports.*') ? 'active' : '' }}" href="{{ route('reports.index') }}">Informes</a></li>
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle fw-semibold {{ request()->routeIs('reports.*') || request()->routeIs('triajes.*') ? 'active' : '' }}" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">Informes</a>
+                                <div class="dropdown-menu shadow border-0">
+                                    <a class="dropdown-item {{ request()->routeIs('reports.*') ? 'active' : '' }}" href="{{ route('reports.index') }}">Informes de tomografías</a>
+                                    <a class="dropdown-item {{ request()->routeIs('triajes.*') ? 'active' : '' }}" href="{{ route('triajes.index') }}">Triaje y consumibles</a>
+                                </div>
+                            </li>
                             <li class="nav-item dropdown">
                                 <a class="nav-link dropdown-toggle fw-semibold {{ request()->routeIs('cash-closings.*') ? 'active' : '' }}" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">Cuadre de caja</a>
                                 <div class="dropdown-menu shadow border-0">

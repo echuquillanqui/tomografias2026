@@ -55,6 +55,8 @@ Route::middleware('auth')->group(function () {
     Route::delete('cash-closings/expenses/{cashExpense}', [CashClosingController::class, 'destroyExpense'])->name('cash-closings.expenses.destroy');
     Route::get('system-settings', [SystemSettingController::class, 'index'])->name('system-settings.index');
     Route::put('system-settings', [SystemSettingController::class, 'update'])->name('system-settings.update');
+    Route::get('triajes', [OrderController::class, 'triajesIndex'])->name('triajes.index');
+    Route::put('triajes/{order}/consumibles', [OrderController::class, 'updateTriageConsumables'])->name('triajes.consumables.update');
     Route::patch('orders/{order}/status', [OrderController::class, 'updateStatus'])->name('orders.update-status');
     Route::get('orders/{order}/triaje', [OrderController::class, 'triaje'])->name('orders.triaje');
     Route::put('orders/{order}/triaje', [OrderController::class, 'updateTriaje'])->name('orders.triaje.update');
