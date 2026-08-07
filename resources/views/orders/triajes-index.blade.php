@@ -5,7 +5,7 @@
     <section class="clinic-page-hero mb-4">
         <div class="clinic-eyebrow mb-2">Informes / Triaje</div>
         <h1 class="display-6 fw-bold">Triajes y consumibles</h1>
-        <p class="mb-0 opacity-75">Consulte las órdenes y abra la plantilla correspondiente para completar el triaje y sus consumibles.</p>
+        <p class="mb-0 opacity-75">Consulte las órdenes y registre los consumibles utilizados.</p>
     </section>
 
     @if(session('success'))
@@ -13,9 +13,16 @@
     @endif
 
     <form class="card clinic-card p-3 mb-4" method="GET" action="{{ route('triajes.index') }}">
-        <div class="input-group">
-            <input name="search" class="form-control" value="{{ $search }}" placeholder="Buscar por orden, DNI o paciente">
-            <button class="btn btn-clinic-primary">Buscar</button>
+        <div class="row g-3 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label fw-semibold" for="triage-date">Fecha</label>
+                <input id="triage-date" name="date" type="date" class="form-control" value="{{ $date }}">
+            </div>
+            <div class="col-md-6">
+                <label class="form-label fw-semibold" for="triage-search">Orden o paciente</label>
+                <input id="triage-search" name="search" class="form-control" value="{{ $search }}" placeholder="Buscar por orden, DNI o paciente">
+            </div>
+            <div class="col-md-2"><button class="btn btn-clinic-primary w-100">Buscar</button></div>
         </div>
     </form>
 
@@ -27,7 +34,6 @@
                         <th>Orden</th>
                         <th>Paciente</th>
                         <th>Tomografías</th>
-                        <th>Consumibles</th>
                         <th>Fecha</th>
                         <th class="text-end">Acción</th>
                     </tr>
@@ -43,16 +49,6 @@
                             <td>
                                 {{ $order->orderExams->pluck('exam.nombre_examen')->filter()->join(', ') ?: 'Sin exámenes' }}
                             </td>
-                            <td>
-                                @forelse($order->consumables as $consumable)
-                                    <div class="small">
-                                        <span class="fw-semibold">{{ $consumable->reagent?->nombre ?? 'Consumible' }}:</span>
-                                        {{ $consumable->cantidad }} {{ $consumable->reagent?->unidad_medida }}
-                                    </div>
-                                @empty
-                                    <span class="text-muted small">Sin consumibles registrados</span>
-                                @endforelse
-                            </td>
                             <td class="text-nowrap">{{ $order->fecha_orden->format('d/m/Y H:i') }}</td>
                             <td class="text-end text-nowrap">
                                 <a class="btn btn-sm btn-clinic-primary" href="{{ route('orders.triaje', $order) }}">
@@ -61,7 +57,7 @@
                             </td>
                         </tr>
                     @empty
-                        <tr><td colspan="6" class="text-center text-muted py-5">No se encontraron órdenes.</td></tr>
+                        <tr><td colspan="5" class="text-center text-muted py-5">No se encontraron órdenes para la fecha seleccionada.</td></tr>
                     @endforelse
                 </tbody>
             </table>
