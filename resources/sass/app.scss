@@ -369,6 +369,23 @@ main {
     border-radius: 0.85rem;
 }
 
+.order-contrast-select--standard {
+    min-height: calc(1.5em + 0.5rem + 2px);
+    border-radius: var(--bs-border-radius-sm);
+    border-color: var(--bs-border-color);
+    background-color: var(--bs-body-bg);
+    font-weight: 400;
+}
+
+.order-contrast-select--standard:hover {
+    border-color: var(--bs-border-color);
+}
+
+.order-contrast-select--standard:focus {
+    border-color: #86b7fe;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
 .ts-wrapper.form-select,
 .ts-wrapper.single .ts-control,
 .ts-wrapper.multi .ts-control {
