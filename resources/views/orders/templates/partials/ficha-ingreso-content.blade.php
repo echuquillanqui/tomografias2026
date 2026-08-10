@@ -93,5 +93,20 @@
         <div class="col-md-8"><label class="form-label fw-bold">Prueba de creatinina</label><div class="input-group"><input name="creatinine" class="form-control" value="{{ old('creatinine', $admissionData['creatinine'] ?? '') }}" placeholder="Valor de creatinina"><span class="input-group-text">mg/dl</span></div></div>
     </div>
 @endif
-<div class="mt-4"><label class="form-label fw-bold">Informado por</label><select name="informed_by" class="form-select"><option value=""></option>@foreach(($medicosInformantes ?? collect()) as $medico)<option value="{{ $medico->nombre_completo }}" @selected(old('informed_by', $admissionData['informed_by'] ?? '') === $medico->nombre_completo)>{{ $medico->nombre_completo }}</option>@endforeach</select></div>
-<div class="row text-center mt-5 g-4"><div class="col-md-6"><div class="border rounded mb-2 w-100" style="height:130px"></div>Firma de paciente o apoderado<div class="mb-4 w-100" style="height:24px;border-bottom:1px solid currentColor"></div><div class="border rounded mb-2 w-100" style="height:90px"></div>Recibí conforme</div><div class="col-md-6"><div class="border rounded mb-2 w-100" style="height:140px"></div>Huella del paciente</div></div>
+<div class="border border-primary rounded mt-4 p-3 text-primary">
+    <label class="form-label fw-bold text-uppercase">Informado por:</label>
+    <select name="informed_by" class="form-select mb-4"><option value=""></option>@foreach(($medicosInformantes ?? collect()) as $medico)<option value="{{ $medico->nombre_completo }}" @selected(old('informed_by', $admissionData['informed_by'] ?? '') === $medico->nombre_completo)>{{ $medico->nombre_completo }}</option>@endforeach</select>
+    <div class="row text-center g-4 text-uppercase small fw-semibold">
+        <div class="col-md-7">
+            <div class="border border-primary rounded mb-2 w-100" style="height:120px"></div>
+            Firma de paciente o apoderado
+            <div class="mb-4 w-100" style="height:38px;border-bottom:1px solid currentColor"></div>
+            <div class="border border-primary rounded mb-1 w-100" style="height:70px"></div>
+            Recibí conforme / apoderado
+        </div>
+        <div class="col-md-5">
+            <div class="border border-primary rounded mb-1 mx-auto" style="height:140px;width:112px"></div>
+            Huella de paciente o apoderado
+        </div>
+    </div>
+</div>
