@@ -193,7 +193,7 @@
                                                         <input type="hidden" :name="`exams[${cart.indexOf(item)}][exam_id]`" :value="item.id">
                                                     </td>
                                                     <td style="min-width: 160px;">
-                                                        <select class="form-select form-select-sm" :name="`exams[${cart.indexOf(item)}][tipo_contraste]`" x-model="item.tipo_contraste" @change="handleContrastChange(item)">
+                                                        <select class="form-select form-select-sm order-contrast-select" :class="{ 'order-contrast-select--standard': item.tipo_contraste === 'Con contraste' }" :name="`exams[${cart.indexOf(item)}][tipo_contraste]`" x-model="item.tipo_contraste" @change="handleContrastChange(item)">
                                                             <option>Sin contraste</option>
                                                             <option>Con contraste</option>
                                                         </select>
