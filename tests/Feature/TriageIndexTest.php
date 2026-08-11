@@ -88,6 +88,30 @@ class TriageIndexTest extends TestCase
             ->assertDontSee('Rellenar triaje');
     }
 
+    public function test_updating_plate_consumable_updates_admission_form_plate_fields(): void
+    {
+        $user = User::create(['username' => 'tester-plates', 'email' => 'plates@example.com', 'password' => 'password']);
+        $patient = Patient::create(['dni' => '12345679', 'nombres' => 'Elena', 'apellidos' => 'Paredes']);
+        $agreement = Agreement::create(['nombre_institucion' => 'Particular', 'activo' => true]);
+        $order = Order::create(['codigo_orden' => 'ORD-PLACAS', 'patient_id' => $patient->id, 'agreement_id' => $agreement->id, 'fecha_orden' => '2026-08-07 09:00:00', 'estado' => 'Pendiente']);
+        $plate = Reagent::create(['nombre' => 'Placas', 'unidad' => 'unidad', 'stock_actual' => 10, 'stock_minimo' => 1, 'activo' => true]);
+        $order->admissionForm()->create(['data' => [
+            'patient_name' => 'Dato conservado',
+            'plates_count' => 1,
+            'delivery_quantities' => ['PLACAS' => 1, 'CD' => 2],
+        ]]);
+
+        $this->actingAs($user)->put(route('triajes.consumables.update', $order), [
+            'consumables' => [['reagent_id' => $plate->id, 'cantidad' => 4]],
+        ])->assertRedirect(route('triajes.index'));
+
+        $admissionData = $order->fresh()->admissionForm->data;
+        $this->assertSame(4, $admissionData['plates_count']);
+        $this->assertSame(4, $admissionData['delivery_quantities']['PLACAS']);
+        $this->assertSame(2, $admissionData['delivery_quantities']['CD']);
+        $this->assertSame('Dato conservado', $admissionData['patient_name']);
+    }
+
     public function test_store_keeps_consumables_for_without_contrast_order(): void
     {
         $user = User::create(['username' => 'tester2', 'email' => 'tester2@example.com', 'password' => 'password']);
