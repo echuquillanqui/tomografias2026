@@ -390,7 +390,7 @@ function orderSystem() {
         exams: [],
         isSubmitting: false,
         init() {
-            this.preloadConsumablesFromCart(true);
+            this.preloadConsumablesFromCart(false);
 
             document.querySelectorAll('.js-tom-select').forEach((select) => {
                 if (!select.tomselect) {
@@ -564,6 +564,12 @@ function orderSystem() {
             this.rebuildConsumablesFromExams();
         },
         examVariantFor(item, contrast) {
+            const exactVariant = this.exams.find((exam) => exam.name === item.name && exam.configured_contrast === contrast && this.priceFor(exam.id, contrast) > 0);
+            if (exactVariant) return exactVariant;
+
+            const allowedVariant = this.exams.find((exam) => exam.name === item.name && this.priceFor(exam.id, contrast) > 0);
+            if (allowedVariant) return allowedVariant;
+
             return this.exams.find((exam) => exam.name === item.name && exam.configured_contrast === contrast) || item;
         },
         priceFor(examId, contrast) {
@@ -610,8 +616,12 @@ function orderSystem() {
                 .filter((price) => price.agreement_id === String(this.selectedAgreement))
                 .map((price) => String(price.exam_id)));
         },
-        isExamAllowed(examId) {
-            return this.allowedExamIds().has(String(examId));
+        isExamAllowed(examId, contrast = null) {
+            return this.agreementPrices.some((price) =>
+                price.agreement_id === String(this.selectedAgreement)
+                && price.exam_id === String(examId)
+                && (contrast === null || price.tipo_contraste === contrast)
+            );
         },
         availableExams() {
             return this.exams.filter((exam) => this.isExamAllowed(exam.id));
