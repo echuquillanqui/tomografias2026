@@ -22,8 +22,8 @@
     <div class="report-header"><h1>Reporte de atenciones</h1><div>Cuadre de caja · Periodo {{ $periods[$period] }}: {{ \Illuminate\Support\Carbon::parse($from)->format('d/m/Y') }} al {{ \Illuminate\Support\Carbon::parse($to)->format('d/m/Y') }}</div></div>
 
     <table class="summary">
-        <tr><td>Ingresos efectivo</td><td class="right">S/ {{ number_format($cashIncome, 2) }}</td><td>Egresos efectivo</td><td class="right">S/ {{ number_format($expenseTotal, 2) }}</td></tr>
-        <tr><td>Saldo efectivo</td><td class="right">S/ {{ number_format($cashBalance, 2) }}</td><td>Yape/Plin</td><td class="right">S/ {{ number_format($yapePlinIncome, 2) }}</td></tr>
+        <tr><td>Ingresos efectivo</td><td class="right">S/ {{ number_format($cashIncome, 2) }}</td><td>Egresos</td><td class="right">S/ {{ number_format($expenseTotal, 2) }}</td></tr>
+        <tr><td>Saldo global</td><td class="right">S/ {{ number_format($balance, 2) }}</td><td>Yape/Plin</td><td class="right">S/ {{ number_format($yapePlinIncome, 2) }}</td></tr>
         <tr><td>Transferencias</td><td class="right">S/ {{ number_format($transferIncome, 2) }}</td><td>Total ingresos</td><td class="right">S/ {{ number_format($incomeTotal, 2) }}</td></tr>
         <tr><td>Placas inicial</td><td class="right">{{ $plateSummary['initial'] }}</td><td>Placas final</td><td class="right">{{ $plateSummary['final'] }}</td></tr>
         <tr><td>Iopamidol utilizado</td><td class="right">{{ number_format($iopamidolSummary['delivered'], 2) }}</td><td>Iopamidol final</td><td class="right">{{ number_format($iopamidolSummary['final'], 2) }}</td></tr>
@@ -35,7 +35,7 @@
     <h2>Ingresos en efectivo</h2>
     @include('cash-closings.exports.partials.orders-pdf-table', ['sheetOrders' => $cashOrders])
 
-    <h2>Egresos en efectivo</h2>
+    <h2>Egresos</h2>
     <table>
         <thead><tr><th>Fecha</th><th>Descripción</th><th>Monto</th><th>Usuario</th></tr></thead>
         <tbody>
