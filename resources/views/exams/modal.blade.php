@@ -15,6 +15,7 @@
               x-data="examConsumables(@js($rowsByContrast), @js(old('tipo_contraste', $e?->tipo_contraste ?? 'Ambos')))">
             @csrf
             @if($method === 'PUT') @method('PUT') @endif
+            <input type="hidden" name="reagents_payload" :value="payload()">
             <div class="modal-header text-white">
                 <div>
                     <h5 class="modal-title">{{ $e ? 'Editar tomografía' : 'Registrar tomografía' }}</h5>
