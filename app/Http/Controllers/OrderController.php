@@ -212,7 +212,7 @@ class OrderController extends Controller
         return [
             'patients' => Patient::select(['id', 'dni', 'nombres', 'apellidos', 'telefono', 'fecha_nacimiento', 'edad'])->orderBy('apellidos')->orderBy('nombres')->get(),
             'agreements' => Agreement::select(['id', 'nombre_institucion', 'mostrar_precio_orden'])->where('activo', true)->orderByRaw("CASE WHEN UPPER(nombre_institucion) = 'PARTICULAR' THEN 0 ELSE 1 END")->orderBy('nombre_institucion')->get(),
-            'exams' => Exam::with('reagents:id,nombre,unidad')->select(['id', 'nombre_examen'])->where('activo', true)->orderBy('nombre_examen')->get(),
+            'exams' => Exam::with('reagents:id,nombre,unidad')->select(['id', 'nombre_examen', 'tipo_contraste'])->where('activo', true)->orderBy('nombre_examen')->orderBy('tipo_contraste')->get(),
             'reagents' => Reagent::select(['id', 'nombre', 'unidad'])->where('activo', true)->orderBy('nombre')->get(),
             'agreementPrices' => AgreementPrice::select(['agreement_id', 'exam_id', 'tipo_contraste', 'precio_pactado'])->get(),
             'medicosSolicitantes' => RequestingDoctor::select(['id', 'nombre'])->where('activo', true)->orderBy('nombre')->get(),
