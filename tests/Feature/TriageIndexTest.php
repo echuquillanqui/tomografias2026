@@ -158,4 +158,45 @@ class TriageIndexTest extends TestCase
         $this->assertSame(2.0, $response->viewData('triageConsumables')[0]['cantidad']);
     }
 
+    public function test_plates_and_consumables_saved_in_triage_appear_in_admission_form(): void
+    {
+        $user = User::create(['username' => 'tester5', 'email' => 'tester5@example.com', 'password' => 'password']);
+        $patient = Patient::create(['dni' => '45678914', 'nombres' => 'Elena', 'apellidos' => 'Paredes']);
+        $agreement = Agreement::create(['nombre_institucion' => 'Particular', 'activo' => true]);
+        $exam = Exam::create(['nombre_examen' => 'TEM Cerebral', 'tipo_contraste' => 'Sin contraste', 'activo' => true]);
+        $reagent = Reagent::create(['nombre' => 'Gasa estéril', 'unidad' => 'unidad', 'stock_actual' => 10, 'stock_minimo' => 1, 'activo' => true]);
+        $order = Order::create(['codigo_orden' => 'ORD-FICHA', 'patient_id' => $patient->id, 'agreement_id' => $agreement->id, 'fecha_orden' => '2026-08-07 09:00:00', 'estado' => 'Pendiente']);
+        $order->orderExams()->create(['exam_id' => $exam->id, 'tipo_contraste' => 'Sin contraste', 'precio' => 100]);
+
+        $this->actingAs($user)->put(route('triajes.consumables.update', $order), [
+            'plates_count' => 3,
+            'consumables' => [['reagent_id' => $reagent->id, 'cantidad' => 2]],
+        ])->assertRedirect();
+
+        $order->refresh();
+        $this->assertSame(3, $order->admissionForm->data['delivery_quantities']['PLACAS']);
+        $this->actingAs($user)->get(route('orders.ficha-ingreso.template', $order))
+            ->assertOk()
+            ->assertSee('name="delivery_quantities[PLACAS]"', false)
+            ->assertSee('value="3"', false)
+            ->assertSee('Gasa estéril')
+            ->assertSee('value="2"', false)
+            ->assertSee('INSUMOS Y MATERIALES DE USO INTERNO');
+
+        $pdfHtml = view('orders.pdfs.ficha-ingreso', [
+            'order' => $order->load(['patient', 'agreement', 'medicoSolicitante', 'orderExams.exam']),
+            'hasContrast' => false,
+            'admissionData' => $order->admissionForm->data,
+            'contrastConsumables' => [[
+                'reagent_id' => (string) $reagent->id,
+                'name' => $reagent->nombre,
+                'unit' => $reagent->unidad_medida,
+                'cantidad' => 2.0,
+            ]],
+        ])->render();
+
+        $this->assertStringContainsString('Gasa estéril', $pdfHtml);
+        $this->assertStringContainsString('>03<', $pdfHtml);
+    }
+
 }

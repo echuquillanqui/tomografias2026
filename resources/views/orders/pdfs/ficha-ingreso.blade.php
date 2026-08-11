@@ -60,9 +60,9 @@ body{ text-transform:uppercase; }
 <div class="full"><b>Intervenciones quirúrgicas:</b> <?= e($surgeries) ?></div>
 <div class="full"><b>Medicación:</b> <?= nl2br(e($admissionData['medication'] ?? '')) ?></div>
 <div class="full"><b>Antecedentes:</b> <?= nl2br(e($admissionData['antecedents'] ?? '')) ?></div>
-<?php if($hasContrast): ?>
-<div class="section-title">INSUMOS Y MATERIALES DE USO INTERNO PARA ESTUDIO CON CONTRASTE</div>
+<div class="section-title">INSUMOS Y MATERIALES DE USO INTERNO</div>
 <div class="box"><div class="row"><div class="cell label">Insumo / material</div><div class="cell label" style="width:18%">Cantidad</div><div class="cell label" style="width:18%">Unidad</div><div class="cell label" style="width:24%">Bránula</div></div><?php $branulaPdf = in_array(($admissionData['peripheral_route'] ?? ''), ['18','20','22'], true) ? 'N° '.($admissionData['peripheral_route'] ?? '') : ($admissionData['peripheral_route'] ?? ''); ?><?php foreach(($contrastConsumables ?? []) as $index => $consumable): ?><div class="row"><div class="cell"><span class="label"><?= e($consumable['name']) ?></span></div><div class="cell" style="width:18%"><?= e($consumable['cantidad']) ?></div><div class="cell" style="width:18%"><?= e($consumable['unit'] ?? '') ?></div><div class="cell red" style="width:24%"><?= $index === 0 ? e($branulaPdf) : '' ?></div></div><?php endforeach; ?><?php if(empty($contrastConsumables ?? [])): ?><div class="row"><div class="cell muted" style="width:58%">Sin insumos precargados.</div><div class="cell red" style="width:24%"><?= e($branulaPdf) ?></div></div><?php endif; ?></div>
+<?php if($hasContrast): ?>
 <div class="section-title">DATOS PARA CONTRASTE</div>
 <div class="row box"><div class="cell wrap-cell" style="width:66.666%"><span class="label">Alergia probable/medicamento:</span> <?= e($admissionData['allergy'] ?? '') ?></div><div class="cell"><span class="label">¿Está en ayunas?</span> <?= e($admissionData['fasting'] ?? '') ?></div></div>
 <div class="row box"><div class="cell wrap-cell"><span class="label">Prueba de creatinina:</span> <?= e($admissionData['creatinine'] ?? '') ?> mg/dl</div></div>

@@ -44,6 +44,12 @@
     <form method="POST" action="{{ route('triajes.consumables.update', $order) }}">
         @csrf
         @method('PUT')
+        <div class="card clinic-card shadow-sm mb-3">
+            <div class="card-body d-flex align-items-center gap-3 flex-wrap">
+                <label for="plates_count" class="form-label fw-bold mb-0">Placas utilizadas</label>
+                <input id="plates_count" name="plates_count" type="number" min="0" step="1" class="form-control" style="max-width:140px" value="{{ old('plates_count', $admissionData['delivery_quantities']['PLACAS'] ?? ($admissionData['plates_count'] ?? '')) }}" placeholder="Cant.">
+            </div>
+        </div>
         <div class="card clinic-card shadow-sm">
             <div class="card-header bg-white fw-bold text-primary d-flex justify-content-between align-items-center">
                 <span>CONSUMIBLES</span>

@@ -93,13 +93,26 @@ class OrderController extends Controller
 
     public function updateTriageConsumables(Request $request, Order $order): RedirectResponse
     {
+        $this->normalizeIntegerInput($request, ['plates_count']);
+
         $data = $request->validate([
+            'plates_count' => ['nullable', 'integer', 'min:0'],
             'consumables' => ['nullable', 'array'],
             'consumables.*.reagent_id' => ['required', 'integer', 'exists:reagents,id'],
             'consumables.*.cantidad' => ['required', 'numeric', 'min:0'],
         ]);
 
         DB::transaction(function () use ($order, $data): void {
+            $admissionData = $order->admissionForm?->data ?? [];
+            $platesCount = $data['plates_count'] ?? null;
+            $deliveryQuantities = is_array($admissionData['delivery_quantities'] ?? null)
+                ? $admissionData['delivery_quantities']
+                : [];
+            $deliveryQuantities['PLACAS'] = $platesCount ?? '';
+            $admissionData['plates_count'] = $platesCount ?? '';
+            $admissionData['delivery_quantities'] = $deliveryQuantities;
+            $order->admissionForm()->updateOrCreate([], ['data' => $admissionData]);
+
             $order->consumables()->delete();
             foreach (collect($data['consumables'] ?? [])->filter(fn ($row) => (float) $row['cantidad'] > 0) as $row) {
                 $order->consumables()->create([
@@ -438,7 +451,7 @@ class OrderController extends Controller
             'consumables.*.cantidad' => ['required', 'numeric', 'min:0'],
         ]);
 
-        $order->load(['patient', 'agreement', 'medicoSolicitante', 'orderExams.exam', 'admissionForm']);
+        $order->load(['patient', 'agreement', 'medicoSolicitante', 'orderExams.exam', 'admissionForm', 'consumables.reagent']);
         $this->syncPrintableDocuments($order);
         $current = $order->fresh('admissionForm')->admissionForm?->data ?? [];
         $formData = collect($data)->except('consumables')->all();
@@ -466,7 +479,7 @@ class OrderController extends Controller
     {
         $order->load(['patient', 'agreement', 'medicoSolicitante', 'orderExams.exam', 'admissionForm']);
         $this->syncPrintableDocuments($order);
-        $order->refresh()->load(['patient', 'agreement', 'medicoSolicitante', 'orderExams.exam', 'admissionForm']);
+        $order->refresh()->load(['patient', 'agreement', 'medicoSolicitante', 'orderExams.exam', 'admissionForm', 'consumables.reagent']);
         $admissionData = $order->admissionForm?->data ?? [];
         $hasContrast = $order->orderExams->contains('tipo_contraste', 'Con contraste');
         $contrastConsumables = $this->triageConsumables($order);
@@ -525,7 +538,7 @@ class OrderController extends Controller
 
         $data = $request->validate($rules, [], $this->fichaIngresoValidationAttributes());
 
-        $order->load(['patient', 'agreement', 'medicoSolicitante', 'orderExams.exam', 'admissionForm']);
+        $order->load(['patient', 'agreement', 'medicoSolicitante', 'orderExams.exam', 'admissionForm', 'consumables.reagent']);
         $this->syncPrintableDocuments($order);
         $current = $order->fresh('admissionForm')->admissionForm?->data ?? [];
         $data['date'] = $order->fecha_orden?->format('d/m/Y H:i');
@@ -555,7 +568,7 @@ class OrderController extends Controller
     {
         $order->load(['patient', 'agreement', 'medicoSolicitante', 'orderExams.exam', 'admissionForm']);
         $this->syncPrintableDocuments($order);
-        $order->refresh()->load(['patient', 'agreement', 'medicoSolicitante', 'orderExams.exam', 'admissionForm']);
+        $order->refresh()->load(['patient', 'agreement', 'medicoSolicitante', 'orderExams.exam', 'admissionForm', 'consumables.reagent']);
         $admissionData = $order->admissionForm?->data ?? [];
         $hasContrast = $order->orderExams->contains('tipo_contraste', 'Con contraste');
         $contrastConsumables = $this->triageConsumables($order);
