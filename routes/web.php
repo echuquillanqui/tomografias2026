@@ -76,6 +76,8 @@ Route::middleware('auth')->group(function () {
     Route::put('reports/{order}', [ReportController::class, 'update'])->name('reports.update');
     Route::get('reports/{order}/pdf', [ReportController::class, 'pdf'])->name('reports.pdf');
     Route::get('reports/{order}/attachments/{attachment}', [ReportController::class, 'downloadAttachment'])->name('reports.attachments.download');
+    Route::get('reports/{order}/attachments/{attachment}/view', [ReportController::class, 'viewAttachment'])->name('reports.attachments.view');
+    Route::put('reports/{order}/attachments/{attachment}', [ReportController::class, 'updateAttachment'])->name('reports.attachments.update');
     Route::delete('reports/{order}/attachments/{attachment}', [ReportController::class, 'destroyAttachment'])->name('reports.attachments.destroy');
     Route::resource('orders', OrderController::class);
 });

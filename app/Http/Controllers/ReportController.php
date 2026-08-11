@@ -12,6 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\HeaderUtils;
 
 class ReportController extends Controller
 {
@@ -101,13 +102,61 @@ class ReportController extends Controller
         return response()->download($path, $attachment->original_name, ['Content-Type' => $attachment->mime_type]);
     }
 
+    public function viewAttachment(Order $order, OrderReportAttachment $attachment)
+    {
+        $this->authorizeAttachment($order, $attachment);
+        abort_unless(Storage::disk('local')->exists($attachment->stored_name), 404);
+
+        $path = Storage::disk('local')->path($attachment->stored_name);
+        $headers = [
+            'Content-Type' => $attachment->mime_type,
+            'Content-Disposition' => HeaderUtils::makeDisposition(HeaderUtils::DISPOSITION_INLINE, $attachment->original_name),
+        ];
+
+        if (str_ends_with($attachment->stored_name, '.gz')) {
+            return response()->stream(function () use ($path) {
+                $handle = gzopen($path, 'rb');
+                while ($handle !== false && ! gzeof($handle)) {
+                    echo gzread($handle, 8192);
+                }
+                if ($handle !== false) {
+                    gzclose($handle);
+                }
+            }, 200, $headers);
+        }
+
+        return response()->file($path, $headers);
+    }
+
+    public function updateAttachment(Request $request, Order $order, OrderReportAttachment $attachment): RedirectResponse
+    {
+        $this->authorizeAttachment($order, $attachment);
+        $data = $request->validate([
+            'nombre' => ['required', 'string', 'max:255'],
+            'archivo' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png,webp', 'max:20480'],
+        ]);
+
+        if ($request->hasFile('archivo')) {
+            app(ReportAttachmentStorage::class)->replace($attachment, $request->file('archivo'));
+        }
+
+        $attachment->update(['original_name' => basename(str_replace('\\', '/', trim($data['nombre'])))]);
+
+        return redirect()->route('reports.edit', $order)->with('success', 'Archivo adjunto actualizado correctamente.');
+    }
+
     public function destroyAttachment(Order $order, OrderReportAttachment $attachment): RedirectResponse
     {
-        abort_unless($attachment->report()->where('order_id', $order->id)->exists(), 404);
+        $this->authorizeAttachment($order, $attachment);
         Storage::disk('local')->delete($attachment->stored_name);
         $attachment->delete();
 
         return redirect()->route('reports.edit', $order)->with('success', 'Archivo adjunto eliminado correctamente.');
+    }
+
+    private function authorizeAttachment(Order $order, OrderReportAttachment $attachment): void
+    {
+        abort_unless($attachment->report()->where('order_id', $order->id)->exists(), 404);
     }
 
     private function composeReportContent(array $data): string

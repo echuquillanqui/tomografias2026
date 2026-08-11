@@ -53,6 +53,28 @@ class ReportAttachmentStorage
         }
     }
 
+    public function replace(OrderReportAttachment $attachment, UploadedFile $file): OrderReportAttachment
+    {
+        $replacement = $this->store($attachment->report, $file);
+        $oldStoredName = $attachment->stored_name;
+
+        try {
+            $attachment->update($replacement->only([
+                'original_name', 'stored_name', 'mime_type', 'original_size',
+                'stored_size', 'compressed',
+            ]));
+        } catch (\Throwable $exception) {
+            Storage::disk('local')->delete($replacement->stored_name);
+            $replacement->delete();
+            throw $exception;
+        }
+
+        $replacement->delete();
+        Storage::disk('local')->delete($oldStoredName);
+
+        return $attachment->refresh();
+    }
+
     /** @return array{string, string, string, bool} */
     protected function optimizeImage(UploadedFile $file, string $mime): array
     {

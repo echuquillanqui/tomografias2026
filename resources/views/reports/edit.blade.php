@@ -87,8 +87,10 @@
                                         <strong class="d-block">{{ $attachment->original_name }}</strong>
                                         <small class="text-muted">{{ str_starts_with($attachment->mime_type, 'image/') ? 'Imagen optimizada' : 'Documento PDF' }} · {{ number_format($attachment->stored_size / 1024, 1) }} KB</small>
                                     </div>
-                                    <div class="d-flex gap-2">
+                                    <div class="d-flex flex-wrap gap-2">
+                                        <button type="button" class="btn btn-sm btn-outline-secondary js-view-attachment" data-bs-toggle="modal" data-bs-target="#viewAttachmentModal" data-preview-url="{{ route('reports.attachments.view', [$order, $attachment]) }}" data-preview-name="{{ $attachment->original_name }}">Ver</button>
                                         <a class="btn btn-sm btn-outline-primary" href="{{ route('reports.attachments.download', [$order, $attachment]) }}">Descargar</a>
+                                        <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editAttachment{{ $attachment->id }}">Editar</button>
                                         <button type="submit" class="btn btn-sm btn-outline-danger" form="delete-attachment-{{ $attachment->id }}" onclick="return confirm('¿Eliminar este archivo?')">Eliminar</button>
                                     </div>
                                 </div>
@@ -105,11 +107,52 @@
         </div>
     </form>
     @foreach($report->attachments as $attachment)
+        <div class="modal fade" id="editAttachment{{ $attachment->id }}" tabindex="-1" aria-labelledby="editAttachmentLabel{{ $attachment->id }}" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <form method="POST" action="{{ route('reports.attachments.update', [$order, $attachment]) }}" enctype="multipart/form-data" class="modal-content border-0 shadow">
+                    @csrf
+                    @method('PUT')
+                    <div class="modal-header">
+                        <h5 class="modal-title fw-bold" id="editAttachmentLabel{{ $attachment->id }}">Editar archivo adjunto</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold" for="attachmentName{{ $attachment->id }}">Nombre del archivo</label>
+                            <input id="attachmentName{{ $attachment->id }}" name="nombre" class="form-control" value="{{ $attachment->original_name }}" maxlength="255" required>
+                        </div>
+                        <div>
+                            <label class="form-label fw-bold" for="attachmentFile{{ $attachment->id }}">Reemplazar archivo <span class="text-muted fw-normal">(opcional)</span></label>
+                            <input id="attachmentFile{{ $attachment->id }}" type="file" name="archivo" class="form-control" accept="application/pdf,image/jpeg,image/png,image/webp">
+                            <div class="form-text">Si no seleccionas otro archivo, solo se actualizará el nombre.</div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
+                        <button class="btn btn-clinic-primary">Guardar cambios</button>
+                    </div>
+                </form>
+            </div>
+        </div>
         <form id="delete-attachment-{{ $attachment->id }}" method="POST" action="{{ route('reports.attachments.destroy', [$order, $attachment]) }}" class="d-none">
             @csrf
             @method('DELETE')
         </form>
     @endforeach
+
+    <div class="modal fade" id="viewAttachmentModal" tabindex="-1" aria-labelledby="viewAttachmentModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold text-truncate" id="viewAttachmentModalLabel">Vista previa del archivo</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body p-0 bg-light">
+                    <iframe id="attachmentPreviewFrame" class="attachment-preview-frame" title="Vista previa del archivo"></iframe>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 @push('scripts')
@@ -129,7 +172,27 @@
     .original-report-preview { background: #0f172a; border-radius: 14px; color: #e2e8f0; max-height: 260px; overflow: auto; padding: 1rem; white-space: pre-wrap; }
     .report-attachment-list { display: grid; gap: .75rem; }
     .report-attachment-item { align-items: center; background: #f8fafc; border: 1px solid #e5edf5; border-radius: 14px; display: flex; gap: 1rem; justify-content: space-between; padding: .85rem 1rem; }
+    .attachment-preview-frame { border: 0; display: block; height: min(78vh, 850px); width: 100%; }
     @media (max-width: 575.98px) { .report-attachment-item { align-items: stretch; flex-direction: column; } }
 </style>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const modal = document.getElementById('viewAttachmentModal');
+        const frame = document.getElementById('attachmentPreviewFrame');
+        const title = document.getElementById('viewAttachmentModalLabel');
+
+        document.querySelectorAll('.js-view-attachment').forEach((button) => {
+            button.addEventListener('click', () => {
+                frame.src = button.dataset.previewUrl;
+                title.textContent = button.dataset.previewName;
+            });
+        });
+
+        modal.addEventListener('hidden.bs.modal', () => {
+            frame.removeAttribute('src');
+            title.textContent = 'Vista previa del archivo';
+        });
+    });
+</script>
 @endpush
 @endsection
