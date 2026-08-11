@@ -18,9 +18,9 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('cash_expenses', function (Blueprint $table) {
+            $table->dropForeign(['cash_fixed_expense_id']);
             $table->dropUnique('cash_expense_fixed_period_unique');
-            $table->dropConstrainedForeignId('cash_fixed_expense_id');
-            $table->dropColumn('fixed_expense_period');
+            $table->dropColumn(['cash_fixed_expense_id', 'fixed_expense_period']);
         });
     }
 };
