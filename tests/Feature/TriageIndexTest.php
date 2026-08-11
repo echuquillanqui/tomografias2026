@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Agreement;
 use App\Models\AgreementPrice;
 use App\Models\Exam;
+use App\Models\GlobalContrastConsumable;
 use App\Models\Order;
 use App\Models\Patient;
 use App\Models\Reagent;
@@ -120,6 +121,7 @@ class TriageIndexTest extends TestCase
         $exam = Exam::create(['nombre_examen' => 'Tórax', 'tipo_contraste' => 'Sin contraste', 'activo' => true]);
         AgreementPrice::create(['agreement_id' => $agreement->id, 'exam_id' => $exam->id, 'tipo_contraste' => 'Sin contraste', 'precio_pactado' => 100]);
         $reagent = Reagent::create(['nombre' => 'Material descartable', 'unidad' => 'und', 'stock_actual' => 10, 'stock_minimo' => 1, 'activo' => true]);
+        GlobalContrastConsumable::create(['tipo_contraste' => 'Sin contraste', 'reagent_id' => $reagent->id, 'cantidad_estimada' => 2]);
 
         $response = $this->actingAs($user)->post(route('orders.store'), [
             'patient_id' => $patient->id,
@@ -154,7 +156,7 @@ class TriageIndexTest extends TestCase
         $agreement = Agreement::create(['nombre_institucion' => 'Particular', 'activo' => true]);
         $exam = Exam::create(['nombre_examen' => 'Senos paranasales', 'tipo_contraste' => 'Sin contraste', 'activo' => true]);
         $reagent = Reagent::create(['nombre' => 'Guantes', 'unidad' => 'par', 'stock_actual' => 10, 'stock_minimo' => 1, 'activo' => true]);
-        $exam->reagents()->attach($reagent->id, ['cantidad_estimada' => 3]);
+        GlobalContrastConsumable::create(['tipo_contraste' => 'Sin contraste', 'reagent_id' => $reagent->id, 'cantidad_estimada' => 3]);
         $order = Order::create(['codigo_orden' => 'ORD-SIN-CONTRASTE', 'patient_id' => $patient->id, 'agreement_id' => $agreement->id, 'fecha_orden' => '2026-08-07 09:00:00', 'estado' => 'Pendiente']);
         $order->orderExams()->create(['exam_id' => $exam->id, 'tipo_contraste' => 'Sin contraste', 'precio' => 100]);
 
@@ -171,8 +173,8 @@ class TriageIndexTest extends TestCase
         $agreement = Agreement::create(['nombre_institucion' => 'Particular', 'activo' => true]);
         $exam = Exam::create(['nombre_examen' => 'TEM Abdomen', 'tipo_contraste' => 'Ambos', 'activo' => true]);
         $reagent = Reagent::create(['nombre' => 'Jeringa', 'unidad' => 'unidad', 'stock_actual' => 10, 'stock_minimo' => 1, 'activo' => true]);
-        $exam->reagents()->attach($reagent->id, ['cantidad_estimada' => 1, 'tipo_contraste' => 'Sin contraste']);
-        $exam->reagents()->attach($reagent->id, ['cantidad_estimada' => 2, 'tipo_contraste' => 'Con contraste']);
+        GlobalContrastConsumable::create(['tipo_contraste' => 'Sin contraste', 'reagent_id' => $reagent->id, 'cantidad_estimada' => 1]);
+        GlobalContrastConsumable::create(['tipo_contraste' => 'Con contraste', 'reagent_id' => $reagent->id, 'cantidad_estimada' => 2]);
         $order = Order::create(['codigo_orden' => 'ORD-CON-CONTRASTE', 'patient_id' => $patient->id, 'agreement_id' => $agreement->id, 'fecha_orden' => '2026-08-07 09:00:00', 'estado' => 'Pendiente']);
         $order->orderExams()->create(['exam_id' => $exam->id, 'tipo_contraste' => 'Con contraste', 'precio' => 100]);
 
@@ -180,6 +182,23 @@ class TriageIndexTest extends TestCase
 
         $response->assertOk();
         $this->assertSame(2.0, $response->viewData('triageConsumables')[0]['cantidad']);
+    }
+
+    public function test_without_contrast_admission_template_receives_its_global_consumables(): void
+    {
+        $user = User::create(['username' => 'tester5', 'email' => 'tester5@example.com', 'password' => 'password']);
+        $patient = Patient::create(['dni' => '45678914', 'nombres' => 'Julia', 'apellidos' => 'León']);
+        $agreement = Agreement::create(['nombre_institucion' => 'Particular', 'activo' => true]);
+        $exam = Exam::create(['nombre_examen' => 'TEM Cerebral', 'tipo_contraste' => 'Sin contraste', 'activo' => true]);
+        $reagent = Reagent::create(['nombre' => 'Campo descartable', 'unidad' => 'unidad', 'stock_actual' => 10, 'stock_minimo' => 1, 'activo' => true]);
+        GlobalContrastConsumable::create(['tipo_contraste' => 'Sin contraste', 'reagent_id' => $reagent->id, 'cantidad_estimada' => 1]);
+        $order = Order::create(['codigo_orden' => 'ORD-FICHA-SIN', 'patient_id' => $patient->id, 'agreement_id' => $agreement->id, 'fecha_orden' => '2026-08-07 09:00:00', 'estado' => 'Pendiente']);
+        $order->orderExams()->create(['exam_id' => $exam->id, 'tipo_contraste' => 'Sin contraste', 'precio' => 100]);
+
+        $this->actingAs($user)->get(route('orders.ficha-ingreso.template', $order))
+            ->assertOk()
+            ->assertSee('INSUMOS Y MATERIALES DE USO INTERNO PARA ESTUDIO SIN CONTRASTE')
+            ->assertSee('Campo descartable');
     }
 
 }
