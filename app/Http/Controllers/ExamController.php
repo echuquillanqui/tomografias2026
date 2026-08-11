@@ -65,9 +65,17 @@ class ExamController extends Controller
         if (is_string($payload) && $payload !== '') {
             $decoded = json_decode($payload, true);
             if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                if (! array_is_list($decoded)) {
+                    $decoded = collect($decoded)->flatMap(fn ($rows, $contrast) => collect($rows)
+                        ->map(fn ($row) => array_merge($row, ['tipo_contraste' => $contrast])))
+                        ->values()
+                        ->all();
+                }
+
                 // Alpine owns the rows displayed in the three blocks. Taking its
-                // snapshot avoids losing rows excluded by disabled fieldsets or
-                // dynamic browser controls when the form is submitted.
+                // snapshot avoids losing disabled or dynamic controls. The
+                // object keys are the authoritative contrast, so rows from one
+                // visual block cannot be saved under another contrast.
                 $request->merge(['reagents' => $decoded]);
             }
         }

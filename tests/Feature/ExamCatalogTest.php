@@ -97,4 +97,42 @@ class ExamCatalogTest extends TestCase
         $this->assertDatabaseHas('exam_reagent', ['exam_id' => $exam->id, 'reagent_id' => $with->id, 'tipo_contraste' => 'Con contraste', 'cantidad_estimada' => 3]);
         $this->assertDatabaseCount('exam_reagent', 3);
     }
+
+    public function test_updating_an_exam_keeps_consumables_in_their_selected_contrast_blocks(): void
+    {
+        $user = User::create(['username' => 'tester', 'email' => 'tester@example.com', 'password' => 'password']);
+        $without = Reagent::create(['nombre' => 'Placa', 'unidad' => 'unidad', 'stock_actual' => 10, 'stock_minimo' => 1, 'activo' => true]);
+        $with = Reagent::create(['nombre' => 'Contraste', 'unidad' => 'frasco', 'stock_actual' => 10, 'stock_minimo' => 1, 'activo' => true]);
+        $exam = Exam::create(['nombre_examen' => 'TEM Abdomen', 'tipo_contraste' => 'Ambos', 'activo' => true]);
+
+        $payload = json_encode([
+            'Sin contraste' => [
+                ['reagent_id' => (string) $without->id, 'nombre' => '', 'cantidad_estimada' => '1'],
+            ],
+            'Con contraste' => [
+                ['reagent_id' => (string) $with->id, 'nombre' => '', 'cantidad_estimada' => '2'],
+            ],
+            'Ambos' => [],
+        ], JSON_THROW_ON_ERROR);
+
+        $this->actingAs($user)->put(route('exams.update', $exam), [
+            'nombre_examen' => $exam->nombre_examen,
+            'tipo_contraste' => 'Ambos',
+            'activo' => '1',
+            'reagents_payload' => $payload,
+        ])->assertRedirect(route('exams.index'));
+
+        $this->assertDatabaseHas('exam_reagent', [
+            'exam_id' => $exam->id,
+            'reagent_id' => $without->id,
+            'tipo_contraste' => 'Sin contraste',
+            'cantidad_estimada' => 1,
+        ]);
+        $this->assertDatabaseHas('exam_reagent', [
+            'exam_id' => $exam->id,
+            'reagent_id' => $with->id,
+            'tipo_contraste' => 'Con contraste',
+            'cantidad_estimada' => 2,
+        ]);
+    }
 }
