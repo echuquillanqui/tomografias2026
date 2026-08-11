@@ -113,10 +113,6 @@ class ExamController extends Controller
             }
 
             $rowContrast = $row['tipo_contraste'] ?? 'Ambos';
-            if ($exam->tipo_contraste !== 'Ambos'
-                && ! in_array($rowContrast, [$exam->tipo_contraste, 'Ambos'], true)) {
-                continue;
-            }
 
             $reagentId = $row['reagent_id'] ?? null;
             $name = trim((string) ($row['nombre'] ?? ''));
@@ -129,13 +125,10 @@ class ExamController extends Controller
             }
 
             if (! empty($reagentId)) {
-                $contrast = $exam->tipo_contraste === 'Ambos'
-                    ? $rowContrast
-                    : $exam->tipo_contraste;
-                $sync[$reagentId.'|'.$contrast] = [
+                $sync[$reagentId.'|'.$rowContrast] = [
                     'exam_id' => $exam->id,
                     'reagent_id' => $reagentId,
-                    'tipo_contraste' => $contrast,
+                    'tipo_contraste' => $rowContrast,
                     'cantidad_estimada' => $row['cantidad_estimada'],
                     'created_at' => now(),
                     'updated_at' => now(),

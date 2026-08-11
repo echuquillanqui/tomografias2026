@@ -168,7 +168,7 @@ class ExamCatalogTest extends TestCase
         ]);
     }
 
-    public function test_saving_without_contrast_does_not_replace_its_quantity_with_the_contrast_configuration(): void
+    public function test_switching_to_one_contrast_preserves_the_other_consumable_configuration(): void
     {
         $user = User::create(['username' => 'tester', 'email' => 'tester@example.com', 'password' => 'password']);
         $reagent = Reagent::create(['nombre' => 'Placa', 'unidad' => 'unidad', 'stock_actual' => 10, 'stock_minimo' => 1, 'activo' => true]);
@@ -197,9 +197,12 @@ class ExamCatalogTest extends TestCase
             'tipo_contraste' => 'Sin contraste',
             'cantidad_estimada' => 1,
         ]);
-        $this->assertDatabaseMissing('exam_reagent', [
+        $this->assertDatabaseHas('exam_reagent', [
             'exam_id' => $exam->id,
+            'reagent_id' => $reagent->id,
+            'tipo_contraste' => 'Con contraste',
             'cantidad_estimada' => 5,
         ]);
+        $this->assertDatabaseCount('exam_reagent', 2);
     }
 }
