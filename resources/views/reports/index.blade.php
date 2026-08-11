@@ -36,6 +36,15 @@
                 </thead>
                 <tbody>
                     @forelse($orders as $order)
+                        @php
+                            $hasReportingDoctor = (bool) ($order->report?->medico_firmante_id ?? $order->medico_informe_id);
+                            $hasReportFile = $order->report?->attachments->isNotEmpty() ?? false;
+                            $reportStatus = match (true) {
+                                $hasReportingDoctor && $hasReportFile => ['label' => 'INFORMADO', 'class' => 'report-status-complete'],
+                                $hasReportingDoctor || $hasReportFile => ['label' => 'EN PROCESO', 'class' => 'report-status-progress'],
+                                default => ['label' => 'PENDIENTE', 'class' => 'report-status-pending'],
+                            };
+                        @endphp
                         <tr>
                             <td class="fw-bold">{{ $order->codigo_orden ?? 'Orden #'.$order->id }}</td>
                             <td>{{ $order->patient->nombres }} {{ $order->patient->apellidos }}<br><small class="text-muted">{{ $order->patient->dni }}</small></td>
@@ -43,7 +52,7 @@
                             <td>{{ $order->fecha_orden->format('d/m/Y H:i') }}</td>
                             <td>{{ $order->order_exams_count }}</td>
                             <td>{{ $order->report?->medicoFirmante?->nombre_completo ?? $order->medicoInforme?->nombre_completo ?? '—' }}</td>
-                            <td><span class="badge badge-role">{{ $order->estado }}</span></td>
+                            <td><span class="badge report-status {{ $reportStatus['class'] }}">{{ $reportStatus['label'] }}</span></td>
                             <td class="text-end">
                                 <a class="btn btn-sm btn-outline-primary" href="{{ route('reports.edit', $order) }}">Rellenar</a>
                                 <button type="button" class="btn btn-sm {{ $order->report?->attachments->isNotEmpty() ? 'btn-success' : 'btn-outline-secondary' }}" data-bs-toggle="modal" data-bs-target="#reportFilesModal{{ $order->id }}">PDF</button>
@@ -115,6 +124,10 @@
 
 @push('scripts')
 <style>
+    .report-status { border: 1px solid transparent; font-weight: 800; letter-spacing: .03em; padding: .45rem .7rem; }
+    .report-status-pending { background: #fff0db; border-color: #fdba74; color: #c2410c; }
+    .report-status-progress { background: #e0f2fe; border-color: #7dd3fc; color: #0369a1; }
+    .report-status-complete { background: #dcfce7; border-color: #86efac; color: #15803d; }
     .report-files-layout { display: grid; grid-template-columns: minmax(220px, 28%) minmax(0, 1fr); height: min(75vh, 760px); }
     .report-files-list { border-right: 1px solid #dee2e6; overflow-y: auto; }
     .report-files-list .list-group-item { color: #334155; }
