@@ -38,7 +38,7 @@ class ExamController extends Controller
 
     public function update(Request $request, Exam $exam): RedirectResponse
     {
-        $data = $this->validatedData($request);
+        $data = $this->validatedData($request, $exam);
         $reagents = $data['reagents'] ?? [];
         unset($data['reagents']);
         $exam->update($data);
@@ -58,10 +58,17 @@ class ExamController extends Controller
         return redirect()->route('exams.index')->with('success', 'Examen eliminado correctamente.');
     }
 
-    private function validatedData(Request $request): array
+    private function validatedData(Request $request, ?Exam $exam = null): array
     {
+        $request->merge(['nombre_examen' => trim((string) $request->input('nombre_examen'))]);
+
         $data = $request->validate([
-            'nombre_examen' => ['required', 'string', 'max:255'],
+            'nombre_examen' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('exams', 'nombre_examen')->ignore($exam),
+            ],
             'tipo_contraste' => ['required', Rule::in(self::CONTRASTES)],
             'activo' => ['nullable', 'boolean'],
             'reagents' => ['nullable', 'array'],
