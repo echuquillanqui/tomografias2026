@@ -44,6 +44,18 @@ class ReportAttachmentActionsTest extends TestCase
         Storage::disk('local')->assertExists('reportes/1/scan.pdf');
     }
 
+    public function test_an_attachment_with_a_non_ascii_name_can_be_viewed_inline(): void
+    {
+        Storage::fake('local');
+        [$user, $order, $attachment] = $this->records('reportes/1/scan.pdf', 'application/pdf', '%PDF-test');
+        $attachment->update(['original_name' => 'TOMOGRAFÍA CEREBRAL.pdf']);
+
+        $this->actingAs($user)->get(route('reports.attachments.view', [$order, $attachment]))
+            ->assertOk()
+            ->assertHeader('content-type', 'application/pdf')
+            ->assertHeader('content-disposition', 'inline; filename="TOMOGRAFIA CEREBRAL.pdf"; filename*=utf-8\'\'TOMOGRAF%C3%8DA%20CEREBRAL.pdf');
+    }
+
     public function test_attachment_actions_are_scoped_to_their_order(): void
     {
         Storage::fake('local');
@@ -97,7 +109,7 @@ class ReportAttachmentActionsTest extends TestCase
         ]);
     }
 
-    public function test_report_index_displays_uploaded_files_and_highlights_pdf_button(): void
+    public function test_report_index_hides_uploaded_files_column_and_highlights_pdf_button(): void
     {
         Storage::fake('local');
         [$user, $order] = $this->records('reportes/1/scan.pdf', 'application/pdf', '%PDF-test');
@@ -105,6 +117,7 @@ class ReportAttachmentActionsTest extends TestCase
         $this->actingAs($user)->get(route('reports.index'))
             ->assertOk()
             ->assertSee('resultado.pdf')
+            ->assertDontSee('<th>Archivos subidos</th>', false)
             ->assertSee(route('reports.attachments.view', [$order, $order->report->attachments->first()]), false)
             ->assertSee('btn-success', false);
     }
