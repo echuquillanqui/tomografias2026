@@ -304,10 +304,13 @@ class OrderController extends Controller
             'consumables.*.reagent_id' => ['required', 'exists:reagents,id'],
             'consumables.*.cantidad' => ['required', 'numeric', 'min:0'],
         ]);
-        $agreementExamIds = AgreementPrice::where('agreement_id', $data['agreement_id'])->pluck('exam_id')->map(fn ($id) => (int) $id)->unique();
-        $invalidExam = collect($data['exams'])->first(fn ($row) => ! $agreementExamIds->contains((int) $row['exam_id']));
+        $agreementPrices = AgreementPrice::where('agreement_id', $data['agreement_id'])
+            ->get(['exam_id', 'tipo_contraste', 'precio_pactado']);
+        $invalidExam = collect($data['exams'])->first(fn ($row) => ! $agreementPrices->contains(
+            fn ($price) => (int) $price->exam_id === (int) $row['exam_id'] && $price->tipo_contraste === $row['tipo_contraste']
+        ));
         if ($invalidExam) {
-            back()->withErrors(['exams' => 'Solo se pueden agregar exámenes asociados al convenio seleccionado.'])->throwResponse();
+            back()->withErrors(['exams' => 'Solo se pueden agregar exámenes asociados al convenio seleccionado con el contraste registrado.'])->throwResponse();
         }
 
         $subtotal = collect($data['exams'])->sum('precio');
