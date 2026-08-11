@@ -29,6 +29,21 @@ class CashClosingController extends Controller
         'year' => 'Anual',
     ];
 
+    private const MONTHS = [
+        1 => 'Enero',
+        2 => 'Febrero',
+        3 => 'Marzo',
+        4 => 'Abril',
+        5 => 'Mayo',
+        6 => 'Junio',
+        7 => 'Julio',
+        8 => 'Agosto',
+        9 => 'Septiembre',
+        10 => 'Octubre',
+        11 => 'Noviembre',
+        12 => 'Diciembre',
+    ];
+
     public function index(Request $request): View
     {
         return view('cash-closings.index', $this->reportData($request));
@@ -49,9 +64,14 @@ class CashClosingController extends Controller
     public function exportMonthlyDailyExcel(Request $request): StreamedResponse
     {
         $month = $request->query('base_month');
-        $month = is_string($month) && preg_match('/^\d{4}-(0[1-9]|1[0-2])$/', $month) === 1
-            ? Carbon::createFromFormat('Y-m-d', $month.'-01')
-            : ($request->date('base_date') ?: now())->startOfMonth();
+        $selectedYear = $request->query('base_year');
+        $selectedMonth = $request->query('base_month_number');
+        $month = is_string($selectedYear) && preg_match('/^\d{4}$/', $selectedYear) === 1
+            && is_string($selectedMonth) && preg_match('/^(0?[1-9]|1[0-2])$/', $selectedMonth) === 1
+                ? Carbon::create((int) $selectedYear, (int) $selectedMonth, 1)
+                : (is_string($month) && preg_match('/^\d{4}-(0[1-9]|1[0-2])$/', $month) === 1
+                    ? Carbon::createFromFormat('Y-m-d', $month.'-01')
+                    : ($request->date('base_date') ?: now())->startOfMonth());
 
         $monthlyRequest = Request::create('', 'GET', array_merge($request->query(), [
             'period' => 'month',
@@ -277,6 +297,7 @@ class CashClosingController extends Controller
             'balance' => $incomeTotal - $expenseTotal,
             'tiposPago' => self::TIPOS_PAGO,
             'periods' => self::PERIODS,
+            'months' => self::MONTHS,
             'agreements' => Agreement::query()->where('activo', true)->orderBy('nombre_institucion')->get(['id', 'nombre_institucion']),
             'cashOrders' => $orders->where('tipo_pago', 'Efectivo'),
             'yapePlinOrders' => $orders->where('tipo_pago', 'Yape/Plin'),
@@ -347,8 +368,15 @@ class CashClosingController extends Controller
     {
         $period = array_key_exists($request->query('period'), self::PERIODS) ? $request->query('period') : 'day';
         $selectedMonth = $request->query('base_month');
+        $selectedMonthNumber = $request->query('base_month_number');
+        $selectedYear = $request->query('base_year');
+        $hasSelectedMonthAndYear = is_string($selectedMonthNumber)
+            && preg_match('/^(0?[1-9]|1[0-2])$/', $selectedMonthNumber) === 1
+            && is_string($selectedYear)
+            && preg_match('/^\d{4}$/', $selectedYear) === 1;
         $baseDate = match (true) {
             $period === 'day' => $request->date('base_date')?->toDateString() ?: now()->toDateString(),
+            $period === 'month' && $hasSelectedMonthAndYear => sprintf('%s-%02d-01', $selectedYear, (int) $selectedMonthNumber),
             $period === 'month' && is_string($selectedMonth) && preg_match('/^\d{4}-(0[1-9]|1[0-2])$/', $selectedMonth) === 1 => $selectedMonth.'-01',
             default => now()->toDateString(),
         };

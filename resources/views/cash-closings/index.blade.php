@@ -18,7 +18,12 @@
                         @endforeach
                     </select>
                     <input x-show="period === 'day'" type="date" name="base_date" value="{{ $baseDate }}" class="form-control" aria-label="Fecha del día" title="Fecha (solo diario)">
-                    <input x-show="period === 'month'" type="month" name="base_month" value="{{ \Illuminate\Support\Carbon::parse($baseDate)->format('Y-m') }}" class="form-control" aria-label="Mes del reporte" title="Mes del reporte mensual">
+                    <select x-show="period === 'month'" name="base_month_number" class="form-select" aria-label="Mes del reporte" title="Mes del reporte mensual">
+                        @foreach($months as $monthNumber => $monthName)
+                            <option value="{{ sprintf('%02d', $monthNumber) }}" @selected((int) \Illuminate\Support\Carbon::parse($baseDate)->format('n') === $monthNumber)>{{ $monthName }}</option>
+                        @endforeach
+                    </select>
+                    <input x-show="period === 'month'" type="number" name="base_year" min="2000" max="2100" value="{{ \Illuminate\Support\Carbon::parse($baseDate)->format('Y') }}" class="form-control" aria-label="Año del reporte" title="Año del reporte mensual">
                     <select name="tipo_pago" class="form-select" aria-label="Tipo de pago">
                         <option value="">Todos los pagos</option>
                         @foreach($tiposPago as $tipo)
