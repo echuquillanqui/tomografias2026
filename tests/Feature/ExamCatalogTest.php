@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Exam;
+use App\Models\GlobalContrastConsumable;
 use App\Models\Reagent;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -48,6 +49,42 @@ class ExamCatalogTest extends TestCase
             'nombre_examen' => 'TEM Abdomen',
             'tipo_contraste' => 'Ambos',
         ]);
+    }
+
+    public function test_global_consumables_can_be_saved_for_each_contrast(): void
+    {
+        $user = User::create(['username' => 'tester', 'email' => 'tester@example.com', 'password' => 'password']);
+        $contrast = Reagent::create(['nombre' => 'Contraste yodado', 'unidad' => 'frasco', 'stock_actual' => 10, 'stock_minimo' => 1, 'activo' => true]);
+        $gloves = Reagent::create(['nombre' => 'Guantes', 'unidad' => 'par', 'stock_actual' => 10, 'stock_minimo' => 1, 'activo' => true]);
+
+        $this->actingAs($user)->put(route('global-contrast-consumables.update'), [
+            'configurations' => [
+                'Con contraste' => [['reagent_id' => $contrast->id, 'cantidad_estimada' => 2]],
+                'Sin contraste' => [['reagent_id' => $gloves->id, 'cantidad_estimada' => 1]],
+            ],
+        ])->assertRedirect(route('global-contrast-consumables.index'));
+
+        $this->assertDatabaseHas('global_contrast_consumables', ['tipo_contraste' => 'Con contraste', 'reagent_id' => $contrast->id, 'cantidad_estimada' => 2]);
+        $this->assertDatabaseHas('global_contrast_consumables', ['tipo_contraste' => 'Sin contraste', 'reagent_id' => $gloves->id, 'cantidad_estimada' => 1]);
+    }
+
+    public function test_new_exam_automatically_receives_the_global_consumables_for_its_contrast(): void
+    {
+        $user = User::create(['username' => 'tester', 'email' => 'tester@example.com', 'password' => 'password']);
+        $with = Reagent::create(['nombre' => 'Jeringa', 'unidad' => 'unidad', 'stock_actual' => 10, 'stock_minimo' => 1, 'activo' => true]);
+        $without = Reagent::create(['nombre' => 'Placa', 'unidad' => 'unidad', 'stock_actual' => 10, 'stock_minimo' => 1, 'activo' => true]);
+        GlobalContrastConsumable::create(['tipo_contraste' => 'Con contraste', 'reagent_id' => $with->id, 'cantidad_estimada' => 2]);
+        GlobalContrastConsumable::create(['tipo_contraste' => 'Sin contraste', 'reagent_id' => $without->id, 'cantidad_estimada' => 1]);
+
+        $this->actingAs($user)->post(route('exams.store'), [
+            'nombre_examen' => 'TEM Pelvis',
+            'tipo_contraste' => 'Con contraste',
+            'activo' => '1',
+        ])->assertRedirect(route('exams.index'));
+
+        $exam = Exam::where('nombre_examen', 'TEM Pelvis')->firstOrFail();
+        $this->assertDatabaseHas('exam_reagent', ['exam_id' => $exam->id, 'reagent_id' => $with->id, 'tipo_contraste' => 'Con contraste', 'cantidad_estimada' => 2]);
+        $this->assertDatabaseMissing('exam_reagent', ['exam_id' => $exam->id, 'reagent_id' => $without->id]);
     }
 
     public function test_consumables_can_be_configured_separately_for_each_contrast(): void

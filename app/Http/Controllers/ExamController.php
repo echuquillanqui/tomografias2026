@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Exam;
+use App\Models\GlobalContrastConsumable;
 use App\Models\Reagent;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -22,19 +23,44 @@ class ExamController extends Controller
             ->orderBy('nombre_examen')->paginate(10)->withQueryString();
         $reagents = Reagent::where('activo', true)->orderBy('nombre')->get();
         $contrastes = self::CONTRASTES;
+        $globalReagents = GlobalContrastConsumable::with('reagent')->get()
+            ->groupBy('tipo_contraste')
+            ->map(fn ($rows) => $rows->map(fn ($row) => [
+                'reagent_id' => (string) $row->reagent_id,
+                'nombre' => '',
+                'cantidad_estimada' => (float) $row->cantidad_estimada,
+                'tipo_contraste' => $row->tipo_contraste,
+            ])->values()->all());
 
-        return view('exams.index', compact('exams', 'reagents', 'contrastes', 'search'));
+        return view('exams.index', compact('exams', 'reagents', 'contrastes', 'globalReagents', 'search'));
     }
 
     public function store(Request $request): RedirectResponse
     {
         $data = $this->validatedData($request);
         $reagents = $data['reagents'] ?? [];
+        if ($reagents === []) {
+            $reagents = $this->globalReagentsFor($data['tipo_contraste']);
+        }
         unset($data['reagents']);
         $exam = Exam::create($data);
         $this->syncReagents($exam, $reagents);
 
         return redirect()->route('exams.index')->with('success', 'Examen creado correctamente.');
+    }
+
+    private function globalReagentsFor(string $contrast): array
+    {
+        $contrasts = $contrast === 'Ambos'
+            ? ['Con contraste', 'Sin contraste']
+            : [$contrast];
+
+        return GlobalContrastConsumable::whereIn('tipo_contraste', $contrasts)->get()
+            ->map(fn ($row) => [
+                'reagent_id' => $row->reagent_id,
+                'cantidad_estimada' => $row->cantidad_estimada,
+                'tipo_contraste' => $row->tipo_contraste,
+            ])->all();
     }
 
     public function update(Request $request, Exam $exam): RedirectResponse

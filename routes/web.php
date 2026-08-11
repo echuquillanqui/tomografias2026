@@ -4,6 +4,7 @@ use App\Http\Controllers\AgreementController;
 use App\Http\Controllers\AgreementPriceController;
 use App\Http\Controllers\CashClosingController;
 use App\Http\Controllers\ExamController;
+use App\Http\Controllers\GlobalContrastConsumableController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\PatientController;
 use App\Http\Controllers\ReportController;
@@ -39,6 +40,8 @@ Route::middleware('auth')->group(function () {
     Route::resource('patients', PatientController::class)->except(['create', 'show', 'edit']);
     Route::resource('agreements', AgreementController::class)->except(['create', 'show', 'edit']);
     Route::resource('exams', ExamController::class)->except(['create', 'show', 'edit']);
+    Route::get('global-contrast-consumables', [GlobalContrastConsumableController::class, 'index'])->name('global-contrast-consumables.index');
+    Route::put('global-contrast-consumables', [GlobalContrastConsumableController::class, 'update'])->name('global-contrast-consumables.update');
     Route::resource('reagents', ReagentController::class)->except(['create', 'show', 'edit']);
     Route::resource('requesting-doctors', RequestingDoctorController::class)->except(['create', 'show', 'edit']);
     Route::resource('agreement-prices', AgreementPriceController::class)->except(['create', 'show', 'edit']);

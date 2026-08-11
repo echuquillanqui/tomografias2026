@@ -1,11 +1,12 @@
 <div class="modal fade user-modal" id="{{ $id }}" tabindex="-1">
     @php
-        $savedRows = collect(old('reagents', $e?->reagents->map(fn ($reagent) => [
+        $defaultRows = $e ? $e->reagents->map(fn ($reagent) => [
             'reagent_id' => (string) $reagent->id,
             'nombre' => '',
             'cantidad_estimada' => $reagent->pivot->cantidad_estimada,
             'tipo_contraste' => $reagent->pivot->tipo_contraste ?? 'Ambos',
-        ])->values()->all() ?? []));
+        ])->values()->all() : collect($globalReagents)->flatten(1)->values()->all();
+        $savedRows = collect(old('reagents', $defaultRows));
         $rowsByContrast = collect($contrastes)->mapWithKeys(fn ($contrast) => [
             $contrast => $savedRows->where('tipo_contraste', $contrast)->values()->all(),
         ]);
@@ -46,6 +47,12 @@
                     <strong>Dos configuraciones, un examen:</strong>
                     <span>los insumos de cada bloque se cargarán únicamente cuando la orden use esa modalidad.</span>
                 </div>
+
+                @if(! $e)
+                    <div class="alert alert-success border-0 py-2">
+                        Los insumos globales ya fueron precargados. Puedes ajustarlos únicamente para esta tomografía antes de guardar.
+                    </div>
+                @endif
 
                 <div class="alert alert-warning border-0 d-flex gap-2 align-items-start" x-show="examContrast !== 'Ambos'" x-cloak>
                     <strong>Configuración protegida:</strong>
