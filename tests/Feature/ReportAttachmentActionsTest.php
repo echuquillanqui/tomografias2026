@@ -109,6 +109,22 @@ class ReportAttachmentActionsTest extends TestCase
             ->assertSee('btn-success', false);
     }
 
+    public function test_report_index_pdf_button_opens_attachment_modal_with_inline_preview(): void
+    {
+        Storage::fake('local');
+        [$user, $order] = $this->records('reportes/1/scan.pdf', 'application/pdf', '%PDF-test');
+        $attachment = $order->report->attachments->first();
+        $previewUrl = route('reports.attachments.view', [$order, $attachment]);
+
+        $this->actingAs($user)->get(route('reports.index'))
+            ->assertOk()
+            ->assertSee('data-bs-target="#reportFilesModal'.$order->id.'"', false)
+            ->assertSee('Archivos del informe')
+            ->assertSee('Adjuntos (1)')
+            ->assertSee('data-preview-url="'.$previewUrl.'"', false)
+            ->assertSee('class="report-file-preview-frame', false);
+    }
+
     public function test_doctor_select_only_displays_the_doctor_name(): void
     {
         Storage::fake('local');
