@@ -10,6 +10,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\HeaderUtils;
@@ -114,7 +115,11 @@ class ReportController extends Controller
         $path = Storage::disk('local')->path($attachment->stored_name);
         $headers = [
             'Content-Type' => $attachment->mime_type,
-            'Content-Disposition' => HeaderUtils::makeDisposition(HeaderUtils::DISPOSITION_INLINE, $attachment->original_name),
+            'Content-Disposition' => HeaderUtils::makeDisposition(
+                HeaderUtils::DISPOSITION_INLINE,
+                $attachment->original_name,
+                $this->asciiFilename($attachment->original_name)
+            ),
         ];
 
         if (str_ends_with($attachment->stored_name, '.gz')) {
@@ -161,6 +166,14 @@ class ReportController extends Controller
     private function authorizeAttachment(Order $order, OrderReportAttachment $attachment): void
     {
         abort_unless($attachment->report()->where('order_id', $order->id)->exists(), 404);
+    }
+
+    private function asciiFilename(string $filename): string
+    {
+        $fallback = Str::ascii($filename);
+        $fallback = preg_replace('/[^A-Za-z0-9._ -]/', '_', $fallback) ?? '';
+
+        return $fallback !== '' ? $fallback : 'archivo';
     }
 
     private function composeReportContent(array $data): string
