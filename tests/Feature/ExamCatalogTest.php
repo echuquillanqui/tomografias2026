@@ -2,6 +2,8 @@
 
 namespace Tests\Feature;
 
+use App\Models\Agreement;
+use App\Models\AgreementPrice;
 use App\Models\Exam;
 use App\Models\GlobalContrastConsumable;
 use App\Models\Reagent;
@@ -19,227 +21,63 @@ class ExamCatalogTest extends TestCase
         $app['config']->set('database.connections.sqlite.database', ':memory:');
     }
 
-    public function test_an_exam_name_cannot_be_registered_twice_for_different_contrasts(): void
+    public function test_exam_registration_only_requires_name_and_active_status(): void
     {
         $user = User::create(['username' => 'tester', 'email' => 'tester@example.com', 'password' => 'password']);
-        Exam::create(['nombre_examen' => 'TEM Cerebral', 'tipo_contraste' => 'Sin contraste', 'activo' => true]);
 
-        $response = $this->actingAs($user)->post(route('exams.store'), [
-            'nombre_examen' => 'TEM Cerebral',
-            'tipo_contraste' => 'Con contraste',
+        $this->actingAs($user)->post(route('exams.store'), [
+            'nombre_examen' => 'TEM Abdomen',
             'activo' => '1',
-        ]);
+        ])->assertRedirect(route('exams.index'));
 
-        $response->assertSessionHasErrors('nombre_examen');
+        $this->assertDatabaseHas('exams', [
+            'nombre_examen' => 'TEM Abdomen',
+            'tipo_contraste' => 'Ambos',
+            'activo' => true,
+        ]);
+        $this->assertDatabaseCount('exam_reagent', 0);
+    }
+
+    public function test_exam_catalog_only_displays_name_and_status_columns(): void
+    {
+        $user = User::create(['username' => 'tester', 'email' => 'tester@example.com', 'password' => 'password']);
+        Exam::create(['nombre_examen' => 'TEM Cerebral', 'tipo_contraste' => 'Ambos', 'activo' => true]);
+
+        $this->actingAs($user)->get(route('exams.index'))
+            ->assertOk()
+            ->assertSee('TEM Cerebral')
+            ->assertSee('Estado')
+            ->assertDontSee('<th>Contraste</th>', false)
+            ->assertDontSee('<th>Reactivos</th>', false);
+    }
+
+    public function test_an_exam_name_remains_unique(): void
+    {
+        $user = User::create(['username' => 'tester', 'email' => 'tester@example.com', 'password' => 'password']);
+        Exam::create(['nombre_examen' => 'TEM Cerebral', 'tipo_contraste' => 'Ambos', 'activo' => true]);
+
+        $this->actingAs($user)->post(route('exams.store'), [
+            'nombre_examen' => 'TEM Cerebral',
+            'activo' => '1',
+        ])->assertSessionHasErrors('nombre_examen');
+
         $this->assertDatabaseCount('exams', 1);
     }
 
-    public function test_an_exam_can_be_registered_once_for_both_contrasts(): void
+    public function test_order_form_uses_global_consumables_for_each_contrast(): void
     {
         $user = User::create(['username' => 'tester', 'email' => 'tester@example.com', 'password' => 'password']);
+        $exam = Exam::create(['nombre_examen' => 'TEM Pelvis', 'tipo_contraste' => 'Ambos', 'activo' => true]);
+        $agreement = Agreement::create(['nombre_institucion' => 'Particular', 'activo' => true]);
+        AgreementPrice::create(['agreement_id' => $agreement->id, 'exam_id' => $exam->id, 'tipo_contraste' => 'Sin contraste', 'precio_pactado' => 100]);
+        AgreementPrice::create(['agreement_id' => $agreement->id, 'exam_id' => $exam->id, 'tipo_contraste' => 'Con contraste', 'precio_pactado' => 180]);
+        $reagent = Reagent::create(['nombre' => 'Iopamidol', 'unidad' => 'frasco', 'stock_actual' => 10, 'stock_minimo' => 1, 'activo' => true]);
+        GlobalContrastConsumable::create(['tipo_contraste' => 'Con contraste', 'reagent_id' => $reagent->id, 'cantidad_estimada' => 2]);
 
-        $response = $this->actingAs($user)->post(route('exams.store'), [
-            'nombre_examen' => 'TEM Abdomen',
-            'tipo_contraste' => 'Ambos',
-            'activo' => '1',
-        ]);
-
-        $response->assertRedirect(route('exams.index'));
-        $this->assertDatabaseHas('exams', [
-            'nombre_examen' => 'TEM Abdomen',
-            'tipo_contraste' => 'Ambos',
-        ]);
-    }
-
-    public function test_global_consumables_can_be_saved_for_each_contrast(): void
-    {
-        $user = User::create(['username' => 'tester', 'email' => 'tester@example.com', 'password' => 'password']);
-        $contrast = Reagent::create(['nombre' => 'Contraste yodado', 'unidad' => 'frasco', 'stock_actual' => 10, 'stock_minimo' => 1, 'activo' => true]);
-        $gloves = Reagent::create(['nombre' => 'Guantes', 'unidad' => 'par', 'stock_actual' => 10, 'stock_minimo' => 1, 'activo' => true]);
-
-        $this->actingAs($user)->put(route('global-contrast-consumables.update'), [
-            'configurations' => [
-                'Con contraste' => [['reagent_id' => $contrast->id, 'cantidad_estimada' => 2]],
-                'Sin contraste' => [['reagent_id' => $gloves->id, 'cantidad_estimada' => 1]],
-            ],
-        ])->assertRedirect(route('global-contrast-consumables.index'));
-
-        $this->assertDatabaseHas('global_contrast_consumables', ['tipo_contraste' => 'Con contraste', 'reagent_id' => $contrast->id, 'cantidad_estimada' => 2]);
-        $this->assertDatabaseHas('global_contrast_consumables', ['tipo_contraste' => 'Sin contraste', 'reagent_id' => $gloves->id, 'cantidad_estimada' => 1]);
-    }
-
-    public function test_new_exam_automatically_receives_the_global_consumables_for_its_contrast(): void
-    {
-        $user = User::create(['username' => 'tester', 'email' => 'tester@example.com', 'password' => 'password']);
-        $with = Reagent::create(['nombre' => 'Jeringa', 'unidad' => 'unidad', 'stock_actual' => 10, 'stock_minimo' => 1, 'activo' => true]);
-        $without = Reagent::create(['nombre' => 'Placa', 'unidad' => 'unidad', 'stock_actual' => 10, 'stock_minimo' => 1, 'activo' => true]);
-        GlobalContrastConsumable::create(['tipo_contraste' => 'Con contraste', 'reagent_id' => $with->id, 'cantidad_estimada' => 2]);
-        GlobalContrastConsumable::create(['tipo_contraste' => 'Sin contraste', 'reagent_id' => $without->id, 'cantidad_estimada' => 1]);
-
-        $this->actingAs($user)->post(route('exams.store'), [
-            'nombre_examen' => 'TEM Pelvis',
-            'tipo_contraste' => 'Con contraste',
-            'activo' => '1',
-        ])->assertRedirect(route('exams.index'));
-
-        $exam = Exam::where('nombre_examen', 'TEM Pelvis')->firstOrFail();
-        $this->assertDatabaseHas('exam_reagent', ['exam_id' => $exam->id, 'reagent_id' => $with->id, 'tipo_contraste' => 'Con contraste', 'cantidad_estimada' => 2]);
-        $this->assertDatabaseMissing('exam_reagent', ['exam_id' => $exam->id, 'reagent_id' => $without->id]);
-    }
-
-    public function test_consumables_can_be_configured_separately_for_each_contrast(): void
-    {
-        $user = User::create(['username' => 'tester', 'email' => 'tester@example.com', 'password' => 'password']);
-        $reagent = Reagent::create(['nombre' => 'Jeringa', 'unidad' => 'unidad', 'stock_actual' => 10, 'stock_minimo' => 1, 'activo' => true]);
-
-        $this->actingAs($user)->post(route('exams.store'), [
-            'nombre_examen' => 'TEM Abdomen',
-            'tipo_contraste' => 'Ambos',
-            'activo' => '1',
-            'reagents' => [
-                ['reagent_id' => $reagent->id, 'cantidad_estimada' => 1, 'tipo_contraste' => 'Sin contraste'],
-                ['reagent_id' => $reagent->id, 'cantidad_estimada' => 2, 'tipo_contraste' => 'Con contraste'],
-            ],
-        ])->assertRedirect(route('exams.index'));
-
-        $exam = Exam::where('nombre_examen', 'TEM Abdomen')->firstOrFail();
-        $this->assertDatabaseHas('exam_reagent', ['exam_id' => $exam->id, 'reagent_id' => $reagent->id, 'tipo_contraste' => 'Sin contraste', 'cantidad_estimada' => 1]);
-        $this->assertDatabaseHas('exam_reagent', ['exam_id' => $exam->id, 'reagent_id' => $reagent->id, 'tipo_contraste' => 'Con contraste', 'cantidad_estimada' => 2]);
-    }
-
-    public function test_all_consumable_blocks_are_saved_from_the_form_snapshot(): void
-    {
-        $user = User::create(['username' => 'tester', 'email' => 'tester@example.com', 'password' => 'password']);
-        $shared = Reagent::create(['nombre' => 'Guantes', 'unidad' => 'par', 'stock_actual' => 10, 'stock_minimo' => 1, 'activo' => true]);
-        $without = Reagent::create(['nombre' => 'Placa', 'unidad' => 'unidad', 'stock_actual' => 10, 'stock_minimo' => 1, 'activo' => true]);
-        $with = Reagent::create(['nombre' => 'Jeringa', 'unidad' => 'unidad', 'stock_actual' => 10, 'stock_minimo' => 1, 'activo' => true]);
-
-        $payload = json_encode([
-            ['reagent_id' => (string) $shared->id, 'nombre' => '', 'cantidad_estimada' => '1', 'tipo_contraste' => 'Ambos'],
-            ['reagent_id' => (string) $without->id, 'nombre' => '', 'cantidad_estimada' => '2', 'tipo_contraste' => 'Sin contraste'],
-            ['reagent_id' => (string) $with->id, 'nombre' => '', 'cantidad_estimada' => '3', 'tipo_contraste' => 'Con contraste'],
-        ], JSON_THROW_ON_ERROR);
-
-        $this->actingAs($user)->post(route('exams.store'), [
-            'nombre_examen' => 'TEM Tórax',
-            'tipo_contraste' => 'Ambos',
-            'activo' => '1',
-            'reagents' => [], // Dynamic controls may be omitted by the browser.
-            'reagents_payload' => $payload,
-        ])->assertRedirect(route('exams.index'));
-
-        $exam = Exam::where('nombre_examen', 'TEM Tórax')->firstOrFail();
-        $this->assertDatabaseHas('exam_reagent', ['exam_id' => $exam->id, 'reagent_id' => $shared->id, 'tipo_contraste' => 'Ambos', 'cantidad_estimada' => 1]);
-        $this->assertDatabaseHas('exam_reagent', ['exam_id' => $exam->id, 'reagent_id' => $without->id, 'tipo_contraste' => 'Sin contraste', 'cantidad_estimada' => 2]);
-        $this->assertDatabaseHas('exam_reagent', ['exam_id' => $exam->id, 'reagent_id' => $with->id, 'tipo_contraste' => 'Con contraste', 'cantidad_estimada' => 3]);
-        $this->assertDatabaseCount('exam_reagent', 3);
-    }
-
-    public function test_updating_an_exam_keeps_consumables_in_their_selected_contrast_blocks(): void
-    {
-        $user = User::create(['username' => 'tester', 'email' => 'tester@example.com', 'password' => 'password']);
-        $without = Reagent::create(['nombre' => 'Placa', 'unidad' => 'unidad', 'stock_actual' => 10, 'stock_minimo' => 1, 'activo' => true]);
-        $with = Reagent::create(['nombre' => 'Contraste', 'unidad' => 'frasco', 'stock_actual' => 10, 'stock_minimo' => 1, 'activo' => true]);
-        $exam = Exam::create(['nombre_examen' => 'TEM Abdomen', 'tipo_contraste' => 'Ambos', 'activo' => true]);
-
-        $payload = json_encode([
-            'Sin contraste' => [
-                ['reagent_id' => (string) $without->id, 'nombre' => '', 'cantidad_estimada' => '1'],
-            ],
-            'Con contraste' => [
-                ['reagent_id' => (string) $with->id, 'nombre' => '', 'cantidad_estimada' => '2'],
-            ],
-            'Ambos' => [],
-        ], JSON_THROW_ON_ERROR);
-
-        $this->actingAs($user)->put(route('exams.update', $exam), [
-            'nombre_examen' => $exam->nombre_examen,
-            'tipo_contraste' => 'Ambos',
-            'activo' => '1',
-            'reagents_payload' => $payload,
-        ])->assertRedirect(route('exams.index'));
-
-        $this->assertDatabaseHas('exam_reagent', [
-            'exam_id' => $exam->id,
-            'reagent_id' => $without->id,
-            'tipo_contraste' => 'Sin contraste',
-            'cantidad_estimada' => 1,
-        ]);
-        $this->assertDatabaseHas('exam_reagent', [
-            'exam_id' => $exam->id,
-            'reagent_id' => $with->id,
-            'tipo_contraste' => 'Con contraste',
-            'cantidad_estimada' => 2,
-        ]);
-    }
-
-    public function test_updating_an_exam_changes_its_contrast_mode_from_both(): void
-    {
-        $user = User::create(['username' => 'tester', 'email' => 'tester@example.com', 'password' => 'password']);
-        $reagent = Reagent::create(['nombre' => 'Placa', 'unidad' => 'unidad', 'stock_actual' => 10, 'stock_minimo' => 1, 'activo' => true]);
-        $exam = Exam::create(['nombre_examen' => 'TEM Cerebral', 'tipo_contraste' => 'Ambos', 'activo' => true]);
-
-        $payload = json_encode([
-            'Sin contraste' => [
-                ['reagent_id' => (string) $reagent->id, 'nombre' => '', 'cantidad_estimada' => '1'],
-            ],
-            'Con contraste' => [],
-            'Ambos' => [],
-        ], JSON_THROW_ON_ERROR);
-
-        $this->actingAs($user)->put(route('exams.update', $exam), [
-            'nombre_examen' => $exam->nombre_examen,
-            'tipo_contraste' => 'Sin contraste',
-            'activo' => '1',
-            'reagents_payload' => $payload,
-        ])->assertRedirect(route('exams.index'));
-
-        $this->assertDatabaseHas('exams', [
-            'id' => $exam->id,
-            'tipo_contraste' => 'Sin contraste',
-        ]);
-        $this->assertDatabaseHas('exam_reagent', [
-            'exam_id' => $exam->id,
-            'reagent_id' => $reagent->id,
-            'tipo_contraste' => 'Sin contraste',
-        ]);
-    }
-
-    public function test_switching_to_one_contrast_preserves_the_other_consumable_configuration(): void
-    {
-        $user = User::create(['username' => 'tester', 'email' => 'tester@example.com', 'password' => 'password']);
-        $reagent = Reagent::create(['nombre' => 'Placa', 'unidad' => 'unidad', 'stock_actual' => 10, 'stock_minimo' => 1, 'activo' => true]);
-        $exam = Exam::create(['nombre_examen' => 'TEM Cerebral', 'tipo_contraste' => 'Ambos', 'activo' => true]);
-
-        $payload = json_encode([
-            'Sin contraste' => [
-                ['reagent_id' => (string) $reagent->id, 'nombre' => '', 'cantidad_estimada' => '1'],
-            ],
-            'Con contraste' => [
-                ['reagent_id' => (string) $reagent->id, 'nombre' => '', 'cantidad_estimada' => '5'],
-            ],
-            'Ambos' => [],
-        ], JSON_THROW_ON_ERROR);
-
-        $this->actingAs($user)->put(route('exams.update', $exam), [
-            'nombre_examen' => $exam->nombre_examen,
-            'tipo_contraste' => 'Sin contraste',
-            'activo' => '1',
-            'reagents_payload' => $payload,
-        ])->assertRedirect(route('exams.index'));
-
-        $this->assertDatabaseHas('exam_reagent', [
-            'exam_id' => $exam->id,
-            'reagent_id' => $reagent->id,
-            'tipo_contraste' => 'Sin contraste',
-            'cantidad_estimada' => 1,
-        ]);
-        $this->assertDatabaseHas('exam_reagent', [
-            'exam_id' => $exam->id,
-            'reagent_id' => $reagent->id,
-            'tipo_contraste' => 'Con contraste',
-            'cantidad_estimada' => 5,
-        ]);
-        $this->assertDatabaseCount('exam_reagent', 2);
+        $this->actingAs($user)->get(route('orders.create'))
+            ->assertOk()
+            ->assertSee('configuración global según el contraste elegido')
+            ->assertSee('Iopamidol')
+            ->assertSee('globalConsumables', false);
     }
 }
