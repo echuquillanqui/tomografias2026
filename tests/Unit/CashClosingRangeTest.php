@@ -22,6 +22,20 @@ class CashClosingRangeTest extends TestCase
         $this->assertSame(['2026-02-01', '2026-02-28', 'month', '2026-02-01'], $range);
     }
 
+    public function test_monthly_range_uses_the_explicit_month_and_year_selectors(): void
+    {
+        $request = Request::create('/cash-closings', 'GET', [
+            'period' => 'month',
+            'base_month_number' => '12',
+            'base_year' => '2025',
+        ]);
+
+        $method = new ReflectionMethod(CashClosingController::class, 'resolveRange');
+        $range = $method->invoke(new CashClosingController(), $request);
+
+        $this->assertSame(['2025-12-01', '2025-12-31', 'month', '2025-12-01'], $range);
+    }
+
     public function test_monthly_range_ignores_an_invalid_month(): void
     {
         $this->travelTo('2026-08-06');
