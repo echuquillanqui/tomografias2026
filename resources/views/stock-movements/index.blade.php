@@ -78,6 +78,10 @@
     </div>
 
     <div class="card clinic-card">
+        @include('catalogs.partials.reactive-search', [
+            'id' => 'stock-movement-search',
+            'placeholder' => 'Buscar por reactivo o motivo...',
+        ])
         <div class="card-body p-0">
             <table class="table table-clinic mb-0">
                 <thead><tr><th>Fecha</th><th>Reactivo</th><th>Tipo</th><th>Cantidad</th><th>Motivo</th><th></th></tr></thead>
