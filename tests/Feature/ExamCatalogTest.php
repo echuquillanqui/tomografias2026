@@ -135,4 +135,36 @@ class ExamCatalogTest extends TestCase
             'cantidad_estimada' => 2,
         ]);
     }
+
+    public function test_updating_an_exam_changes_its_contrast_mode_from_both(): void
+    {
+        $user = User::create(['username' => 'tester', 'email' => 'tester@example.com', 'password' => 'password']);
+        $reagent = Reagent::create(['nombre' => 'Placa', 'unidad' => 'unidad', 'stock_actual' => 10, 'stock_minimo' => 1, 'activo' => true]);
+        $exam = Exam::create(['nombre_examen' => 'TEM Cerebral', 'tipo_contraste' => 'Ambos', 'activo' => true]);
+
+        $payload = json_encode([
+            'Sin contraste' => [
+                ['reagent_id' => (string) $reagent->id, 'nombre' => '', 'cantidad_estimada' => '1'],
+            ],
+            'Con contraste' => [],
+            'Ambos' => [],
+        ], JSON_THROW_ON_ERROR);
+
+        $this->actingAs($user)->put(route('exams.update', $exam), [
+            'nombre_examen' => $exam->nombre_examen,
+            'tipo_contraste' => 'Sin contraste',
+            'activo' => '1',
+            'reagents_payload' => $payload,
+        ])->assertRedirect(route('exams.index'));
+
+        $this->assertDatabaseHas('exams', [
+            'id' => $exam->id,
+            'tipo_contraste' => 'Sin contraste',
+        ]);
+        $this->assertDatabaseHas('exam_reagent', [
+            'exam_id' => $exam->id,
+            'reagent_id' => $reagent->id,
+            'tipo_contraste' => 'Sin contraste',
+        ]);
+    }
 }
