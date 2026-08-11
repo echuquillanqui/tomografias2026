@@ -112,27 +112,24 @@ class OrderController extends Controller
                 ]);
             }
 
-            $this->syncAdmissionPlateQuantity($order, $consumables);
+            $this->syncAdmissionPlateQuantity($order);
         });
 
         return redirect()->route('triajes.index', $request->only(['search', 'date', 'page']))
             ->with('success', 'Consumibles de la orden actualizados correctamente.');
     }
 
-    private function syncAdmissionPlateQuantity(Order $order, Collection $consumables): void
+    private function syncAdmissionPlateQuantity(Order $order): void
     {
-        $reagents = Reagent::whereIn('id', $consumables->pluck('reagent_id'))->get(['id', 'nombre']);
-        $plateReagentIds = $reagents
-            ->filter(fn (Reagent $reagent) => in_array(mb_strtolower(trim($reagent->nombre)), ['placa', 'placas'], true))
-            ->pluck('id');
+        $plateConsumables = $order->consumables()
+            ->whereHas('reagent', fn ($query) => $query->whereRaw('LOWER(TRIM(nombre)) IN (?, ?)', ['placa', 'placas']))
+            ->get();
 
-        if ($plateReagentIds->isEmpty()) {
+        if ($plateConsumables->isEmpty()) {
             return;
         }
 
-        $plateQuantity = (int) $consumables
-            ->whereIn('reagent_id', $plateReagentIds->all())
-            ->sum(fn ($row) => (float) $row['cantidad']);
+        $plateQuantity = (int) $plateConsumables->sum('cantidad');
         $admissionData = $order->admissionForm?->data ?? [];
         $deliveryQuantities = $admissionData['delivery_quantities'] ?? [];
         $deliveryQuantities = is_array($deliveryQuantities) ? $deliveryQuantities : [];
@@ -495,6 +492,7 @@ class OrderController extends Controller
         foreach (collect($data['consumables'] ?? [])->filter(fn ($row) => (float) ($row['cantidad'] ?? 0) > 0) as $row) {
             $order->consumables()->updateOrCreate(['reagent_id' => $row['reagent_id']], ['cantidad' => $row['cantidad']]);
         }
+        $this->syncAdmissionPlateQuantity($order);
 
         return redirect()->route('orders.triaje', $order)->with('success', 'Parte de triaje guardado correctamente.');
     }
@@ -503,6 +501,7 @@ class OrderController extends Controller
     {
         $order->load(['patient', 'agreement', 'medicoSolicitante', 'orderExams.exam', 'admissionForm']);
         $this->syncPrintableDocuments($order);
+        $this->syncAdmissionPlateQuantity($order);
         $order->refresh()->load(['patient', 'agreement', 'medicoSolicitante', 'orderExams.exam', 'admissionForm', 'consumables.reagent']);
         $admissionData = $order->admissionForm?->data ?? [];
         $hasContrast = $order->orderExams->contains('tipo_contraste', 'Con contraste');
@@ -583,6 +582,7 @@ class OrderController extends Controller
             foreach (collect($data['consumables'] ?? [])->filter(fn ($row) => (float) ($row['cantidad'] ?? 0) > 0) as $row) {
                 $order->consumables()->updateOrCreate(['reagent_id' => $row['reagent_id']], ['cantidad' => $row['cantidad']]);
             }
+            $this->syncAdmissionPlateQuantity($order);
         }
 
         return redirect()->route('orders.ficha-ingreso.template', $order)->with('success', 'Ficha de ingreso guardada correctamente.');
@@ -592,6 +592,7 @@ class OrderController extends Controller
     {
         $order->load(['patient', 'agreement', 'medicoSolicitante', 'orderExams.exam', 'admissionForm']);
         $this->syncPrintableDocuments($order);
+        $this->syncAdmissionPlateQuantity($order);
         $order->refresh()->load(['patient', 'agreement', 'medicoSolicitante', 'orderExams.exam', 'admissionForm', 'consumables.reagent']);
         $admissionData = $order->admissionForm?->data ?? [];
         $hasContrast = $order->orderExams->contains('tipo_contraste', 'Con contraste');

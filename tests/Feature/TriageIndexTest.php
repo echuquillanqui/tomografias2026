@@ -117,6 +117,23 @@ class TriageIndexTest extends TestCase
         $this->assertSame('Dato conservado', $admissionData['patient_name']);
     }
 
+    public function test_admission_form_automatically_uses_the_saved_triage_plate_quantity(): void
+    {
+        $user = User::create(['username' => 'tester-admission-plates', 'email' => 'admission-plates@example.com', 'password' => 'password']);
+        $patient = Patient::create(['dni' => '12345670', 'nombres' => 'Lucía', 'apellidos' => 'Torres']);
+        $agreement = Agreement::create(['nombre_institucion' => 'Particular', 'activo' => true]);
+        $order = Order::create(['codigo_orden' => 'ORD-FICHA-PLACAS', 'patient_id' => $patient->id, 'agreement_id' => $agreement->id, 'fecha_orden' => '2026-08-07 09:00:00', 'estado' => 'Pendiente']);
+        $plate = Reagent::create(['nombre' => 'Placas', 'unidad' => 'unidad', 'stock_actual' => 10, 'stock_minimo' => 1, 'activo' => true]);
+        $order->consumables()->create(['reagent_id' => $plate->id, 'cantidad' => 3]);
+        $order->admissionForm()->create(['data' => ['plates_count' => 1, 'delivery_quantities' => ['PLACAS' => 1]]]);
+
+        $this->actingAs($user)->get(route('orders.ficha-ingreso.template', $order))->assertOk();
+
+        $admissionData = $order->fresh()->admissionForm->data;
+        $this->assertSame(3, $admissionData['plates_count']);
+        $this->assertSame(3, $admissionData['delivery_quantities']['PLACAS']);
+    }
+
     public function test_store_keeps_consumables_for_without_contrast_order(): void
     {
         $user = User::create(['username' => 'tester2', 'email' => 'tester2@example.com', 'password' => 'password']);
