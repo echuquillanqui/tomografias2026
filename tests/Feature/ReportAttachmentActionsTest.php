@@ -9,6 +9,7 @@ use App\Models\OrderReportAttachment;
 use App\Models\Patient;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
@@ -61,6 +62,73 @@ class ReportAttachmentActionsTest extends TestCase
         $this->actingAs($user)->put(route('reports.attachments.update', [$otherOrder, $attachment]), [
             'nombre' => 'intruso.pdf',
         ])->assertNotFound();
+    }
+
+    public function test_report_becomes_informed_when_it_has_a_doctor_and_attachment(): void
+    {
+        Storage::fake('local');
+        [$user, $order] = $this->records('reportes/1/scan.pdf', 'application/pdf', '%PDF-test');
+        $order->report->attachments()->delete();
+        Storage::disk('local')->delete('reportes/1/scan.pdf');
+
+        $doctor = User::create([
+            'username' => 'doctor',
+            'email' => 'doctor@example.com',
+            'password' => 'password',
+            'nombre_completo' => 'Dra. María Pérez',
+            'rol' => 'Médico',
+            'tipo_medico' => 'De Informe',
+            'activo' => true,
+        ]);
+
+        $this->actingAs($user)->put(route('reports.update', $order), [
+            'medico_firmante_id' => $doctor->id,
+            'adjuntos' => [UploadedFile::fake()->create('resultado.pdf', 10, 'application/pdf')],
+        ])->assertRedirect(route('reports.edit', $order));
+
+        $this->assertDatabaseHas('orders', [
+            'id' => $order->id,
+            'medico_informe_id' => $doctor->id,
+            'estado' => 'Informado',
+        ]);
+        $this->assertDatabaseHas('order_report_attachments', [
+            'order_report_id' => $order->report->id,
+            'original_name' => 'resultado.pdf',
+        ]);
+    }
+
+    public function test_report_index_displays_uploaded_files_and_highlights_pdf_button(): void
+    {
+        Storage::fake('local');
+        [$user, $order] = $this->records('reportes/1/scan.pdf', 'application/pdf', '%PDF-test');
+
+        $this->actingAs($user)->get(route('reports.index'))
+            ->assertOk()
+            ->assertSee('resultado.pdf')
+            ->assertSee(route('reports.attachments.view', [$order, $order->report->attachments->first()]), false)
+            ->assertSee('btn-success', false);
+    }
+
+    public function test_doctor_select_only_displays_the_doctor_name(): void
+    {
+        Storage::fake('local');
+        [$user, $order] = $this->records('reportes/1/scan.pdf', 'application/pdf', '%PDF-test');
+        User::create([
+            'username' => 'doctor',
+            'email' => 'doctor@example.com',
+            'password' => 'password',
+            'nombre_completo' => 'Dr. Juan Torres',
+            'rol' => 'Médico',
+            'tipo_medico' => 'De Informe',
+            'firma_path' => 'firmas/doctor.png',
+            'activo' => true,
+        ]);
+
+        $this->actingAs($user)->get(route('reports.edit', $order))
+            ->assertOk()
+            ->assertSee('Dr. Juan Torres')
+            ->assertDontSee('con firma')
+            ->assertDontSee('sin firma');
     }
 
     /** @return array{User, Order, OrderReportAttachment} */
