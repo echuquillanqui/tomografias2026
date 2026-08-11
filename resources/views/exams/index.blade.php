@@ -26,14 +26,14 @@
                         return `reagents[${row.key}][${name}]`;
                     },
                     payload() {
-                        return JSON.stringify(Object.entries(this.rows).flatMap(([tipo_contraste, rows]) =>
+                        return JSON.stringify(Object.fromEntries(Object.entries(this.rows).map(([tipo_contraste, rows]) => [
+                            tipo_contraste,
                             rows.map(({ reagent_id, nombre, cantidad_estimada }) => ({
                                 reagent_id,
                                 nombre,
                                 cantidad_estimada,
-                                tipo_contraste,
-                            }))
-                        ));
+                            })),
+                        ])));
                     },
                 }));
             });
