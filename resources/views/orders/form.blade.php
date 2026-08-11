@@ -12,6 +12,7 @@
             'name' => $exam?->nombre_examen ?? 'Examen seleccionado',
             'type' => 'exam',
             'area' => 'TOMOGRAFÍA',
+            'configured_contrast' => $exam?->tipo_contraste ?? ($row['tipo_contraste'] ?? 'Sin contraste'),
             'tipo_contraste' => $row['tipo_contraste'] ?? 'Sin contraste',
             'estado' => $row['estado'] ?? 'Pendiente',
             'price' => (float) ($row['precio'] ?? 0),
@@ -405,7 +406,7 @@ function orderSystem() {
                 }
             });
 
-            const exams = {{ Illuminate\Support\Js::from($exams->map(fn ($e) => ['id' => (string) $e->id, 'name' => $e->nombre_examen, 'uid' => 'exam'.$e->id, 'area' => 'TOMOGRAFÍA'])->values()) }};
+            const exams = {{ Illuminate\Support\Js::from($exams->map(fn ($e) => ['id' => (string) $e->id, 'name' => $e->nombre_examen, 'uid' => 'exam'.$e->id, 'area' => 'TOMOGRAFÍA', 'configured_contrast' => $e->tipo_contraste])->values()) }};
             this.exams = exams;
             this.itemSelect = new TomSelect('#item_select', {
                 valueField: 'uid',
@@ -421,8 +422,10 @@ function orderSystem() {
                 onChange: (value) => {
                     if (!value) return;
                     const item = this.$el.querySelector('#item_select').tomselect.options[value];
-                    if (!this.cart.find((cartItem) => cartItem.uid === item.uid)) {
-                        this.cart.push({ ...item, type: 'exam', tipo_contraste: 'Sin contraste', estado: 'Pendiente', price: this.priceFor(item.id, 'Sin contraste') });
+                    if (!this.cart.find((cartItem) => cartItem.name === item.name)) {
+                        const contrast = 'Sin contraste';
+                        const variant = this.examVariantFor(item, contrast);
+                        this.cart.push({ ...item, ...variant, type: 'exam', tipo_contraste: contrast, estado: 'Pendiente', price: this.priceFor(variant.id, contrast) });
                         this.rebuildConsumablesFromExams();
                     }
                     this.$el.querySelector('#item_select').tomselect.clear();
@@ -553,8 +556,15 @@ function orderSystem() {
             }
         },
         handleContrastChange(item) {
+            const variant = this.examVariantFor(item, item.tipo_contraste);
+            item.id = variant.id;
+            item.uid = variant.uid;
+            item.configured_contrast = variant.configured_contrast;
             item.price = this.priceFor(item.id, item.tipo_contraste);
             this.rebuildConsumablesFromExams();
+        },
+        examVariantFor(item, contrast) {
+            return this.exams.find((exam) => exam.name === item.name && exam.configured_contrast === contrast) || item;
         },
         priceFor(examId, contrast) {
             const match = this.agreementPrices.find((price) => price.agreement_id === String(this.selectedAgreement) && price.exam_id === String(examId) && price.tipo_contraste === contrast);
@@ -589,6 +599,7 @@ function orderSystem() {
         },
         applyAgreementPrices() {
             this.cart = this.cart
+                .map((item) => ({ ...item, ...this.examVariantFor(item, item.tipo_contraste) }))
                 .filter((item) => this.isExamAllowed(item.id))
                 .map((item) => ({ ...item, price: this.priceFor(item.id, item.tipo_contraste) }));
             this.refreshExamOptions();
