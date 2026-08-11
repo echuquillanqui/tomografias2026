@@ -227,8 +227,8 @@
 
                             <div class="tab-pane fade" id="consumables-pane" role="tabpanel" aria-labelledby="consumables-tab" tabindex="0">
                                 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
-                                    <div class="alert alert-info py-2 small mb-0 flex-grow-1">Los consumibles configurados para cada examen se precargan sin depender del tipo de contraste. Puedes ajustar las cantidades antes de guardar.</div>
-                                    <button type="button" class="btn btn-sm btn-outline-primary" @click="preloadConsumablesFromCart(true)">Precargar desde exámenes</button>
+                                    <div class="alert alert-info py-2 small mb-0 flex-grow-1">Los consumibles se precargan desde la configuración global según el contraste elegido. Puedes ajustar las cantidades antes de guardar.</div>
+                                    <button type="button" class="btn btn-sm btn-outline-primary" @click="preloadConsumablesFromCart(true)">Precargar configuración global</button>
                                 </div>
                                 <div class="row g-2 mb-3">
                                     <div class="col-8">
@@ -377,7 +377,7 @@ function orderSystem() {
         reniecLoading: false,
         lastReniecDni: '',
         reagents: {{ Illuminate\Support\Js::from($reagents->map(fn ($r) => ['id' => (string) $r->id, 'name' => $r->nombre, 'unit' => $r->unidad_medida])->values()) }},
-        examConsumables: {{ Illuminate\Support\Js::from($exams->mapWithKeys(fn ($e) => [(string) $e->id => $e->reagents->map(fn ($r) => ['reagent_id' => (string) $r->id, 'name' => $r->nombre, 'unit' => $r->unidad_medida, 'cantidad' => (float) $r->pivot->cantidad_estimada, 'tipo_contraste' => $r->pivot->tipo_contraste ?? 'Ambos'])->values()])) }},
+        globalConsumables: {{ Illuminate\Support\Js::from($globalConsumables->groupBy('tipo_contraste')->map(fn ($rows) => $rows->map(fn ($row) => ['reagent_id' => (string) $row->reagent_id, 'name' => $row->reagent->nombre, 'unit' => $row->reagent->unidad_medida, 'cantidad' => (float) $row->cantidad_estimada])->values())) }},
         agreementPrices: {{ Illuminate\Support\Js::from($agreementPrices->map(fn ($price) => [
             'agreement_id' => (string) $price->agreement_id,
             'exam_id' => (string) $price->exam_id,
@@ -597,8 +597,7 @@ function orderSystem() {
             const totals = new Map();
             this.cart
                 .forEach((item) => {
-                    (this.examConsumables[String(item.id)] || [])
-                        .filter((row) => ['Ambos', item.tipo_contraste].includes(row.tipo_contraste || 'Ambos'))
+                    (this.globalConsumables[item.tipo_contraste] || [])
                         .forEach((row) => {
                             const current = totals.get(row.reagent_id) || { ...row, cantidad: 0 };
                             current.cantidad = Number(current.cantidad || 0) + Number(row.cantidad || 0);
