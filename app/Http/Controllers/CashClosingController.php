@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Agreement;
 use App\Models\CashExpense;
 use App\Models\CashFixedExpense;
 use App\Models\Order;
@@ -116,7 +117,7 @@ class CashClosingController extends Controller
         $data['created_by'] = auth()->id();
         CashExpense::create($data);
 
-        return redirect()->route('cash-closings.index', $request->only(['period', 'base_date', 'base_month', 'from', 'to', 'tipo_pago', 'tab']))->with('success', 'Egreso registrado correctamente.');
+        return redirect()->route('cash-closings.index', $request->only(['period', 'base_date', 'base_month', 'from', 'to', 'tipo_pago', 'agreement_id', 'tab']))->with('success', 'Egreso registrado correctamente.');
     }
 
     public function storeFixedExpense(Request $request): RedirectResponse
@@ -193,6 +194,7 @@ class CashClosingController extends Controller
     private function reportData(Request $request): array
     {
         [$from, $to, $period, $baseDate] = $this->resolveRange($request);
+        $agreementId = filter_var($request->query('agreement_id'), FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]) ?: null;
         $tipoPago = in_array($request->query('tipo_pago'), self::TIPOS_PAGO, true)
             ? $request->query('tipo_pago')
             : null;
@@ -203,6 +205,7 @@ class CashClosingController extends Controller
             ->whereBetween('fecha_orden', [$start, $end])
             ->where('estado', '!=', 'Anulado')
             ->when($tipoPago, fn ($query) => $query->where('tipo_pago', $tipoPago))
+            ->when($agreementId, fn ($query) => $query->where('agreement_id', $agreementId))
             ->latest('fecha_orden')
             ->get();
 
@@ -230,6 +233,7 @@ class CashClosingController extends Controller
             ->whereBetween('fecha_orden', [$operationalStart, $operationalEnd])
             ->where('estado', '!=', 'Anulado')
             ->when($operationalTipoPago, fn ($query) => $query->where('tipo_pago', $operationalTipoPago))
+            ->when($agreementId, fn ($query) => $query->where('agreement_id', $agreementId))
             ->latest('fecha_orden')
             ->get();
         $operationalExpenses = CashExpense::with(['creator', 'fixedExpense'])
@@ -268,11 +272,12 @@ class CashClosingController extends Controller
         $monthlyFixedExpensesPending = $this->pendingFixedExpenses($currentFixedExpensePeriod);
         $shouldShowFixedExpenseModal = now()->isLastOfMonth() && $monthlyFixedExpensesPending->isNotEmpty();
 
-        return compact('from', 'to', 'period', 'baseDate', 'tipoPago', 'orders', 'expenses', 'incomeTotal', 'expenseTotal', 'cashIncome', 'yapePlinIncome', 'transferIncome', 'digitalIncome', 'incomeByPayment', 'plateSummary', 'iopamidolSummary', 'operationalBaseDate', 'operationalTipoPago', 'operationalOrders', 'operationalExpenses', 'operationalIncomeTotal', 'operationalExpenseTotal', 'operationalYapePlinIncome', 'operationalTransferIncome', 'operationalPlateSummary', 'operationalIopamidolSummary') + [
+        return compact('from', 'to', 'period', 'baseDate', 'tipoPago', 'agreementId', 'orders', 'expenses', 'incomeTotal', 'expenseTotal', 'cashIncome', 'yapePlinIncome', 'transferIncome', 'digitalIncome', 'incomeByPayment', 'plateSummary', 'iopamidolSummary', 'operationalBaseDate', 'operationalTipoPago', 'operationalOrders', 'operationalExpenses', 'operationalIncomeTotal', 'operationalExpenseTotal', 'operationalYapePlinIncome', 'operationalTransferIncome', 'operationalPlateSummary', 'operationalIopamidolSummary') + [
             'cashBalance' => $cashIncome - $expenseTotal,
             'balance' => $incomeTotal - $expenseTotal,
             'tiposPago' => self::TIPOS_PAGO,
             'periods' => self::PERIODS,
+            'agreements' => Agreement::query()->where('activo', true)->orderBy('nombre_institucion')->get(['id', 'nombre_institucion']),
             'cashOrders' => $orders->where('tipo_pago', 'Efectivo'),
             'yapePlinOrders' => $orders->where('tipo_pago', 'Yape/Plin'),
             'transferOrders' => $orders->where('tipo_pago', 'Transferencia'),

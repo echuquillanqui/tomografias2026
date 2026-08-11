@@ -1,0 +1,10 @@
+/* Keep report columns only as wide as their content while allowing horizontal scrolling. */
+.table-content-fit {
+    width: max-content;
+    min-width: 100%;
+}
+
+.table-content-fit > :not(caption) > * > * {
+    width: 1%;
+    white-space: nowrap;
+}
