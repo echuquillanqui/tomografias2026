@@ -34,10 +34,12 @@
     <div class="card clinic-card shadow-sm mb-4">
         <div class="card-header bg-white fw-bold text-primary">DATOS DEL PACIENTE Y ESTUDIO</div>
         <div class="card-body"><div class="row g-3">
-            <div class="col-md-4"><strong>Paciente</strong><br>{{ $order->patient->nombres }} {{ $order->patient->apellidos }}</div>
+            <div class="col-md-3"><strong>Paciente</strong><br>{{ $order->patient->nombres }} {{ $order->patient->apellidos }}</div>
             <div class="col-md-2"><strong>DNI</strong><br>{{ $order->patient->dni }}</div>
-            <div class="col-md-2"><strong>Edad</strong><br>{{ $order->patient->edad ?? $order->patient->fecha_nacimiento?->age ?? '—' }}</div>
-            <div class="col-md-4"><strong>Tipo de estudio</strong><br>{{ $order->orderExams->pluck('exam.nombre_examen')->filter()->join(', ') ?: 'Sin estudios registrados' }}</div>
+            <div class="col-md-1"><strong>Edad</strong><br>{{ $order->patient->edad ?? $order->patient->fecha_nacimiento?->age ?? '—' }}</div>
+            <div class="col-md-3"><strong>Tipo de estudio</strong><br>{{ $order->orderExams->pluck('exam.nombre_examen')->filter()->join(', ') ?: 'Sin estudios registrados' }}</div>
+            <div class="col-md-2"><strong>Contraste</strong><br>{{ $order->orderExams->pluck('tipo_contraste')->filter()->unique()->join(', ') ?: 'No registrado' }}</div>
+            <div class="col-md-1"><strong>Fecha del estudio</strong><br><span class="text-nowrap">{{ $order->fecha_orden?->format('d/m/Y') ?? 'No registrada' }}</span></div>
         </div></div>
     </div>
 
