@@ -15,6 +15,7 @@
               x-data="examConsumables(@js($rowsByContrast), @js(old('tipo_contraste', $e?->tipo_contraste ?? 'Ambos')))">
             @csrf
             @if($method === 'PUT') @method('PUT') @endif
+            <input type="hidden" name="tipo_contraste" :value="examContrast">
             <input type="hidden" name="reagents_payload" :value="payload()">
             <div class="modal-header text-white">
                 <div>
@@ -32,7 +33,7 @@
                     </div>
                     <div class="col-md-5">
                         <label class="form-label fw-semibold">¿Cómo se puede realizar?</label>
-                        <select name="tipo_contraste" class="form-select" x-model="examContrast" required>
+                        <select class="form-select" x-model="examContrast" required>
                             @foreach($contrastes as $contrast)
                                 <option value="{{ $contrast }}">{{ $contrast }}</option>
                             @endforeach
