@@ -230,17 +230,6 @@
                                     <div class="alert alert-info py-2 small mb-0 flex-grow-1">Los consumibles se precargan desde la configuración global según el contraste elegido. Puedes ajustar las cantidades antes de guardar.</div>
                                     <button type="button" class="btn btn-sm btn-outline-primary" @click="preloadConsumablesFromCart(true)">Precargar configuración global</button>
                                 </div>
-                                <div class="row g-2 mb-3">
-                                    <div class="col-8">
-                                        <select x-model="selectedReagent" class="form-select">
-                                            <option value="">Agregar consumible...</option>
-                                            <template x-for="reagent in reagents" :key="reagent.id">
-                                                <option :value="reagent.id" x-text="reagent.name + (reagent.unit ? ' (' + reagent.unit + ')' : '')"></option>
-                                            </template>
-                                        </select>
-                                    </div>
-                                    <div class="col-4"><button type="button" class="btn btn-outline-primary w-100" @click="addConsumable()">Agregar</button></div>
-                                </div>
                                 <div class="table-responsive">
                                     <table class="table align-middle mb-0">
                                         <thead><tr><th>Consumible</th><th style="width:150px;">Cantidad</th><th>Unidad</th><th></th></tr></thead>
@@ -250,7 +239,7 @@
                                                     <td><span x-text="item.name"></span><input type="hidden" :name="`consumables[${index}][reagent_id]`" :value="item.reagent_id"></td>
                                                     <td><input type="number" min="0" step="0.01" class="form-control form-control-sm" :name="`consumables[${index}][cantidad]`" x-model.number="item.cantidad"></td>
                                                     <td x-text="item.unit || '—'"></td>
-                                                    <td class="text-end"><button type="button" class="btn btn-sm btn-outline-danger border-0" @click="consumables.splice(index, 1)"><i class="bi bi-trash3-fill"></i></button></td>
+                                                    <td class="text-end"><span class="badge text-bg-light">Configuración global</span></td>
                                                 </tr>
                                             </template>
                                             <tr x-show="consumables.length === 0"><td colspan="4" class="text-center text-muted">Sin consumibles.</td></tr>
@@ -595,9 +584,9 @@ function orderSystem() {
         },
         rebuildConsumablesFromExams() {
             const totals = new Map();
-            this.cart
-                .forEach((item) => {
-                    (this.globalConsumables[item.tipo_contraste] || [])
+            [...new Set(this.cart.map((item) => item.tipo_contraste))]
+                .forEach((contrastType) => {
+                    (this.globalConsumables[contrastType] || [])
                         .forEach((row) => {
                             const current = totals.get(row.reagent_id) || { ...row, cantidad: 0 };
                             current.cantidad = Number(current.cantidad || 0) + Number(row.cantidad || 0);
