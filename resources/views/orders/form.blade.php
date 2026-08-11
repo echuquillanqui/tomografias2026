@@ -377,7 +377,7 @@ function orderSystem() {
         reniecLoading: false,
         lastReniecDni: '',
         reagents: {{ Illuminate\Support\Js::from($reagents->map(fn ($r) => ['id' => (string) $r->id, 'name' => $r->nombre, 'unit' => $r->unidad_medida])->values()) }},
-        examConsumables: {{ Illuminate\Support\Js::from($exams->mapWithKeys(fn ($e) => [(string) $e->id => $e->reagents->map(fn ($r) => ['reagent_id' => (string) $r->id, 'name' => $r->nombre, 'unit' => $r->unidad_medida, 'cantidad' => (float) $r->pivot->cantidad_estimada])->values()])) }},
+        examConsumables: {{ Illuminate\Support\Js::from($exams->mapWithKeys(fn ($e) => [(string) $e->id => $e->reagents->map(fn ($r) => ['reagent_id' => (string) $r->id, 'name' => $r->nombre, 'unit' => $r->unidad_medida, 'cantidad' => (float) $r->pivot->cantidad_estimada, 'tipo_contraste' => $r->pivot->tipo_contraste ?? 'Ambos'])->values()])) }},
         agreementPrices: {{ Illuminate\Support\Js::from($agreementPrices->map(fn ($price) => [
             'agreement_id' => (string) $price->agreement_id,
             'exam_id' => (string) $price->exam_id,
@@ -597,11 +597,13 @@ function orderSystem() {
             const totals = new Map();
             this.cart
                 .forEach((item) => {
-                    (this.examConsumables[String(item.id)] || []).forEach((row) => {
-                        const current = totals.get(row.reagent_id) || { ...row, cantidad: 0 };
-                        current.cantidad = Number(current.cantidad || 0) + Number(row.cantidad || 0);
-                        totals.set(row.reagent_id, current);
-                    });
+                    (this.examConsumables[String(item.id)] || [])
+                        .filter((row) => ['Ambos', item.tipo_contraste].includes(row.tipo_contraste || 'Ambos'))
+                        .forEach((row) => {
+                            const current = totals.get(row.reagent_id) || { ...row, cantidad: 0 };
+                            current.cantidad = Number(current.cantidad || 0) + Number(row.cantidad || 0);
+                            totals.set(row.reagent_id, current);
+                        });
                 });
             this.consumables = Array.from(totals.values()).filter((row) => Number(row.cantidad || 0) > 0);
         },
