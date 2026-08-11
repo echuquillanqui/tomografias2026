@@ -38,7 +38,7 @@ class CashClosingExcelExportTest extends TestCase
             'to' => '2026-08-06',
             'cashIncome' => 180,
             'expenseTotal' => 0,
-            'cashBalance' => 180,
+            'balance' => 180,
             'yapePlinIncome' => 0,
             'transferIncome' => 0,
             'incomeTotal' => 180,
@@ -62,5 +62,34 @@ class CashClosingExcelExportTest extends TestCase
         $this->assertStringContainsString('Boleta', $dailySheet);
         $this->assertStringContainsString('B001-000045', $dailySheet);
         $this->assertStringNotContainsString('#999', $dailySheet);
+    }
+
+    public function test_summary_uses_all_payment_types_for_the_balance(): void
+    {
+        $view = view('cash-closings.exports.excel', [
+            'periods' => ['day' => 'Día'],
+            'period' => 'day',
+            'from' => '2026-08-06',
+            'to' => '2026-08-06',
+            'cashIncome' => 100,
+            'expenseTotal' => 50,
+            'balance' => 250,
+            'yapePlinIncome' => 80,
+            'transferIncome' => 70,
+            'incomeTotal' => 300,
+            'plateSummary' => ['initial' => 0, 'delivered' => 0, 'final' => 0],
+            'iopamidolSummary' => ['initial' => 0, 'delivered' => 0, 'final' => 0],
+            'orders' => collect(),
+            'expenses' => collect(),
+            'cashOrders' => collect(),
+            'yapePlinOrders' => collect(),
+            'transferOrders' => collect(),
+        ])->render();
+
+        $summary = str($view)->between('<Worksheet ss:Name="Resumen">', '</Worksheet>')->toString();
+
+        $this->assertStringContainsString('Saldo global', $summary);
+        $this->assertMatchesRegularExpression('/Saldo global.*?250\.00/s', $summary);
+        $this->assertStringNotContainsString('Saldo efectivo', $summary);
     }
 }

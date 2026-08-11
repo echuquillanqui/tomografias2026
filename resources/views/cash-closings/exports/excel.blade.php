@@ -24,8 +24,8 @@
             <Row ss:Height="30"><Cell ss:StyleID="Title" ss:MergeAcross="1"><Data ss:Type="String">REPORTE DE ATENCIONES - CUADRE DE CAJA</Data></Cell></Row>
             <Row><Cell ss:StyleID="Label"><Data ss:Type="String">Periodo</Data></Cell><Cell><Data ss:Type="String">{{ $periods[$period] }}: {{ $from }} al {{ $to }}</Data></Cell></Row>
             <Row><Cell><Data ss:Type="String">Ingresos efectivo</Data></Cell><Cell><Data ss:Type="Number">{{ $money($cashIncome) }}</Data></Cell></Row>
-            <Row><Cell><Data ss:Type="String">Egresos efectivo</Data></Cell><Cell><Data ss:Type="Number">{{ $money($expenseTotal) }}</Data></Cell></Row>
-            <Row><Cell><Data ss:Type="String">Saldo efectivo</Data></Cell><Cell><Data ss:Type="Number">{{ $money($cashBalance) }}</Data></Cell></Row>
+            <Row><Cell><Data ss:Type="String">Egresos</Data></Cell><Cell><Data ss:Type="Number">{{ $money($expenseTotal) }}</Data></Cell></Row>
+            <Row><Cell><Data ss:Type="String">Saldo global</Data></Cell><Cell><Data ss:Type="Number">{{ $money($balance) }}</Data></Cell></Row>
             <Row><Cell><Data ss:Type="String">Yape/Plin</Data></Cell><Cell><Data ss:Type="Number">{{ $money($yapePlinIncome) }}</Data></Cell></Row>
             <Row><Cell><Data ss:Type="String">Transferencias</Data></Cell><Cell><Data ss:Type="Number">{{ $money($transferIncome) }}</Data></Cell></Row>
             <Row><Cell><Data ss:Type="String">Total ingresos</Data></Cell><Cell><Data ss:Type="Number">{{ $money($incomeTotal) }}</Data></Cell></Row>
@@ -53,10 +53,10 @@
 
     @include('cash-closings.exports.partials.orders-sheet', ['sheetName' => 'Ingresos efectivo', 'sheetOrders' => $cashOrders])
 
-    <Worksheet ss:Name="Egresos efectivo">
+    <Worksheet ss:Name="Egresos">
         <Table>
             <Column ss:Width="90"/><Column ss:Width="220"/><Column ss:Width="90"/><Column ss:Width="120"/>
-            <Row ss:Height="30"><Cell ss:StyleID="Title" ss:MergeAcross="3"><Data ss:Type="String">EGRESOS EN EFECTIVO</Data></Cell></Row>
+            <Row ss:Height="30"><Cell ss:StyleID="Title" ss:MergeAcross="3"><Data ss:Type="String">EGRESOS</Data></Cell></Row>
             <Row ss:Height="28"><Cell ss:StyleID="Header"><Data ss:Type="String">Fecha</Data></Cell><Cell ss:StyleID="Header"><Data ss:Type="String">Descripción</Data></Cell><Cell ss:StyleID="Header"><Data ss:Type="String">Monto</Data></Cell><Cell ss:StyleID="Header"><Data ss:Type="String">Usuario</Data></Cell></Row>
             @foreach($expenses as $expense)
                 <Row><Cell ss:StyleID="Centered"><Data ss:Type="String">{{ $expense->fecha_egreso->format('d/m/Y') }}</Data></Cell><Cell><Data ss:Type="String">{{ $text($expense->descripcion) }}</Data></Cell><Cell ss:StyleID="Money"><Data ss:Type="Number">{{ $money($expense->monto) }}</Data></Cell><Cell><Data ss:Type="String">{{ $text($expense->creator->username ?? '—') }}</Data></Cell></Row>
