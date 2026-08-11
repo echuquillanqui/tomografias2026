@@ -60,7 +60,7 @@ body{ text-transform:uppercase; }
 <div class="full"><b>Intervenciones quirúrgicas:</b> <?= e($surgeries) ?></div>
 <div class="full"><b>Medicación:</b> <?= nl2br(e($admissionData['medication'] ?? '')) ?></div>
 <div class="full"><b>Antecedentes:</b> <?= nl2br(e($admissionData['antecedents'] ?? '')) ?></div>
-<?php if(!empty($contrastConsumables)): ?>
+<?php if($hasContrast && !empty($contrastConsumables)): ?>
 <div class="section-title">INSUMOS Y MATERIALES DE USO INTERNO PARA ESTUDIO <?= $hasContrast ? 'CON CONTRASTE' : 'SIN CONTRASTE' ?></div>
 <div class="box"><div class="row"><div class="cell label">Insumo / material</div><div class="cell label" style="width:18%">Cantidad</div><div class="cell label" style="width:18%">Unidad</div><div class="cell label" style="width:24%">Bránula</div></div><?php $branulaPdf = in_array(($admissionData['peripheral_route'] ?? ''), ['18','20','22'], true) ? 'N° '.($admissionData['peripheral_route'] ?? '') : ($admissionData['peripheral_route'] ?? ''); ?><?php foreach(($contrastConsumables ?? []) as $index => $consumable): ?><div class="row"><div class="cell"><span class="label"><?= e($consumable['name']) ?></span></div><div class="cell" style="width:18%"><?= e($consumable['cantidad']) ?></div><div class="cell" style="width:18%"><?= e($consumable['unit'] ?? '') ?></div><div class="cell red" style="width:24%"><?= $index === 0 ? e($branulaPdf) : '' ?></div></div><?php endforeach; ?><?php if(empty($contrastConsumables ?? [])): ?><div class="row"><div class="cell muted" style="width:58%">Sin insumos precargados.</div><div class="cell red" style="width:24%"><?= e($branulaPdf) ?></div></div><?php endif; ?></div>
 <?php endif; ?>
@@ -95,7 +95,7 @@ body{ text-transform:uppercase; }
     </tbody>
 </table>
 <div class="signatures-box">
-    <div class="informed-title">INFORMADO POR:</div>
+    <div class="informed-title">INFORMADO POR: <?= e($order->medicoInforme?->nombre_completo ?? ($admissionData['informed_by'] ?? '')) ?></div>
     <table class="signature-layout">
         <tr>
             <td class="signature-left">

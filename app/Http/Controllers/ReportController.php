@@ -36,7 +36,7 @@ class ReportController extends Controller
 
     public function edit(Order $order): View
     {
-        $order->load(['patient', 'agreement', 'medicoSolicitante', 'medicoInforme', 'orderExams.exam', 'report.attachments']);
+        $order->load(['patient', 'agreement', 'medicoSolicitante', 'medicoInforme', 'admissionForm', 'orderExams.exam', 'report.attachments']);
         $this->ensureReport($order);
 
         return view('reports.edit', [
@@ -48,20 +48,15 @@ class ReportController extends Controller
     public function update(Request $request, Order $order): RedirectResponse
     {
         $data = $request->validate([
-            'titulo' => ['required', 'string', 'max:255'],
-            'tecnica' => ['required', 'string'],
-            'informe' => ['required', 'string'],
-            'impresion' => ['required', 'string'],
-            'recomendaciones' => ['nullable', 'string'],
             'medico_firmante_id' => ['nullable', 'exists:users,id'],
             'adjuntos' => ['nullable', 'array'],
             'adjuntos.*' => ['file', 'mimes:pdf,jpg,jpeg,png,webp', 'max:20480'],
         ]);
 
-        $data['contenido'] = $this->composeReportContent($data);
-
-
         $order->update(['medico_informe_id' => $data['medico_firmante_id']]);
+        $admissionData = $order->admissionForm?->data ?? [];
+        $admissionData['informed_by'] = User::find($data['medico_firmante_id'])?->nombre_completo ?? '';
+        $order->admissionForm()->updateOrCreate([], ['data' => $admissionData]);
         $report = $order->report()->updateOrCreate(
             ['order_id' => $order->id],
             collect($data)->except('adjuntos')->all()

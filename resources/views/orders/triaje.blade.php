@@ -39,11 +39,11 @@
             <div class="col-md-1"><strong>Edad</strong><br>{{ $order->patient->edad ?? $order->patient->fecha_nacimiento?->age ?? '—' }}</div>
             <div class="col-md-3"><strong>Tipo de estudio</strong><br>{{ $order->orderExams->pluck('exam.nombre_examen')->filter()->join(', ') ?: 'Sin estudios registrados' }}</div>
             <div class="col-md-2"><strong>Contraste</strong><br>{{ $order->orderExams->pluck('tipo_contraste')->filter()->unique()->join(', ') ?: 'No registrado' }}</div>
-            <div class="col-md-1"><strong>Fecha del estudio</strong><br><span class="text-nowrap">{{ $order->fecha_orden?->format('d/m/Y') ?? 'No registrada' }}</span></div>
+            <div class="col-md-1"><strong>Placas</strong><br><input form="triage-consumables-form" name="plates_count" type="number" min="0" step="1" class="form-control form-control-sm" value="{{ old('plates_count', $admissionData['delivery_quantities']['PLACAS'] ?? $admissionData['plates_count'] ?? 0) }}" aria-label="Cantidad de placas"></div>
         </div></div>
     </div>
 
-    <form method="POST" action="{{ route('triajes.consumables.update', $order) }}">
+    <form id="triage-consumables-form" method="POST" action="{{ route('triajes.consumables.update', $order) }}">
         @csrf
         @method('PUT')
         <div class="card clinic-card shadow-sm">

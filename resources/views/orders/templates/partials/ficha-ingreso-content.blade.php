@@ -83,7 +83,7 @@
         </div>
     </div>
 </div>
-@if(!empty($contrastConsumables))
+@if($hasContrast && !empty($contrastConsumables))
     <h5 class="bg-primary text-white text-center py-2 mt-4">INSUMOS Y MATERIALES DE USO INTERNO PARA ESTUDIO {{ $hasContrast ? 'CON CONTRASTE' : 'SIN CONTRASTE' }}</h5>
     <div class="table-responsive mb-3"><table class="table table-bordered table-sm align-middle"><thead><tr><th>Insumo / material</th><th style="width:140px">Cantidad</th><th style="width:100px">Unidad</th><th style="width:240px">Bránula</th></tr></thead><tbody>@forelse(($contrastConsumables ?? []) as $index => $consumable)<tr><td>{{ $consumable['name'] }}<input type="hidden" name="consumables[{{ $index }}][reagent_id]" value="{{ $consumable['reagent_id'] }}"></td><td><input name="consumables[{{ $index }}][cantidad]" type="number" min="0" step="0.01" class="form-control form-control-sm" value="{{ $consumable['cantidad'] }}"></td><td>{{ $consumable['unit'] ?? '' }}</td>@if($loop->first)<td rowspan="{{ max(count($contrastConsumables ?? []), 1) }}"><div class="input-group" x-data="{v: '{{ old('peripheral_route', $admissionData['peripheral_route'] ?? '') }}'}"><span class="input-group-text" x-text="['18','20','22'].includes(v) ? 'N°' : ''"></span><select name="peripheral_route" class="form-select" x-model="v"><option value=""></option><option value="18" @selected(old('peripheral_route', $admissionData['peripheral_route'] ?? '') === '18')>18</option><option value="20" @selected(old('peripheral_route', $admissionData['peripheral_route'] ?? '') === '20')>20</option><option value="22" @selected(old('peripheral_route', $admissionData['peripheral_route'] ?? '') === '22')>22</option><option value="Permeable" @selected(old('peripheral_route', $admissionData['peripheral_route'] ?? '') === 'Permeable')>Permeable</option></select></div></td>@endif</tr>@empty<tr><td colspan="3" class="text-muted">Sin insumos precargados.</td><td><div class="input-group" x-data="{v: '{{ old('peripheral_route', $admissionData['peripheral_route'] ?? '') }}'}"><span class="input-group-text" x-text="['18','20','22'].includes(v) ? 'N°' : ''"></span><select name="peripheral_route" class="form-select" x-model="v"><option value=""></option><option value="18" @selected(old('peripheral_route', $admissionData['peripheral_route'] ?? '') === '18')>18</option><option value="20" @selected(old('peripheral_route', $admissionData['peripheral_route'] ?? '') === '20')>20</option><option value="22" @selected(old('peripheral_route', $admissionData['peripheral_route'] ?? '') === '22')>22</option><option value="Permeable" @selected(old('peripheral_route', $admissionData['peripheral_route'] ?? '') === 'Permeable')>Permeable</option></select></div></td></tr>@endforelse</tbody></table></div>
 @endif
@@ -97,7 +97,9 @@
 @endif
 <div class="border border-primary rounded mt-4 p-3 text-primary">
     <label class="form-label fw-bold text-uppercase">Informado por:</label>
-    <select name="informed_by" class="form-select mb-4"><option value=""></option>@foreach(($medicosInformantes ?? collect()) as $medico)<option value="{{ $medico->nombre_completo }}" @selected(old('informed_by', $admissionData['informed_by'] ?? '') === $medico->nombre_completo)>{{ $medico->nombre_completo }}</option>@endforeach</select>
+    @php($informedBy = $order->medicoInforme?->nombre_completo ?? ($admissionData['informed_by'] ?? ''))
+    <input type="hidden" name="informed_by" value="{{ $informedBy }}">
+    <input class="form-control mb-4" value="{{ $informedBy }}" readonly placeholder="Se selecciona desde el informe de tomografía">
     <div class="row text-center g-4 text-uppercase small fw-semibold">
         <div class="col-md-7">
             <div class="border border-primary rounded mb-2 w-100" style="height:120px"></div>
