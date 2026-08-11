@@ -23,7 +23,7 @@
             <div>
                 <div class="clinic-eyebrow mb-2">Triaje y consumibles</div>
                 <h1 class="display-6 fw-bold mb-1">{{ $order->codigo_orden ?? 'Orden #'.$order->id }}</h1>
-                <p class="mb-0 opacity-75">Registre los consumibles utilizados en el estudio.</p>
+                <p class="mb-0 opacity-75">{{ $hasContrast ? 'Registre los consumibles utilizados en el estudio.' : 'Registre la cantidad de placas utilizadas en el estudio.' }}</p>
             </div>
             <a class="btn btn-outline-light align-self-start" href="{{ route('triajes.index') }}">Volver</a>
         </div>
@@ -46,6 +46,7 @@
     <form id="triage-consumables-form" method="POST" action="{{ route('triajes.consumables.update', $order) }}">
         @csrf
         @method('PUT')
+        @if($hasContrast)
         <div class="card clinic-card shadow-sm">
             <div class="card-header bg-white fw-bold text-primary d-flex justify-content-between align-items-center">
                 <span>CONSUMIBLES</span>
@@ -65,7 +66,8 @@
                 </table></div>
             </div>
         </div>
-        <div class="d-flex justify-content-end mt-4"><button class="btn btn-clinic-primary px-4" type="submit">Guardar consumibles</button></div>
+        @endif
+        <div class="d-flex justify-content-end mt-4"><button class="btn btn-clinic-primary px-4" type="submit">{{ $hasContrast ? 'Guardar consumibles' : 'Guardar placas' }}</button></div>
     </form>
 </div>
 @endsection

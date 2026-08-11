@@ -68,7 +68,7 @@ class TriageIndexTest extends TestCase
             ->assertDontSee('Guardar consumibles');
     }
 
-    public function test_consumables_template_only_shows_patient_study_and_consumables_form(): void
+    public function test_without_contrast_template_only_shows_patient_study_and_plate_field(): void
     {
         $user = User::create(['username' => 'tester', 'email' => 'tester@example.com', 'password' => 'password']);
         $patient = Patient::create(['dni' => '12345678', 'nombres' => 'Ana', 'apellidos' => 'Torres']);
@@ -86,11 +86,28 @@ class TriageIndexTest extends TestCase
             ->assertSee('Sin contraste')
             ->assertSee('Placas')
             ->assertSee('name="plates_count"', false)
-            ->assertSee('CONSUMIBLES')
+            ->assertDontSee('CONSUMIBLES')
             ->assertSee(route('triajes.index'), false)
-            ->assertSee('Guardar consumibles')
+            ->assertSee('Guardar placas')
+            ->assertDontSee('Agregar consumible...')
             ->assertDontSee('ÍNDICE DE TRIAJE')
             ->assertDontSee('Rellenar triaje');
+    }
+
+    public function test_with_contrast_template_shows_consumables_form(): void
+    {
+        $user = User::create(['username' => 'tester-contrast', 'email' => 'contrast@example.com', 'password' => 'password']);
+        $patient = Patient::create(['dni' => '12345671', 'nombres' => 'Ana', 'apellidos' => 'Torres']);
+        $agreement = Agreement::create(['nombre_institucion' => 'Particular', 'activo' => true]);
+        $exam = Exam::create(['nombre_examen' => 'Abdomen', 'tipo_contraste' => 'Ambos', 'activo' => true]);
+        $order = Order::create(['codigo_orden' => 'ORD-CONTRASTE', 'patient_id' => $patient->id, 'agreement_id' => $agreement->id, 'fecha_orden' => '2026-08-07 09:00:00', 'estado' => 'Pendiente']);
+        $order->orderExams()->create(['exam_id' => $exam->id, 'tipo_contraste' => 'Con contraste', 'precio' => 100]);
+
+        $this->actingAs($user)->get(route('orders.triaje', $order))
+            ->assertOk()
+            ->assertSee('CONSUMIBLES')
+            ->assertSee('Agregar consumible...')
+            ->assertSee('Guardar consumibles');
     }
 
     public function test_updating_plate_consumable_updates_admission_form_plate_fields(): void
@@ -170,7 +187,7 @@ class TriageIndexTest extends TestCase
         ]);
     }
 
-    public function test_triaje_preloads_configured_consumables_for_without_contrast_exam(): void
+    public function test_triaje_does_not_preload_consumables_for_without_contrast_exam(): void
     {
         $user = User::create(['username' => 'tester3', 'email' => 'tester3@example.com', 'password' => 'password']);
         $patient = Patient::create(['dni' => '45678912', 'nombres' => 'María', 'apellidos' => 'Vega']);
@@ -183,8 +200,8 @@ class TriageIndexTest extends TestCase
 
         $this->actingAs($user)->get(route('orders.triaje', $order))
             ->assertOk()
-            ->assertSee('Guantes')
-            ->assertSee('3');
+            ->assertDontSee('Guantes')
+            ->assertDontSee('Agregar consumible...');
     }
 
     public function test_triaje_only_preloads_consumables_for_the_selected_contrast(): void
