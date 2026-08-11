@@ -103,7 +103,8 @@ class OrderController extends Controller
         ]);
 
         DB::transaction(function () use ($order, $data): void {
-            $consumables = collect($data['consumables'] ?? []);
+            $hasContrast = $order->orderExams()->where('tipo_contraste', 'Con contraste')->exists();
+            $consumables = $hasContrast ? collect($data['consumables'] ?? []) : collect();
 
             if (array_key_exists('plates_count', $data)) {
                 $plateReagent = Reagent::whereRaw('LOWER(nombre) LIKE ?', ['%placa%'])->first();
@@ -418,9 +419,10 @@ class OrderController extends Controller
         $order->refresh()->load(['patient', 'agreement', 'medicoSolicitante', 'orderExams.exam', 'admissionForm', 'consumables.reagent']);
         $admissionData = $order->admissionForm?->data ?? [];
         $reagents = Reagent::select(['id', 'nombre', 'unidad'])->where('activo', true)->orderBy('nombre')->get();
-        $triageConsumables = $this->triageConsumables($order);
+        $hasContrast = $order->orderExams->contains('tipo_contraste', 'Con contraste');
+        $triageConsumables = $hasContrast ? $this->triageConsumables($order) : [];
 
-        return view('orders.triaje', compact('order', 'admissionData', 'reagents', 'triageConsumables') + ['unidades' => self::UNIDADES]);
+        return view('orders.triaje', compact('order', 'admissionData', 'reagents', 'triageConsumables', 'hasContrast') + ['unidades' => self::UNIDADES]);
     }
 
     private function triageConsumables(Order $order): array
