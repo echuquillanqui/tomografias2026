@@ -14,12 +14,7 @@
     </section>
 
     <div class="card clinic-card">
-        <div class="card-body border-bottom">
-            <form class="row g-2" method="GET">
-                <div class="col-md-10"><input name="search" class="form-control" value="{{ $search }}" placeholder="Buscar por nombre"></div>
-                <div class="col-md-2"><button class="btn btn-outline-primary w-100">Buscar</button></div>
-            </form>
-        </div>
+        @include('catalogs.partials.reactive-search', ['placeholder' => 'Buscar por nombre del médico...'])
         <div class="card-body p-0">
             <table class="table table-hover table-clinic mb-0 align-middle">
                 <thead><tr><th>Nombre</th><th>Órdenes</th><th>Estado</th><th class="text-end">Acciones</th></tr></thead>
