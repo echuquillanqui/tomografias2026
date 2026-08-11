@@ -84,8 +84,8 @@ class TriageIndexTest extends TestCase
             ->assertSee('Tórax')
             ->assertSee('Contraste')
             ->assertSee('Sin contraste')
-            ->assertSee('Fecha del estudio')
-            ->assertSee('07/08/2026')
+            ->assertSee('Placas')
+            ->assertSee('name="plates_count"', false)
             ->assertSee('CONSUMIBLES')
             ->assertSee(route('triajes.index'), false)
             ->assertSee('Guardar consumibles')
@@ -218,8 +218,8 @@ class TriageIndexTest extends TestCase
 
         $this->actingAs($user)->get(route('orders.ficha-ingreso.template', $order))
             ->assertOk()
-            ->assertSee('INSUMOS Y MATERIALES DE USO INTERNO PARA ESTUDIO SIN CONTRASTE')
-            ->assertSee('Campo descartable');
+            ->assertDontSee('INSUMOS Y MATERIALES DE USO INTERNO PARA ESTUDIO SIN CONTRASTE')
+            ->assertDontSee('Campo descartable');
     }
 
 }

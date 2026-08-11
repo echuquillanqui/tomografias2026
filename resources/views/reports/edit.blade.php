@@ -6,11 +6,6 @@
     $patientName = $order->patient->nombres.' '.$order->patient->apellidos;
     $examNames = $order->orderExams->pluck('exam.nombre_examen')->filter()->implode(', ');
     $contrast = $order->orderExams->contains('tipo_contraste', 'Con contraste') ? 'Con contraste endovenoso' : 'Sin contraste';
-    $contenido = $report->contenido;
-    $defaultTechnique = 'Se realizó tomografía computarizada de '.($examNames ?: '[región anatómica]').' mediante adquisición helicoidal/multicorte, con reconstrucciones multiplanares.';
-    $defaultFindings = "Se evalúan las estructuras anatómicas incluidas en el campo de estudio.\n\n[Describir informe tomográfico según el estudio.]";
-    $defaultImpression = "1. [Conclusión principal del estudio.]\n2. [Hallazgo secundario relevante, si existe.]";
-    $defaultRecommendations = '';
 @endphp
 <div class="container">
     <section class="clinic-page-hero mb-4">
@@ -55,13 +50,8 @@
         <div class="row g-4">
             <div class="col-12">
                 <div class="card clinic-card p-4 mb-4">
-                    <div class="row g-3">
+                    <div class="row g-3 justify-content-center">
                         <div class="col-lg-7">
-                            <label class="form-label small fw-bold">Título del informe</label>
-                            <input name="titulo" class="form-control form-control-lg @error('titulo') is-invalid @enderror" value="{{ old('titulo', $report->titulo) }}" placeholder="Ej. TOMOGRAFÍA DE CRÁNEO SIN CONTRASTE" required>
-                            @error('titulo') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                        </div>
-                        <div class="col-lg-5">
                             <label class="form-label small fw-bold">Médico que firmará</label>
                             <select name="medico_firmante_id" class="form-select form-select-lg @error('medico_firmante_id') is-invalid @enderror">
                                 <option value="">Sin médico / firma en blanco</option>
@@ -77,43 +67,6 @@
                 </div>
 
                 <div class="card clinic-card p-4">
-                    <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
-                        <div>
-                            <h5 class="fw-bold mb-1">Campos a completar</h5>
-                            <p class="text-muted mb-0">Redacta solo la información final. Los campos vacíos no aparecerán en el PDF.</p>
-                        </div>
-                        <span class="badge rounded-pill text-bg-light">Plantilla médica</span>
-                    </div>
-                    <div class="report-section-grid">
-                        <div class="report-field">
-                            <label class="form-label small fw-bold">Técnica</label>
-                            <textarea name="tecnica" rows="4" class="form-control report-content-box @error('tecnica') is-invalid @enderror" required>{{ old('tecnica', $report->tecnica ?? $defaultTechnique) }}</textarea>
-                            @error('tecnica') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                        </div>
-                        <div class="report-field">
-                            <label class="form-label small fw-bold">Informe</label>
-                            <textarea name="informe" rows="8" class="form-control report-content-box @error('informe') is-invalid @enderror" required>{{ old('informe', $report->informe ?? $defaultFindings) }}</textarea>
-                            @error('informe') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                        </div>
-                        <div class="report-field">
-                            <label class="form-label small fw-bold">Impresión diagnóstica</label>
-                            <textarea name="impresion" rows="5" class="form-control report-content-box @error('impresion') is-invalid @enderror" required>{{ old('impresion', $report->impresion ?? $defaultImpression) }}</textarea>
-                            @error('impresion') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                        </div>
-                        <div class="report-field">
-                            <label class="form-label small fw-bold">Recomendaciones / notas</label>
-                            <textarea name="recomendaciones" rows="3" class="form-control report-content-box @error('recomendaciones') is-invalid @enderror">{{ old('recomendaciones', $report->recomendaciones ?? $defaultRecommendations) }}</textarea>
-                            @error('recomendaciones') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                        </div>
-                    </div>
-                    <details class="mt-3">
-                        <summary class="text-muted small">Ver contenido original precargado</summary>
-                        <pre class="original-report-preview mt-2 mb-0">{{ $contenido }}</pre>
-                    </details>
-                    <div class="form-text">El PDF mostrará los datos completados con formato de informe médico, amplio y listo para firma; la impresión diagnóstica siempre tendrá una sección visible.</div>
-                </div>
-
-                <div class="card clinic-card p-4 mt-4">
                     <div class="d-flex flex-wrap justify-content-between gap-2 mb-3">
                         <div>
                             <h5 class="fw-bold mb-1">Archivos e imágenes del informe</h5>

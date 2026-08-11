@@ -96,6 +96,7 @@ class OrderController extends Controller
     public function updateTriageConsumables(Request $request, Order $order): RedirectResponse
     {
         $data = $request->validate([
+            'plates_count' => ['nullable', 'integer', 'min:0'],
             'consumables' => ['nullable', 'array'],
             'consumables.*.reagent_id' => ['required', 'integer', 'exists:reagents,id'],
             'consumables.*.cantidad' => ['required', 'numeric', 'min:0'],
@@ -103,6 +104,16 @@ class OrderController extends Controller
 
         DB::transaction(function () use ($order, $data): void {
             $consumables = collect($data['consumables'] ?? []);
+
+            if (array_key_exists('plates_count', $data)) {
+                $plateReagent = Reagent::whereRaw('LOWER(nombre) LIKE ?', ['%placa%'])->first();
+                if ($plateReagent) {
+                    $plateRow = ['reagent_id' => $plateReagent->id, 'cantidad' => (int) ($data['plates_count'] ?? 0)];
+                    $consumables = $consumables
+                        ->reject(fn ($row) => (int) ($row['reagent_id'] ?? 0) === (int) $plateReagent->id)
+                        ->push($plateRow);
+                }
+            }
 
             $order->consumables()->delete();
             foreach ($consumables->filter(fn ($row) => (float) $row['cantidad'] > 0) as $row) {
@@ -113,6 +124,14 @@ class OrderController extends Controller
             }
 
             $this->syncAdmissionPlateQuantity($order);
+            if (array_key_exists('plates_count', $data)) {
+                $admissionData = $order->admissionForm?->data ?? [];
+                $deliveryQuantities = (array) ($admissionData['delivery_quantities'] ?? []);
+                $deliveryQuantities['PLACAS'] = (int) ($data['plates_count'] ?? 0);
+                $admissionData['delivery_quantities'] = $deliveryQuantities;
+                $admissionData['plates_count'] = (int) ($data['plates_count'] ?? 0);
+                $order->admissionForm()->updateOrCreate([], ['data' => $admissionData]);
+            }
         });
 
         return redirect()->route('triajes.index', $request->only(['search', 'date', 'page']))
@@ -122,7 +141,7 @@ class OrderController extends Controller
     private function syncAdmissionPlateQuantity(Order $order): void
     {
         $plateConsumables = $order->consumables()
-            ->whereHas('reagent', fn ($query) => $query->whereRaw('LOWER(TRIM(nombre)) IN (?, ?)', ['placa', 'placas']))
+            ->whereHas('reagent', fn ($query) => $query->whereRaw('LOWER(nombre) LIKE ?', ['%placa%']))
             ->get();
 
         if ($plateConsumables->isEmpty()) {
@@ -315,7 +334,6 @@ class OrderController extends Controller
             'archivo_orden' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png,webp', 'max:10240'],
             'agreement_id' => ['required', 'exists:agreements,id'],
             'medico_solicitante_id' => ['nullable', 'exists:requesting_doctors,id'],
-            'medico_informe_id' => ['nullable', 'exists:users,id'],
             'fecha_orden' => ['required', 'date'],
             'estado' => ['required', Rule::in(self::ESTADOS)],
             'tipo_pago' => ['required', Rule::in(self::TIPOS_PAGO)],
@@ -361,7 +379,7 @@ class OrderController extends Controller
         unset($payload['exams'], $payload['consumables'], $payload['archivo_orden']);
         $order->fill($payload)->save();
         $order->orderExams()->delete();
-        $med = User::find($data['medico_informe_id'] ?? null);
+        $med = $order->medicoInforme;
         $pct = $med?->comision_porcentaje;
         foreach ($data['exams'] as $row) {
             $order->orderExams()->create($row + [
@@ -395,7 +413,7 @@ class OrderController extends Controller
 
     public function triaje(Order $order): View
     {
-        $order->load(['patient', 'agreement', 'medicoSolicitante', 'orderExams.exam', 'admissionForm', 'consumables.reagent']);
+        $order->load(['patient', 'agreement', 'medicoSolicitante', 'medicoInforme', 'orderExams.exam', 'admissionForm', 'consumables.reagent']);
         $this->syncPrintableDocuments($order);
         $order->refresh()->load(['patient', 'agreement', 'medicoSolicitante', 'orderExams.exam', 'admissionForm', 'consumables.reagent']);
         $admissionData = $order->admissionForm?->data ?? [];
@@ -499,10 +517,10 @@ class OrderController extends Controller
 
     public function fichaIngresoTemplate(Order $order): View
     {
-        $order->load(['patient', 'agreement', 'medicoSolicitante', 'orderExams.exam', 'admissionForm']);
+        $order->load(['patient', 'agreement', 'medicoSolicitante', 'medicoInforme', 'orderExams.exam', 'admissionForm']);
         $this->syncPrintableDocuments($order);
         $this->syncAdmissionPlateQuantity($order);
-        $order->refresh()->load(['patient', 'agreement', 'medicoSolicitante', 'orderExams.exam', 'admissionForm', 'consumables.reagent']);
+        $order->refresh()->load(['patient', 'agreement', 'medicoSolicitante', 'medicoInforme', 'orderExams.exam', 'admissionForm', 'consumables.reagent']);
         $admissionData = $order->admissionForm?->data ?? [];
         $hasContrast = $order->orderExams->contains('tipo_contraste', 'Con contraste');
         $contrastConsumables = $this->triageConsumables($order);
@@ -584,16 +602,29 @@ class OrderController extends Controller
             }
             $this->syncAdmissionPlateQuantity($order);
         }
+        if (array_key_exists('plates_count', $data) && $data['plates_count'] !== null) {
+            $plateReagent = Reagent::whereRaw('LOWER(nombre) LIKE ?', ['%placa%'])->first();
+            if ($plateReagent) {
+                if ((int) $data['plates_count'] > 0) {
+                    $order->consumables()->updateOrCreate(
+                        ['reagent_id' => $plateReagent->id],
+                        ['cantidad' => (int) $data['plates_count']]
+                    );
+                } else {
+                    $order->consumables()->where('reagent_id', $plateReagent->id)->delete();
+                }
+            }
+        }
 
         return redirect()->route('orders.ficha-ingreso.template', $order)->with('success', 'Ficha de ingreso guardada correctamente.');
     }
 
     public function fichaIngresoPdf(Order $order)
     {
-        $order->load(['patient', 'agreement', 'medicoSolicitante', 'orderExams.exam', 'admissionForm']);
+        $order->load(['patient', 'agreement', 'medicoSolicitante', 'medicoInforme', 'orderExams.exam', 'admissionForm']);
         $this->syncPrintableDocuments($order);
         $this->syncAdmissionPlateQuantity($order);
-        $order->refresh()->load(['patient', 'agreement', 'medicoSolicitante', 'orderExams.exam', 'admissionForm', 'consumables.reagent']);
+        $order->refresh()->load(['patient', 'agreement', 'medicoSolicitante', 'medicoInforme', 'orderExams.exam', 'admissionForm', 'consumables.reagent']);
         $admissionData = $order->admissionForm?->data ?? [];
         $hasContrast = $order->orderExams->contains('tipo_contraste', 'Con contraste');
         $contrastConsumables = $this->triageConsumables($order);

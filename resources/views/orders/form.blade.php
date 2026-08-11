@@ -125,15 +125,6 @@
                                 </select>
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label small fw-bold">MÉDICO INFORMANTE</label>
-                                <select name="medico_informe_id" class="form-select js-tom-select" data-placeholder="Buscar médico informante">
-                                    <option value=""></option>
-                                    @foreach($medicosInformantes as $m)
-                                        <option value="{{ $m->id }}" @selected(old('medico_informe_id', $order->medico_informe_id) == $m->id)>{{ $m->nombre_completo }} ({{ $m->comision_porcentaje ?? 0 }}%)</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                            <div class="col-md-6">
                                 <label class="form-label small fw-bold">ARCHIVO DE ORDEN</label>
                                 <input name="archivo_orden" type="file" class="form-control" accept=".pdf,.jpg,.jpeg,.png,.webp">
                                 @if($order->archivo_orden_path)<div class="form-text">Archivo cargado: {{ basename($order->archivo_orden_path) }}</div>@endif
