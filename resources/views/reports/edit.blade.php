@@ -48,7 +48,7 @@
         </div>
     </section>
 
-    <form method="POST" action="{{ route('reports.update', $order) }}" class="report-editor">
+    <form method="POST" action="{{ route('reports.update', $order) }}" class="report-editor" enctype="multipart/form-data">
         @csrf
         @method('PUT')
 
@@ -113,6 +113,37 @@
                     <div class="form-text">El PDF mostrará los datos completados con formato de informe médico, amplio y listo para firma; la impresión diagnóstica siempre tendrá una sección visible.</div>
                 </div>
 
+                <div class="card clinic-card p-4 mt-4">
+                    <div class="d-flex flex-wrap justify-content-between gap-2 mb-3">
+                        <div>
+                            <h5 class="fw-bold mb-1">Archivos e imágenes del informe</h5>
+                            <p class="text-muted mb-0">Adjunta todos los PDF o imágenes que necesites. Las imágenes se reducen y convierten automáticamente a un formato optimizado.</p>
+                        </div>
+                        <span class="badge rounded-pill text-bg-light">PDF, JPG, PNG o WebP · 20 MB c/u</span>
+                    </div>
+                    <label class="form-label small fw-bold" for="reportAttachments">Seleccionar archivos</label>
+                    <input id="reportAttachments" type="file" name="adjuntos[]" class="form-control @error('adjuntos.*') is-invalid @enderror" accept="application/pdf,image/jpeg,image/png,image/webp" multiple>
+                    @error('adjuntos.*') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                    <div class="form-text">Puedes volver a seleccionar más archivos cada vez que guardes el informe; no existe un límite de cantidad.</div>
+
+                    @if($report->attachments->isNotEmpty())
+                        <div class="report-attachment-list mt-4">
+                            @foreach($report->attachments as $attachment)
+                                <div class="report-attachment-item">
+                                    <div>
+                                        <strong class="d-block">{{ $attachment->original_name }}</strong>
+                                        <small class="text-muted">{{ str_starts_with($attachment->mime_type, 'image/') ? 'Imagen optimizada' : 'Documento PDF' }} · {{ number_format($attachment->stored_size / 1024, 1) }} KB</small>
+                                    </div>
+                                    <div class="d-flex gap-2">
+                                        <a class="btn btn-sm btn-outline-primary" href="{{ route('reports.attachments.download', [$order, $attachment]) }}">Descargar</a>
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" form="delete-attachment-{{ $attachment->id }}" onclick="return confirm('¿Eliminar este archivo?')">Eliminar</button>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    @endif
+                </div>
+
                 <div class="d-flex justify-content-end gap-2 mt-4">
                     <a class="btn btn-outline-secondary" href="{{ route('reports.index') }}">Cancelar</a>
                     <button class="btn btn-clinic-primary px-4">Guardar informe</button>
@@ -120,6 +151,12 @@
             </div>
         </div>
     </form>
+    @foreach($report->attachments as $attachment)
+        <form id="delete-attachment-{{ $attachment->id }}" method="POST" action="{{ route('reports.attachments.destroy', [$order, $attachment]) }}" class="d-none">
+            @csrf
+            @method('DELETE')
+        </form>
+    @endforeach
 </div>
 
 @push('scripts')
@@ -137,6 +174,9 @@
     .report-content-box { background: linear-gradient(#ffffff, #fbfdff); border: 1px solid #cbd5e1; border-radius: 14px; box-shadow: inset 0 1px 2px rgba(15, 23, 42, .04); font-size: 1rem; line-height: 1.65; padding: 1rem; }
     .report-content-box:focus { border-color: #14b8a6; box-shadow: 0 0 0 .25rem rgba(20, 184, 166, .12); }
     .original-report-preview { background: #0f172a; border-radius: 14px; color: #e2e8f0; max-height: 260px; overflow: auto; padding: 1rem; white-space: pre-wrap; }
+    .report-attachment-list { display: grid; gap: .75rem; }
+    .report-attachment-item { align-items: center; background: #f8fafc; border: 1px solid #e5edf5; border-radius: 14px; display: flex; gap: 1rem; justify-content: space-between; padding: .85rem 1rem; }
+    @media (max-width: 575.98px) { .report-attachment-item { align-items: stretch; flex-direction: column; } }
 </style>
 @endpush
 @endsection
