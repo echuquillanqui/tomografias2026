@@ -69,4 +69,32 @@ class ExamCatalogTest extends TestCase
         $this->assertDatabaseHas('exam_reagent', ['exam_id' => $exam->id, 'reagent_id' => $reagent->id, 'tipo_contraste' => 'Sin contraste', 'cantidad_estimada' => 1]);
         $this->assertDatabaseHas('exam_reagent', ['exam_id' => $exam->id, 'reagent_id' => $reagent->id, 'tipo_contraste' => 'Con contraste', 'cantidad_estimada' => 2]);
     }
+
+    public function test_all_consumable_blocks_are_saved_from_the_form_snapshot(): void
+    {
+        $user = User::create(['username' => 'tester', 'email' => 'tester@example.com', 'password' => 'password']);
+        $shared = Reagent::create(['nombre' => 'Guantes', 'unidad' => 'par', 'stock_actual' => 10, 'stock_minimo' => 1, 'activo' => true]);
+        $without = Reagent::create(['nombre' => 'Placa', 'unidad' => 'unidad', 'stock_actual' => 10, 'stock_minimo' => 1, 'activo' => true]);
+        $with = Reagent::create(['nombre' => 'Jeringa', 'unidad' => 'unidad', 'stock_actual' => 10, 'stock_minimo' => 1, 'activo' => true]);
+
+        $payload = json_encode([
+            ['reagent_id' => (string) $shared->id, 'nombre' => '', 'cantidad_estimada' => '1', 'tipo_contraste' => 'Ambos'],
+            ['reagent_id' => (string) $without->id, 'nombre' => '', 'cantidad_estimada' => '2', 'tipo_contraste' => 'Sin contraste'],
+            ['reagent_id' => (string) $with->id, 'nombre' => '', 'cantidad_estimada' => '3', 'tipo_contraste' => 'Con contraste'],
+        ], JSON_THROW_ON_ERROR);
+
+        $this->actingAs($user)->post(route('exams.store'), [
+            'nombre_examen' => 'TEM Tórax',
+            'tipo_contraste' => 'Ambos',
+            'activo' => '1',
+            'reagents' => [], // Dynamic controls may be omitted by the browser.
+            'reagents_payload' => $payload,
+        ])->assertRedirect(route('exams.index'));
+
+        $exam = Exam::where('nombre_examen', 'TEM Tórax')->firstOrFail();
+        $this->assertDatabaseHas('exam_reagent', ['exam_id' => $exam->id, 'reagent_id' => $shared->id, 'tipo_contraste' => 'Ambos', 'cantidad_estimada' => 1]);
+        $this->assertDatabaseHas('exam_reagent', ['exam_id' => $exam->id, 'reagent_id' => $without->id, 'tipo_contraste' => 'Sin contraste', 'cantidad_estimada' => 2]);
+        $this->assertDatabaseHas('exam_reagent', ['exam_id' => $exam->id, 'reagent_id' => $with->id, 'tipo_contraste' => 'Con contraste', 'cantidad_estimada' => 3]);
+        $this->assertDatabaseCount('exam_reagent', 3);
+    }
 }

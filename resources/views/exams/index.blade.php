@@ -25,6 +25,16 @@
                     field(row, name) {
                         return `reagents[${row.key}][${name}]`;
                     },
+                    payload() {
+                        return JSON.stringify(Object.entries(this.rows).flatMap(([tipo_contraste, rows]) =>
+                            rows.map(({ reagent_id, nombre, cantidad_estimada }) => ({
+                                reagent_id,
+                                nombre,
+                                cantidad_estimada,
+                                tipo_contraste,
+                            }))
+                        ));
+                    },
                 }));
             });
         </script>

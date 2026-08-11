@@ -61,6 +61,17 @@ class ExamController extends Controller
 
     private function validatedData(Request $request, ?Exam $exam = null): array
     {
+        $payload = $request->input('reagents_payload');
+        if (is_string($payload) && $payload !== '') {
+            $decoded = json_decode($payload, true);
+            if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                // Alpine owns the rows displayed in the three blocks. Taking its
+                // snapshot avoids losing rows excluded by disabled fieldsets or
+                // dynamic browser controls when the form is submitted.
+                $request->merge(['reagents' => $decoded]);
+            }
+        }
+
         $request->merge(['nombre_examen' => trim((string) $request->input('nombre_examen'))]);
 
         $data = $request->validate([
@@ -72,6 +83,7 @@ class ExamController extends Controller
             ],
             'tipo_contraste' => ['required', Rule::in(self::CONTRASTES)],
             'activo' => ['nullable', 'boolean'],
+            'reagents_payload' => ['nullable', 'json'],
             'reagents' => ['nullable', 'array'],
             'reagents.*.reagent_id' => ['nullable', 'exists:reagents,id'],
             'reagents.*.nombre' => ['nullable', 'string', 'max:255'],
