@@ -21,8 +21,7 @@ class ReportAttachmentStorage
         $directory = 'reportes/'.$report->id;
 
         if (str_starts_with($mime, 'image/')) {
-            [$contents, $extension, $storedMime] = $this->optimizeImage($file);
-            $compressed = true;
+            [$contents, $extension, $storedMime, $compressed] = $this->optimizeImage($file, $mime);
         } else {
             $raw = file_get_contents($file->getRealPath());
             if ($raw === false) {
@@ -54,11 +53,22 @@ class ReportAttachmentStorage
         }
     }
 
-    /** @return array{string, string, string} */
-    private function optimizeImage(UploadedFile $file): array
+    /** @return array{string, string, string, bool} */
+    protected function optimizeImage(UploadedFile $file, string $mime): array
     {
         $sourceData = file_get_contents($file->getRealPath());
-        $source = $sourceData === false ? false : imagecreatefromstring($sourceData);
+
+        if ($sourceData === false) {
+            throw new RuntimeException('La imagen adjunta no pudo ser procesada.');
+        }
+
+        // GD is not enabled in every PHP installation (notably some XAMPP
+        // setups). Keep uploads working there and optimize when it is present.
+        if (! $this->canOptimizeImages()) {
+            return [$sourceData, $this->extensionForMime($mime), $mime, false];
+        }
+
+        $source = imagecreatefromstring($sourceData);
 
         if ($source === false) {
             throw new RuntimeException('La imagen adjunta no pudo ser procesada.');
@@ -92,6 +102,22 @@ class ReportAttachmentStorage
             throw new RuntimeException('La imagen adjunta no pudo ser optimizada.');
         }
 
-        return [$contents, $extension, $mime];
+        return [$contents, $extension, $mime, true];
+    }
+
+    protected function canOptimizeImages(): bool
+    {
+        return function_exists('imagecreatefromstring')
+            && (function_exists('imagewebp') || function_exists('imagejpeg'));
+    }
+
+    private function extensionForMime(string $mime): string
+    {
+        return match ($mime) {
+            'image/jpeg' => 'jpg',
+            'image/png' => 'png',
+            'image/webp' => 'webp',
+            default => 'img',
+        };
     }
 }
