@@ -6,6 +6,7 @@ use App\Models\Exam;
 use App\Models\Reagent;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
@@ -75,6 +76,7 @@ class ExamController extends Controller
             'reagents.*.reagent_id' => ['nullable', 'exists:reagents,id'],
             'reagents.*.nombre' => ['nullable', 'string', 'max:255'],
             'reagents.*.cantidad_estimada' => ['nullable', 'numeric', 'min:0.01'],
+            'reagents.*.tipo_contraste' => ['nullable', Rule::in(self::CONTRASTES)],
         ]);
         $data['activo'] = $request->boolean('activo');
 
@@ -101,10 +103,25 @@ class ExamController extends Controller
             }
 
             if (! empty($reagentId)) {
-                $sync[$reagentId] = ['cantidad_estimada' => $row['cantidad_estimada']];
+                $contrast = $exam->tipo_contraste === 'Ambos'
+                    ? ($row['tipo_contraste'] ?? 'Ambos')
+                    : $exam->tipo_contraste;
+                $sync[$reagentId.'|'.$contrast] = [
+                    'exam_id' => $exam->id,
+                    'reagent_id' => $reagentId,
+                    'tipo_contraste' => $contrast,
+                    'cantidad_estimada' => $row['cantidad_estimada'],
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ];
             }
         }
 
-        $exam->reagents()->sync($sync);
+        DB::transaction(function () use ($exam, $sync) {
+            DB::table('exam_reagent')->where('exam_id', $exam->id)->delete();
+            if ($sync !== []) {
+                DB::table('exam_reagent')->insert(array_values($sync));
+            }
+        });
     }
 }

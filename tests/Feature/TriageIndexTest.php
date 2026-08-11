@@ -140,4 +140,22 @@ class TriageIndexTest extends TestCase
             ->assertSee('3');
     }
 
+    public function test_triaje_only_preloads_consumables_for_the_selected_contrast(): void
+    {
+        $user = User::create(['username' => 'tester4', 'email' => 'tester4@example.com', 'password' => 'password']);
+        $patient = Patient::create(['dni' => '45678913', 'nombres' => 'Rosa', 'apellidos' => 'Díaz']);
+        $agreement = Agreement::create(['nombre_institucion' => 'Particular', 'activo' => true]);
+        $exam = Exam::create(['nombre_examen' => 'TEM Abdomen', 'tipo_contraste' => 'Ambos', 'activo' => true]);
+        $reagent = Reagent::create(['nombre' => 'Jeringa', 'unidad' => 'unidad', 'stock_actual' => 10, 'stock_minimo' => 1, 'activo' => true]);
+        $exam->reagents()->attach($reagent->id, ['cantidad_estimada' => 1, 'tipo_contraste' => 'Sin contraste']);
+        $exam->reagents()->attach($reagent->id, ['cantidad_estimada' => 2, 'tipo_contraste' => 'Con contraste']);
+        $order = Order::create(['codigo_orden' => 'ORD-CON-CONTRASTE', 'patient_id' => $patient->id, 'agreement_id' => $agreement->id, 'fecha_orden' => '2026-08-07 09:00:00', 'estado' => 'Pendiente']);
+        $order->orderExams()->create(['exam_id' => $exam->id, 'tipo_contraste' => 'Con contraste', 'precio' => 100]);
+
+        $response = $this->actingAs($user)->get(route('orders.triaje', $order));
+
+        $response->assertOk();
+        $this->assertSame(2.0, $response->viewData('triageConsumables')[0]['cantidad']);
+    }
+
 }
