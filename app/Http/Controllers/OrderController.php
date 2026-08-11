@@ -34,6 +34,7 @@ class OrderController extends Controller
     public function index(Request $request): View
     {
         $search = trim((string) $request->query('search'));
+        $allDates = $search !== '' && $request->boolean('all_dates');
         $date = (string) $request->query('date', now()->toDateString());
         if (! Carbon::hasFormat($date, 'Y-m-d')) {
             $date = now()->toDateString();
@@ -42,7 +43,7 @@ class OrderController extends Controller
         $searchTerms = preg_split('/\s+/', $search, -1, PREG_SPLIT_NO_EMPTY);
         $orders = Order::with(['patient', 'agreement', 'medicoSolicitante', 'medicoInforme'])
             ->withCount('orderExams')
-            ->whereDate('fecha_orden', $date)
+            ->when(! $allDates, fn ($query) => $query->whereDate('fecha_orden', $date))
             ->when($searchTerms !== [], function ($query) use ($searchTerms) {
                 foreach ($searchTerms as $term) {
                     $query->where(fn ($q) => $q
@@ -61,6 +62,7 @@ class OrderController extends Controller
             'orders' => $orders,
             'search' => $search,
             'date' => $date,
+            'allDates' => $allDates,
             'estados' => self::ESTADOS,
             'tiposPago' => self::TIPOS_PAGO,
             'tiposComprobante' => self::TIPOS_COMPROBANTE,
@@ -72,13 +74,14 @@ class OrderController extends Controller
     public function triajesIndex(Request $request): View
     {
         $search = trim((string) $request->query('search'));
+        $allDates = $search !== '' && $request->boolean('all_dates');
         $date = (string) $request->query('date', now()->toDateString());
         if (! Carbon::hasFormat($date, 'Y-m-d')) {
             $date = now()->toDateString();
         }
 
         $orders = Order::with(['patient', 'orderExams.exam'])
-            ->whereDate('fecha_orden', $date)
+            ->when(! $allDates, fn ($query) => $query->whereDate('fecha_orden', $date))
             ->when($search !== '', fn ($query) => $query->where(function ($query) use ($search) {
                 $query->where('codigo_orden', 'like', "%{$search}%")
                     ->orWhereHas('patient', fn ($patient) => $patient
@@ -90,7 +93,7 @@ class OrderController extends Controller
             ->paginate(10)
             ->withQueryString();
 
-        return view('orders.triajes-index', compact('orders', 'search', 'date'));
+        return view('orders.triajes-index', compact('orders', 'search', 'date', 'allDates'));
     }
 
     public function updateTriageConsumables(Request $request, Order $order): RedirectResponse

@@ -68,6 +68,30 @@ class TriageIndexTest extends TestCase
             ->assertDontSee('Guardar consumibles');
     }
 
+    public function test_index_can_search_a_patient_across_all_dates(): void
+    {
+        $user = User::create(['username' => 'global-search', 'email' => 'global@example.com', 'password' => 'password']);
+        $patient = Patient::create(['dni' => '87654321', 'nombres' => 'Lucía', 'apellidos' => 'Mendoza']);
+        $agreement = Agreement::create(['nombre_institucion' => 'Particular', 'activo' => true]);
+        Order::create([
+            'codigo_orden' => 'ORD-HISTORICA',
+            'patient_id' => $patient->id,
+            'agreement_id' => $agreement->id,
+            'fecha_orden' => '2025-02-03 09:00:00',
+            'estado' => 'Pendiente',
+        ]);
+
+        $this->actingAs($user)->get(route('triajes.index', [
+            'date' => '2026-08-07',
+            'search' => 'Lucía',
+            'all_dates' => 1,
+        ]))
+            ->assertOk()
+            ->assertSee('ORD-HISTORICA')
+            ->assertSee('Buscar en todas las fechas')
+            ->assertSee('checked', false);
+    }
+
     public function test_without_contrast_template_only_shows_patient_study_and_plate_field(): void
     {
         $user = User::create(['username' => 'tester', 'email' => 'tester@example.com', 'password' => 'password']);
