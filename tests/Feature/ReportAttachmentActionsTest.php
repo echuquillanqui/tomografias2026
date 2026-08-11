@@ -122,6 +122,49 @@ class ReportAttachmentActionsTest extends TestCase
             ->assertSee('btn-success', false);
     }
 
+    public function test_report_index_displays_progress_when_only_a_file_is_uploaded(): void
+    {
+        Storage::fake('local');
+        [$user] = $this->records('reportes/1/scan.pdf', 'application/pdf', '%PDF-test');
+
+        $this->actingAs($user)->get(route('reports.index'))
+            ->assertOk()
+            ->assertSee('class="badge report-status report-status-progress">EN PROCESO</span>', false);
+    }
+
+    public function test_report_index_displays_progress_when_only_a_doctor_is_selected(): void
+    {
+        Storage::fake('local');
+        [$user, $order] = $this->records('reportes/1/scan.pdf', 'application/pdf', '%PDF-test');
+        $order->report->attachments()->delete();
+        $order->report->update(['medico_firmante_id' => $user->id]);
+
+        $this->actingAs($user)->get(route('reports.index'))
+            ->assertOk()
+            ->assertSee('class="badge report-status report-status-progress">EN PROCESO</span>', false);
+    }
+
+    public function test_report_index_displays_pending_or_informed_based_on_completion(): void
+    {
+        Storage::fake('local');
+        [$user, $completeOrder] = $this->records('reportes/1/scan.pdf', 'application/pdf', '%PDF-test');
+        $completeOrder->report->update(['medico_firmante_id' => $user->id]);
+
+        $pendingPatient = Patient::create(['dni' => '87654321', 'nombres' => 'Luis', 'apellidos' => 'Ramos']);
+        Order::create([
+            'codigo_orden' => 'ORD-PENDING',
+            'patient_id' => $pendingPatient->id,
+            'agreement_id' => $completeOrder->agreement_id,
+            'fecha_orden' => now()->subMinute(),
+            'estado' => 'Pendiente',
+        ]);
+
+        $this->actingAs($user)->get(route('reports.index'))
+            ->assertOk()
+            ->assertSee('class="badge report-status report-status-pending">PENDIENTE</span>', false)
+            ->assertSee('class="badge report-status report-status-complete">INFORMADO</span>', false);
+    }
+
     public function test_report_index_pdf_button_opens_attachment_modal_with_inline_preview(): void
     {
         Storage::fake('local');
