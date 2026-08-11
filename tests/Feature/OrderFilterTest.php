@@ -66,6 +66,25 @@ class OrderFilterTest extends TestCase
             ->assertDontSee('ORD-002');
     }
 
+    public function test_global_search_finds_patient_without_restricting_the_date(): void
+    {
+        Carbon::setTestNow('2026-08-07 10:00:00');
+        [$user, $agreement] = $this->baseRecords();
+        $matched = Patient::create(['dni' => '44556677', 'nombres' => 'María Elena', 'apellidos' => 'Pérez Salazar']);
+        $other = Patient::create(['dni' => '11223344', 'nombres' => 'Carlos', 'apellidos' => 'Quispe']);
+
+        $this->order($matched, $agreement, 'ORD-ANTIGUA', '2025-01-10 08:00:00');
+        $this->order($other, $agreement, 'ORD-HOY', '2026-08-07 09:00:00');
+
+        $this->actingAs($user)->get(route('orders.index', ['search' => 'María Pérez', 'all_dates' => 1]))
+            ->assertOk()
+            ->assertSee('ORD-ANTIGUA')
+            ->assertDontSee('ORD-HOY')
+            ->assertSee('Buscar en todas las fechas')
+            ->assertSee('name="all_dates"', false)
+            ->assertSee('checked', false);
+    }
+
     private function baseRecords(): array
     {
         $user = User::create([
