@@ -423,7 +423,7 @@ function orderSystem() {
                     if (!value) return;
                     const item = this.$el.querySelector('#item_select').tomselect.options[value];
                     if (!this.cart.find((cartItem) => cartItem.name === item.name)) {
-                        const contrast = 'Sin contraste';
+                        const contrast = this.defaultContrastFor(item.name);
                         const variant = this.examVariantFor(item, contrast);
                         this.cart.push({ ...item, ...variant, type: 'exam', tipo_contraste: contrast, estado: 'Pendiente', price: this.priceFor(variant.id, contrast) });
                         this.rebuildConsumablesFromExams();
@@ -576,6 +576,11 @@ function orderSystem() {
             const match = this.agreementPrices.find((price) => price.agreement_id === String(this.selectedAgreement) && price.exam_id === String(examId) && price.tipo_contraste === contrast);
             return match ? Number(match.price) : 0;
         },
+        defaultContrastFor(examName) {
+            return this.exams.some((exam) => exam.name === examName && this.isExamAllowed(exam.id, 'Sin contraste'))
+                ? 'Sin contraste'
+                : 'Con contraste';
+        },
         preloadConsumablesFromCart(force = false) {
             if (!force && this.consumables.length > 0) return;
             this.rebuildConsumablesFromExams();
@@ -624,7 +629,14 @@ function orderSystem() {
             );
         },
         availableExams() {
-            return this.exams.filter((exam) => this.isExamAllowed(exam.id));
+            const names = new Set();
+
+            return this.exams.filter((exam) => {
+                if (!this.isExamAllowed(exam.id) || names.has(exam.name)) return false;
+                names.add(exam.name);
+
+                return true;
+            });
         },
         refreshExamOptions() {
             if (!this.itemSelect) return;

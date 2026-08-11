@@ -16,11 +16,13 @@
                 </div>
                 <div class="col-md-5">
                     <label class="form-label">Tipo contraste</label>
+                    @php($selectedContrast = old('tipo_contraste', $e?->tipo_contraste ?? 'Ambos'))
                     <select name="tipo_contraste" class="form-select">
                         @foreach($contrastes as $c)
-                            <option @selected(old('tipo_contraste', $e?->tipo_contraste) === $c)>{{ $c }}</option>
+                            <option @selected($selectedContrast === $c)>{{ $c }}</option>
                         @endforeach
                     </select>
+                    <div class="form-text">Selecciona “Ambos” si el estudio puede realizarse con o sin contraste. No es necesario registrar el mismo examen dos veces.</div>
                 </div>
                 <div class="col-12">
                     <div class="clinic-section-box p-3">
