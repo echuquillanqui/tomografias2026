@@ -3,10 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Models\Order;
+use App\Models\OrderReportAttachment;
 use App\Models\User;
+use App\Services\ReportAttachmentStorage;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
@@ -33,11 +36,11 @@ class ReportController extends Controller
 
     public function edit(Order $order): View
     {
-        $order->load(['patient', 'agreement', 'medicoSolicitante', 'medicoInforme', 'orderExams.exam', 'report']);
+        $order->load(['patient', 'agreement', 'medicoSolicitante', 'medicoInforme', 'orderExams.exam', 'report.attachments']);
         $this->ensureReport($order);
 
         return view('reports.edit', [
-            'order' => $order->fresh(['patient', 'agreement', 'medicoSolicitante', 'medicoInforme', 'orderExams.exam', 'report']),
+            'order' => $order->fresh(['patient', 'agreement', 'medicoSolicitante', 'medicoInforme', 'orderExams.exam', 'report.attachments']),
             'medicosInformantes' => $this->medicosInformantes(),
         ]);
     }
@@ -51,16 +54,23 @@ class ReportController extends Controller
             'impresion' => ['required', 'string'],
             'recomendaciones' => ['nullable', 'string'],
             'medico_firmante_id' => ['nullable', 'exists:users,id'],
+            'adjuntos' => ['nullable', 'array'],
+            'adjuntos.*' => ['file', 'mimes:pdf,jpg,jpeg,png,webp', 'max:20480'],
         ]);
 
         $data['contenido'] = $this->composeReportContent($data);
 
 
         $order->update(['medico_informe_id' => $data['medico_firmante_id']]);
-        $order->report()->updateOrCreate(
+        $report = $order->report()->updateOrCreate(
             ['order_id' => $order->id],
-            $data
+            collect($data)->except('adjuntos')->all()
         );
+
+        $storage = app(ReportAttachmentStorage::class);
+        foreach ($request->file('adjuntos', []) as $file) {
+            $storage->store($report, $file);
+        }
 
         return redirect()->route('reports.edit', $order)->with('success', 'Informe actualizado correctamente.');
     }
@@ -72,6 +82,37 @@ class ReportController extends Controller
         $order->load('report.medicoFirmante');
 
         return Pdf::loadView('reports.pdf', ['order' => $order, 'setting' => \App\Models\SystemSetting::current()])->stream('informe-orden-'.$order->id.'.pdf');
+    }
+
+    public function downloadAttachment(Order $order, OrderReportAttachment $attachment)
+    {
+        abort_unless($attachment->report()->where('order_id', $order->id)->exists(), 404);
+        abort_unless(Storage::disk('local')->exists($attachment->stored_name), 404);
+
+        $path = Storage::disk('local')->path($attachment->stored_name);
+
+        if (str_ends_with($attachment->stored_name, '.gz')) {
+            return response()->streamDownload(function () use ($path) {
+                $handle = gzopen($path, 'rb');
+                while ($handle !== false && ! gzeof($handle)) {
+                    echo gzread($handle, 8192);
+                }
+                if ($handle !== false) {
+                    gzclose($handle);
+                }
+            }, $attachment->original_name, ['Content-Type' => $attachment->mime_type]);
+        }
+
+        return response()->download($path, $attachment->original_name, ['Content-Type' => $attachment->mime_type]);
+    }
+
+    public function destroyAttachment(Order $order, OrderReportAttachment $attachment): RedirectResponse
+    {
+        abort_unless($attachment->report()->where('order_id', $order->id)->exists(), 404);
+        Storage::disk('local')->delete($attachment->stored_name);
+        $attachment->delete();
+
+        return redirect()->route('reports.edit', $order)->with('success', 'Archivo adjunto eliminado correctamente.');
     }
 
     private function composeReportContent(array $data): string
