@@ -340,14 +340,11 @@ class OrderController extends Controller
         }
 
         $order->consumables()->delete();
-        $hasContrastedExam = collect($data['exams'])->contains(fn ($row) => ($row['tipo_contraste'] ?? null) === 'Con contraste');
-        if ($hasContrastedExam) {
-            foreach (collect($data['consumables'] ?? [])->filter(fn ($row) => (float) ($row['cantidad'] ?? 0) > 0) as $row) {
-                $order->consumables()->updateOrCreate(
-                    ['reagent_id' => $row['reagent_id']],
-                    ['cantidad' => $row['cantidad']]
-                );
-            }
+        foreach (collect($data['consumables'] ?? [])->filter(fn ($row) => (float) ($row['cantidad'] ?? 0) > 0) as $row) {
+            $order->consumables()->updateOrCreate(
+                ['reagent_id' => $row['reagent_id']],
+                ['cantidad' => $row['cantidad']]
+            );
         }
 
         $order->load(['patient', 'agreement', 'medicoSolicitante', 'orderExams.exam']);
@@ -382,7 +379,6 @@ class OrderController extends Controller
         }
 
         return $order->orderExams
-            ->filter(fn ($orderExam) => $orderExam->tipo_contraste === 'Con contraste')
             ->flatMap(fn ($orderExam) => $orderExam->exam?->reagents ?? collect())
             ->groupBy('id')
             ->map(fn ($reagents) => [

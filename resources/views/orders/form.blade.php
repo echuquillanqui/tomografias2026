@@ -226,8 +226,8 @@
 
                             <div class="tab-pane fade" id="consumables-pane" role="tabpanel" aria-labelledby="consumables-tab" tabindex="0">
                                 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
-                                    <div class="alert alert-info py-2 small mb-0 flex-grow-1">Los consumibles configurados solo se precargan cuando el examen está marcado con contraste. Si cambias a sin contraste, se retiran de la orden.</div>
-                                    <button type="button" class="btn btn-sm btn-outline-primary" @click="preloadConsumablesFromCart(true)">Precargar desde exámenes con contraste</button>
+                                    <div class="alert alert-info py-2 small mb-0 flex-grow-1">Los consumibles configurados para cada examen se precargan sin depender del tipo de contraste. Puedes ajustar las cantidades antes de guardar.</div>
+                                    <button type="button" class="btn btn-sm btn-outline-primary" @click="preloadConsumablesFromCart(true)">Precargar desde exámenes</button>
                                 </div>
                                 <div class="row g-2 mb-3">
                                     <div class="col-8">
@@ -423,7 +423,7 @@ function orderSystem() {
                     const item = this.$el.querySelector('#item_select').tomselect.options[value];
                     if (!this.cart.find((cartItem) => cartItem.uid === item.uid)) {
                         this.cart.push({ ...item, type: 'exam', tipo_contraste: 'Sin contraste', estado: 'Pendiente', price: this.priceFor(item.id, 'Sin contraste') });
-                        this.rebuildConsumablesFromContrastedExams();
+                        this.rebuildConsumablesFromExams();
                     }
                     this.$el.querySelector('#item_select').tomselect.clear();
                 }
@@ -549,12 +549,12 @@ function orderSystem() {
             const index = this.cart.findIndex((item) => item.uid === uid);
             if (index !== -1) {
                 this.cart.splice(index, 1);
-                this.rebuildConsumablesFromContrastedExams();
+                this.rebuildConsumablesFromExams();
             }
         },
         handleContrastChange(item) {
             item.price = this.priceFor(item.id, item.tipo_contraste);
-            this.rebuildConsumablesFromContrastedExams();
+            this.rebuildConsumablesFromExams();
         },
         priceFor(examId, contrast) {
             const match = this.agreementPrices.find((price) => price.agreement_id === String(this.selectedAgreement) && price.exam_id === String(examId) && price.tipo_contraste === contrast);
@@ -562,7 +562,7 @@ function orderSystem() {
         },
         preloadConsumablesFromCart(force = false) {
             if (!force && this.consumables.length > 0) return;
-            this.rebuildConsumablesFromContrastedExams();
+            this.rebuildConsumablesFromExams();
         },
         addConsumable() {
             const reagent = this.reagents.find((item) => item.id === String(this.selectedReagent));
@@ -572,10 +572,9 @@ function orderSystem() {
             else this.consumables.push({ reagent_id: reagent.id, name: reagent.name, unit: reagent.unit, cantidad: 1 });
             this.selectedReagent = '';
         },
-        rebuildConsumablesFromContrastedExams() {
+        rebuildConsumablesFromExams() {
             const totals = new Map();
             this.cart
-                .filter((item) => item.tipo_contraste === 'Con contraste')
                 .forEach((item) => {
                     (this.examConsumables[String(item.id)] || []).forEach((row) => {
                         const current = totals.get(row.reagent_id) || { ...row, cantidad: 0 };
@@ -586,14 +585,14 @@ function orderSystem() {
             this.consumables = Array.from(totals.values()).filter((row) => Number(row.cantidad || 0) > 0);
         },
         mergeExamConsumables(examId) {
-            this.rebuildConsumablesFromContrastedExams();
+            this.rebuildConsumablesFromExams();
         },
         applyAgreementPrices() {
             this.cart = this.cart
                 .filter((item) => this.isExamAllowed(item.id))
                 .map((item) => ({ ...item, price: this.priceFor(item.id, item.tipo_contraste) }));
             this.refreshExamOptions();
-            this.rebuildConsumablesFromContrastedExams();
+            this.rebuildConsumablesFromExams();
         },
         allowedExamIds() {
             return new Set(this.agreementPrices

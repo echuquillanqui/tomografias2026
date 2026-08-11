@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Agreement;
+use App\Models\AgreementPrice;
 use App\Models\Exam;
 use App\Models\Order;
 use App\Models\Patient;
@@ -86,4 +87,57 @@ class TriageIndexTest extends TestCase
             ->assertDontSee('ÍNDICE DE TRIAJE')
             ->assertDontSee('Rellenar triaje');
     }
+
+    public function test_store_keeps_consumables_for_without_contrast_order(): void
+    {
+        $user = User::create(['username' => 'tester2', 'email' => 'tester2@example.com', 'password' => 'password']);
+        $patient = Patient::create(['dni' => '87654321', 'nombres' => 'Luis', 'apellidos' => 'Rojas']);
+        $agreement = Agreement::create(['nombre_institucion' => 'Particular', 'activo' => true]);
+        $exam = Exam::create(['nombre_examen' => 'Tórax', 'tipo_contraste' => 'Sin contraste', 'activo' => true]);
+        AgreementPrice::create(['agreement_id' => $agreement->id, 'exam_id' => $exam->id, 'tipo_contraste' => 'Sin contraste', 'precio_pactado' => 100]);
+        $reagent = Reagent::create(['nombre' => 'Material descartable', 'unidad' => 'und', 'stock_actual' => 10, 'stock_minimo' => 1, 'activo' => true]);
+
+        $response = $this->actingAs($user)->post(route('orders.store'), [
+            'patient_id' => $patient->id,
+            'agreement_id' => $agreement->id,
+            'fecha_orden' => '07/08/2026 09:00',
+            'estado' => 'Pendiente',
+            'tipo_pago' => 'Efectivo',
+            'descuento' => 0,
+            'exams' => [[
+                'exam_id' => $exam->id,
+                'tipo_contraste' => 'Sin contraste',
+                'precio' => 100,
+                'estado' => 'Pendiente',
+            ]],
+            'consumables' => [[
+                'reagent_id' => $reagent->id,
+                'cantidad' => 2,
+            ]],
+        ]);
+
+        $response->assertRedirect();
+        $this->assertDatabaseHas('order_consumables', [
+            'reagent_id' => $reagent->id,
+            'cantidad' => 2,
+        ]);
+    }
+
+    public function test_triaje_preloads_configured_consumables_for_without_contrast_exam(): void
+    {
+        $user = User::create(['username' => 'tester3', 'email' => 'tester3@example.com', 'password' => 'password']);
+        $patient = Patient::create(['dni' => '45678912', 'nombres' => 'María', 'apellidos' => 'Vega']);
+        $agreement = Agreement::create(['nombre_institucion' => 'Particular', 'activo' => true]);
+        $exam = Exam::create(['nombre_examen' => 'Senos paranasales', 'tipo_contraste' => 'Sin contraste', 'activo' => true]);
+        $reagent = Reagent::create(['nombre' => 'Guantes', 'unidad' => 'par', 'stock_actual' => 10, 'stock_minimo' => 1, 'activo' => true]);
+        $exam->reagents()->attach($reagent->id, ['cantidad_estimada' => 3]);
+        $order = Order::create(['codigo_orden' => 'ORD-SIN-CONTRASTE', 'patient_id' => $patient->id, 'agreement_id' => $agreement->id, 'fecha_orden' => '2026-08-07 09:00:00', 'estado' => 'Pendiente']);
+        $order->orderExams()->create(['exam_id' => $exam->id, 'tipo_contraste' => 'Sin contraste', 'precio' => 100]);
+
+        $this->actingAs($user)->get(route('orders.triaje', $order))
+            ->assertOk()
+            ->assertSee('Guantes')
+            ->assertSee('3');
+    }
+
 }
