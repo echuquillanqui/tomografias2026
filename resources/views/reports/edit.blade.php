@@ -88,7 +88,7 @@
                                         <small class="text-muted">{{ str_starts_with($attachment->mime_type, 'image/') ? 'Imagen optimizada' : 'Documento PDF' }} · {{ number_format($attachment->stored_size / 1024, 1) }} KB</small>
                                     </div>
                                     <div class="d-flex flex-wrap gap-2">
-                                        <button type="button" class="btn btn-sm btn-outline-secondary js-view-attachment" data-bs-toggle="modal" data-bs-target="#viewAttachmentModal" data-preview-url="{{ route('reports.attachments.view', [$order, $attachment]) }}" data-preview-name="{{ $attachment->original_name }}">Ver</button>
+                                        <button type="button" class="btn btn-sm btn-outline-secondary js-view-attachment" data-bs-toggle="modal" data-bs-target="#viewAttachmentModal" data-preview-url="{{ route('reports.attachments.view', [$order, $attachment]) }}" data-preview-name="{{ $attachment->original_name }}" data-preview-type="{{ str_starts_with($attachment->mime_type, 'image/') ? 'image' : 'pdf' }}">Ver</button>
                                         <a class="btn btn-sm btn-outline-primary" href="{{ route('reports.attachments.download', [$order, $attachment]) }}">Descargar</a>
                                         <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editAttachment{{ $attachment->id }}">Editar</button>
                                         <button type="submit" class="btn btn-sm btn-outline-danger" form="delete-attachment-{{ $attachment->id }}" onclick="return confirm('¿Eliminar este archivo?')">Eliminar</button>
@@ -141,14 +141,15 @@
     @endforeach
 
     <div class="modal fade" id="viewAttachmentModal" tabindex="-1" aria-labelledby="viewAttachmentModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-dialog modal-xl modal-dialog-centered">
             <div class="modal-content border-0 shadow">
                 <div class="modal-header">
                     <h5 class="modal-title fw-bold text-truncate" id="viewAttachmentModalLabel">Vista previa del archivo</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
-                <div class="modal-body p-0 bg-light">
-                    <iframe id="attachmentPreviewFrame" class="attachment-preview-frame" title="Vista previa del archivo"></iframe>
+                <div id="attachmentPreview" class="modal-body attachment-preview bg-light">
+                    <iframe id="attachmentPreviewFrame" class="attachment-preview-frame d-none" title="Vista previa del documento PDF"></iframe>
+                    <img id="attachmentPreviewImage" class="attachment-preview-image d-none" alt="">
                 </div>
             </div>
         </div>
@@ -172,24 +173,45 @@
     .original-report-preview { background: #0f172a; border-radius: 14px; color: #e2e8f0; max-height: 260px; overflow: auto; padding: 1rem; white-space: pre-wrap; }
     .report-attachment-list { display: grid; gap: .75rem; }
     .report-attachment-item { align-items: center; background: #f8fafc; border: 1px solid #e5edf5; border-radius: 14px; display: flex; gap: 1rem; justify-content: space-between; padding: .85rem 1rem; }
-    .attachment-preview-frame { border: 0; display: block; height: min(78vh, 850px); width: 100%; }
+    .attachment-preview { align-items: center; display: flex; height: min(78vh, 850px); justify-content: center; overflow: hidden; padding: 1rem; }
+    .attachment-preview-frame { aspect-ratio: 210 / 297; background: #fff; border: 0; box-shadow: 0 8px 24px rgba(15, 23, 42, .14); height: 100%; max-width: 100%; }
+    .attachment-preview-image { display: block; height: auto; max-height: 100%; max-width: 100%; object-fit: contain; width: auto; }
     @media (max-width: 575.98px) { .report-attachment-item { align-items: stretch; flex-direction: column; } }
 </style>
 <script>
     document.addEventListener('DOMContentLoaded', () => {
         const modal = document.getElementById('viewAttachmentModal');
         const frame = document.getElementById('attachmentPreviewFrame');
+        const image = document.getElementById('attachmentPreviewImage');
         const title = document.getElementById('viewAttachmentModalLabel');
 
         document.querySelectorAll('.js-view-attachment').forEach((button) => {
             button.addEventListener('click', () => {
-                frame.src = button.dataset.previewUrl;
                 title.textContent = button.dataset.previewName;
+
+                if (button.dataset.previewType === 'image') {
+                    frame.classList.add('d-none');
+                    frame.removeAttribute('src');
+                    image.src = button.dataset.previewUrl;
+                    image.alt = `Vista previa de ${button.dataset.previewName}`;
+                    image.classList.remove('d-none');
+                    return;
+                }
+
+                image.classList.add('d-none');
+                image.removeAttribute('src');
+                image.removeAttribute('alt');
+                frame.src = button.dataset.previewUrl;
+                frame.classList.remove('d-none');
             });
         });
 
         modal.addEventListener('hidden.bs.modal', () => {
+            frame.classList.add('d-none');
             frame.removeAttribute('src');
+            image.classList.add('d-none');
+            image.removeAttribute('src');
+            image.removeAttribute('alt');
             title.textContent = 'Vista previa del archivo';
         });
     });
