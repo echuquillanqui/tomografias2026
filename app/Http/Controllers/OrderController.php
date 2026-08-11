@@ -12,6 +12,7 @@ use App\Models\RequestingDoctor;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -100,17 +101,45 @@ class OrderController extends Controller
         ]);
 
         DB::transaction(function () use ($order, $data): void {
+            $consumables = collect($data['consumables'] ?? []);
+
             $order->consumables()->delete();
-            foreach (collect($data['consumables'] ?? [])->filter(fn ($row) => (float) $row['cantidad'] > 0) as $row) {
+            foreach ($consumables->filter(fn ($row) => (float) $row['cantidad'] > 0) as $row) {
                 $order->consumables()->create([
                     'reagent_id' => $row['reagent_id'],
                     'cantidad' => $row['cantidad'],
                 ]);
             }
+
+            $this->syncAdmissionPlateQuantity($order, $consumables);
         });
 
         return redirect()->route('triajes.index', $request->only(['search', 'date', 'page']))
             ->with('success', 'Consumibles de la orden actualizados correctamente.');
+    }
+
+    private function syncAdmissionPlateQuantity(Order $order, Collection $consumables): void
+    {
+        $reagents = Reagent::whereIn('id', $consumables->pluck('reagent_id'))->get(['id', 'nombre']);
+        $plateReagentIds = $reagents
+            ->filter(fn (Reagent $reagent) => in_array(mb_strtolower(trim($reagent->nombre)), ['placa', 'placas'], true))
+            ->pluck('id');
+
+        if ($plateReagentIds->isEmpty()) {
+            return;
+        }
+
+        $plateQuantity = (int) $consumables
+            ->whereIn('reagent_id', $plateReagentIds->all())
+            ->sum(fn ($row) => (float) $row['cantidad']);
+        $admissionData = $order->admissionForm?->data ?? [];
+        $deliveryQuantities = $admissionData['delivery_quantities'] ?? [];
+        $deliveryQuantities = is_array($deliveryQuantities) ? $deliveryQuantities : [];
+        $deliveryQuantities['PLACAS'] = $plateQuantity;
+        $admissionData['delivery_quantities'] = $deliveryQuantities;
+        $admissionData['plates_count'] = $plateQuantity;
+
+        $order->admissionForm()->updateOrCreate([], ['data' => $admissionData]);
     }
 
     public function create(Request $request): View
