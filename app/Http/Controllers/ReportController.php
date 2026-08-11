@@ -20,7 +20,7 @@ class ReportController extends Controller
     {
         $search = trim((string) $request->query('search'));
 
-        $orders = Order::with(['patient', 'agreement', 'medicoInforme', 'report.medicoFirmante'])
+        $orders = Order::with(['patient', 'agreement', 'medicoInforme', 'report.medicoFirmante', 'report.attachments'])
             ->withCount('orderExams')
             ->when($search !== '', fn ($query) => $query->where(function ($query) use ($search) {
                 $query->where('codigo_orden', 'like', "%{$search}%")
@@ -66,6 +66,10 @@ class ReportController extends Controller
         $storage = app(ReportAttachmentStorage::class);
         foreach ($request->file('adjuntos', []) as $file) {
             $storage->store($report, $file);
+        }
+
+        if ($data['medico_firmante_id'] && $report->attachments()->exists()) {
+            $order->update(['estado' => 'Informado']);
         }
 
         return redirect()->route('reports.edit', $order)->with('success', 'Informe actualizado correctamente.');
@@ -187,7 +191,7 @@ class ReportController extends Controller
 
     private function medicosInformantes()
     {
-        return User::select(['id', 'nombre_completo', 'tipo_medico', 'cmp', 'rne', 'firma_path'])
+        return User::select(['id', 'nombre_completo'])
             ->where('rol', 'Médico')
             ->where('activo', true)
             ->whereIn('tipo_medico', ['De Informe', 'Ambos'])

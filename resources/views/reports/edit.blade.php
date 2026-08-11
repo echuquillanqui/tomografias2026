@@ -52,12 +52,12 @@
                 <div class="card clinic-card p-4 mb-4">
                     <div class="row g-3 justify-content-center">
                         <div class="col-lg-7">
-                            <label class="form-label small fw-bold">Médico que firmará</label>
+                            <label class="form-label small fw-bold">Médico informante</label>
                             <select name="medico_firmante_id" class="form-select form-select-lg @error('medico_firmante_id') is-invalid @enderror">
-                                <option value="">Sin médico / firma en blanco</option>
+                                <option value="">Sin médico</option>
                                 @foreach($medicosInformantes as $medico)
                                     <option value="{{ $medico->id }}" @selected(old('medico_firmante_id', $report->medico_firmante_id ?? $order->medico_informe_id) == $medico->id)>
-                                        {{ $medico->nombre_completo }}{{ $medico->firma_path ? ' · con firma' : ' · sin firma' }}
+                                        {{ $medico->nombre_completo }}
                                     </option>
                                 @endforeach
                             </select>

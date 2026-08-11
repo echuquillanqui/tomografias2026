@@ -31,6 +31,7 @@
                         <th>Exámenes</th>
                         <th>Médico firmante</th>
                         <th>Estado</th>
+                        <th>Archivos subidos</th>
                         <th></th>
                     </tr>
                 </thead>
@@ -44,13 +45,22 @@
                             <td>{{ $order->order_exams_count }}</td>
                             <td>{{ $order->report?->medicoFirmante?->nombre_completo ?? $order->medicoInforme?->nombre_completo ?? '—' }}</td>
                             <td><span class="badge badge-role">{{ $order->estado }}</span></td>
+                            <td>
+                                @forelse($order->report?->attachments ?? [] as $attachment)
+                                    <a class="btn btn-sm btn-outline-success mb-1" href="{{ route('reports.attachments.view', [$order, $attachment]) }}" target="_blank" title="Ver {{ $attachment->original_name }}">
+                                        {{ $attachment->original_name }}
+                                    </a>
+                                @empty
+                                    <span class="text-muted">—</span>
+                                @endforelse
+                            </td>
                             <td class="text-end">
                                 <a class="btn btn-sm btn-outline-primary" href="{{ route('reports.edit', $order) }}">Rellenar</a>
-                                <a class="btn btn-sm btn-outline-secondary" href="{{ route('reports.pdf', $order) }}" target="_blank">PDF</a>
+                                <a class="btn btn-sm {{ $order->report?->attachments->isNotEmpty() ? 'btn-success' : 'btn-outline-secondary' }}" href="{{ route('reports.pdf', $order) }}" target="_blank">PDF</a>
                             </td>
                         </tr>
                     @empty
-                        <tr><td colspan="8" class="text-center py-5">Sin atenciones generadas por órdenes.</td></tr>
+                        <tr><td colspan="9" class="text-center py-5">Sin atenciones generadas por órdenes.</td></tr>
                     @endforelse
                 </tbody>
             </table>
