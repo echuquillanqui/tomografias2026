@@ -47,6 +47,11 @@
                     <span>los insumos de cada bloque se cargarán únicamente cuando la orden use esa modalidad.</span>
                 </div>
 
+                <div class="alert alert-warning border-0 d-flex gap-2 align-items-start" x-show="examContrast !== 'Ambos'" x-cloak>
+                    <strong>Configuración protegida:</strong>
+                    <span>los insumos guardados para la otra modalidad se conservarán aunque ahora no esté habilitada.</span>
+                </div>
+
                 @foreach(['Sin contraste', 'Con contraste', 'Ambos'] as $contrast)
                     @php
                         $isShared = $contrast === 'Ambos';
