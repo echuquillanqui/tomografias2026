@@ -23,7 +23,7 @@ class Reagent extends Model
     public function exams(): BelongsToMany
     {
         return $this->belongsToMany(Exam::class, 'exam_reagent')
-            ->withPivot('cantidad_estimada')
+            ->withPivot('cantidad_estimada', 'tipo_contraste')
             ->withTimestamps();
     }
 

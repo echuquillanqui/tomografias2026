@@ -382,7 +382,12 @@ class OrderController extends Controller
         }
 
         return $order->orderExams
-            ->flatMap(fn ($orderExam) => $orderExam->exam?->reagents ?? collect())
+            ->flatMap(fn ($orderExam) => ($orderExam->exam?->reagents ?? collect())
+                ->filter(fn ($reagent) => in_array(
+                    $reagent->pivot->tipo_contraste ?? 'Ambos',
+                    ['Ambos', $orderExam->tipo_contraste],
+                    true
+                )))
             ->groupBy('id')
             ->map(fn ($reagents) => [
                 'reagent_id' => (string) $reagents->first()->id,

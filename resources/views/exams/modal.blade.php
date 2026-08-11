@@ -29,14 +29,14 @@
                         <div class="d-flex flex-column flex-md-row justify-content-between gap-2 mb-2">
                             <div>
                                 <strong>Reactivos estimados</strong>
-                                <div class="small text-clinic-muted">Selecciona un reactivo existente o escribe uno nuevo aquí; se creará desde este examen.</div>
+                                <div class="small text-clinic-muted">Indica si cada insumo se usa con contraste, sin contraste o en ambos casos.</div>
                             </div>
                             <span class="badge badge-role align-self-md-start">Origen: Exámenes</span>
                         </div>
                         @for($i = 0; $i < 5; $i++)
                             @php($current = $e?->reagents[$i] ?? null)
                             <div class="row g-2 mt-1 align-items-end">
-                                <div class="col-md-5">
+                                <div class="col-md-4">
                                     <label class="form-label small mb-1">Reactivo existente</label>
                                     <select name="reagents[{{ $i }}][reagent_id]" class="form-select">
                                         <option value="">Seleccionar reactivo</option>
@@ -45,13 +45,21 @@
                                         @endforeach
                                     </select>
                                 </div>
-                                <div class="col-md-4">
+                                <div class="col-md-3">
                                     <label class="form-label small mb-1">O nuevo reactivo</label>
                                     <input name="reagents[{{ $i }}][nombre]" class="form-control" placeholder="Nombre del reactivo" value="{{ old("reagents.$i.nombre") }}">
                                 </div>
-                                <div class="col-md-3">
+                                <div class="col-md-2">
                                     <label class="form-label small mb-1">Cantidad</label>
                                     <input name="reagents[{{ $i }}][cantidad_estimada]" class="form-control" type="number" step="0.01" placeholder="Cantidad" value="{{ old("reagents.$i.cantidad_estimada", $current?->pivot->cantidad_estimada) }}">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label small mb-1">Se utiliza en</label>
+                                    <select name="reagents[{{ $i }}][tipo_contraste]" class="form-select">
+                                        @foreach($contrastes as $contrast)
+                                            <option value="{{ $contrast }}" @selected(old("reagents.$i.tipo_contraste", $current?->pivot->tipo_contraste ?? 'Ambos') === $contrast)>{{ $contrast }}</option>
+                                        @endforeach
+                                    </select>
                                 </div>
                             </div>
                         @endfor
