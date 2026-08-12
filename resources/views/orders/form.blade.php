@@ -23,6 +23,10 @@
         $reagent = $reagents->firstWhere('id', (int) ($row['reagent_id'] ?? 0));
         return ['reagent_id' => (string) ($row['reagent_id'] ?? ''), 'name' => $reagent?->nombre ?? 'Consumible', 'unit' => $reagent?->unidad_medida ?? '', 'cantidad' => (float) ($row['cantidad'] ?? 0)];
     })->values();
+    $paymentRows = collect(old('payments', $order->payments->toArray() ?: [[
+        'payment_method' => $order->tipo_pago ?? 'Efectivo',
+        'amount' => (float) ($order->total ?? 0),
+    ]]));
 @endphp
 
 <div class="container py-4" x-data="orderSystem()">
@@ -248,12 +252,26 @@
                     <div class="card-header bg-primary text-white py-3 text-center fw-bold">RESUMEN DE COBRO</div>
                     <div class="card-body p-4">
                         <div class="mb-3">
-                            <label class="form-label small fw-bold">MÉTODO DE PAGO</label>
-                            <select name="tipo_pago" class="form-select" required>
-                                @foreach($tiposPago as $tipo)
-                                    <option value="{{ $tipo }}" @selected(old('tipo_pago', $order->tipo_pago ?? 'Efectivo') === $tipo)>{{ $tipo }}</option>
-                                @endforeach
-                            </select>
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <label class="form-label small fw-bold mb-0">MÉTODOS DE PAGO</label>
+                                <button type="button" class="btn btn-sm btn-outline-primary" @click="addPayment()" :disabled="payments.length >= paymentMethods.length">+ Agregar</button>
+                            </div>
+                            <template x-for="(payment, index) in payments" :key="index">
+                                <div class="row g-2 mb-2 align-items-center">
+                                    <div class="col-7">
+                                        <select class="form-select form-select-sm" :name="`payments[${index}][payment_method]`" x-model="payment.payment_method" required>
+                                            <template x-for="method in paymentMethods" :key="method"><option :value="method" x-text="method"></option></template>
+                                        </select>
+                                    </div>
+                                    <div class="col-4"><input type="number" min="0.01" step="0.01" class="form-control form-control-sm text-end" :name="`payments[${index}][amount]`" x-model.number="payment.amount" required></div>
+                                    <div class="col-1"><button type="button" class="btn btn-sm btn-link text-danger p-0" @click="removePayment(index)" x-show="payments.length > 1" aria-label="Quitar método">×</button></div>
+                                </div>
+                            </template>
+                            <div class="small" :class="paymentDifference() === 0 ? 'text-success' : 'text-danger'">
+                                <span x-show="paymentDifference() === 0">Pago completo.</span>
+                                <span x-show="paymentDifference() > 0">Falta asignar: S/ <span x-text="paymentDifference().toFixed(2)"></span></span>
+                                <span x-show="paymentDifference() < 0">Excede el total: S/ <span x-text="Math.abs(paymentDifference()).toFixed(2)"></span></span>
+                            </div>
                         </div>
 
                         <div class="mb-4">
@@ -366,6 +384,8 @@ function orderSystem() {
         ])->values()) }},
         selectedAgreement: String({{ Illuminate\Support\Js::from(old('agreement_id', $order->agreement_id ?? $agreements->first()?->id)) }} || ''),
         discount: Number({{ Illuminate\Support\Js::from(old('descuento', $order->descuento ?? 0)) }}) || 0,
+        payments: {{ Illuminate\Support\Js::from($paymentRows->map(fn ($payment) => ['payment_method' => $payment['payment_method'], 'amount' => (float) $payment['amount']])->values()) }},
+        paymentMethods: {{ Illuminate\Support\Js::from($tiposPago) }},
         cartSearch: '',
         exams: [],
         isSubmitting: false,
@@ -630,6 +650,11 @@ function orderSystem() {
             return this.cart.reduce((sum, item) => sum + (Number(item.price) || 0), 0);
         },
         submitOrder(event) {
+            if (this.paymentDifference() !== 0 || new Set(this.payments.map((payment) => payment.payment_method)).size !== this.payments.length) {
+                event.preventDefault();
+                alert(this.paymentDifference() !== 0 ? 'La suma de los pagos debe coincidir con el total de la orden.' : 'No se puede repetir un método de pago.');
+                return false;
+            }
             if (this.isSubmitting) {
                 event.preventDefault();
                 event.stopImmediatePropagation();
@@ -642,6 +667,17 @@ function orderSystem() {
         },
         total() {
             return Math.max(this.subtotal() - (Number(this.discount) || 0), 0);
+        },
+        paymentDifference() {
+            return Math.round((this.total() - this.payments.reduce((sum, payment) => sum + (Number(payment.amount) || 0), 0)) * 100) / 100;
+        },
+        addPayment() {
+            const used = new Set(this.payments.map((payment) => payment.payment_method));
+            const method = this.paymentMethods.find((item) => !used.has(item));
+            if (method) this.payments.push({ payment_method: method, amount: Math.max(this.paymentDifference(), 0) });
+        },
+        removePayment(index) {
+            this.payments.splice(index, 1);
         }
     }
 }

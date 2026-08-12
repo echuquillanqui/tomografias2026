@@ -27,4 +27,16 @@ class Order extends Model
     public function swornDeclaration(): HasOne { return $this->hasOne(OrderSwornDeclaration::class); }
     public function stockMovements(): HasMany { return $this->hasMany(StockMovement::class); }
     public function consumables(): HasMany { return $this->hasMany(OrderConsumable::class); }
+    public function payments(): HasMany { return $this->hasMany(OrderPayment::class); }
+
+    public function getPaymentSummaryAttribute(): string
+    {
+        if ($this->relationLoaded('payments') && $this->payments->isNotEmpty()) {
+            return $this->payments
+                ->map(fn (OrderPayment $payment) => $payment->payment_method.' (S/ '.number_format((float) $payment->amount, 2).')')
+                ->join(' + ');
+        }
+
+        return $this->tipo_pago ?: '—';
+    }
 }

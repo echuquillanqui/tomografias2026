@@ -27,8 +27,7 @@ class ReportController extends Controller
             $date = now()->toDateString();
         }
 
-        $orders = Order::with(['patient', 'agreement', 'medicoInforme', 'report.medicoFirmante', 'report.attachments'])
-            ->withCount('orderExams')
+        $orders = Order::with(['patient', 'agreement', 'medicoInforme', 'orderExams.exam', 'report.medicoFirmante', 'report.attachments'])
             ->when(! $allDates, fn ($query) => $query->whereDate('fecha_orden', $date))
             ->when($search !== '', fn ($query) => $query->where(function ($query) use ($search) {
                 $query->where('codigo_orden', 'like', "%{$search}%")

@@ -92,8 +92,8 @@ class CashClosingController extends Controller
                 'expenses' => $expenses,
                 'incomeTotal' => $orders->sum('total'),
                 'expenseTotal' => $expenses->sum('monto'),
-                'yapePlinIncome' => $orders->where('tipo_pago', 'Yape/Plin')->sum('total'),
-                'transferIncome' => $orders->where('tipo_pago', 'Transferencia')->sum('total'),
+                'yapePlinIncome' => $orders->sum(fn (Order $order) => $this->paymentTotal($order, 'Yape/Plin')),
+                'transferIncome' => $orders->sum(fn (Order $order) => $this->paymentTotal($order, 'Transferencia')),
                 'plateSummary' => $this->stockSummary($orders, $start, $end, 'placa', 'Placas', function (Order $order): float {
                     $data = $order->admissionForm?->data ?? [];
 
@@ -221,10 +221,12 @@ class CashClosingController extends Controller
         $start = Carbon::parse($from)->startOfDay();
         $end = Carbon::parse($to)->endOfDay();
 
-        $orders = Order::with(['patient', 'agreement', 'medicoSolicitante', 'medicoInforme', 'orderExams.exam', 'admissionForm', 'consumables.reagent'])
+        $orders = Order::with(['patient', 'agreement', 'medicoSolicitante', 'medicoInforme', 'orderExams.exam', 'admissionForm', 'consumables.reagent', 'payments'])
             ->whereBetween('fecha_orden', [$start, $end])
             ->where('estado', '!=', 'Anulado')
-            ->when($tipoPago, fn ($query) => $query->where('tipo_pago', $tipoPago))
+            ->when($tipoPago, fn ($query) => $query->where(fn ($paymentQuery) => $paymentQuery
+                ->whereHas('payments', fn ($payments) => $payments->where('payment_method', $tipoPago))
+                ->orWhere(fn ($legacy) => $legacy->whereDoesntHave('payments')->where('tipo_pago', $tipoPago))))
             ->when($agreementId, fn ($query) => $query->where('agreement_id', $agreementId))
             ->latest('fecha_orden')
             ->get();
@@ -237,22 +239,25 @@ class CashClosingController extends Controller
 
         $incomeTotal = $orders->sum('total');
         $expenseTotal = $expenses->sum('monto');
-        $cashIncome = $orders->where('tipo_pago', 'Efectivo')->sum('total');
-        $yapePlinIncome = $orders->where('tipo_pago', 'Yape/Plin')->sum('total');
-        $transferIncome = $orders->where('tipo_pago', 'Transferencia')->sum('total');
+        $cashIncome = $orders->sum(fn (Order $order) => $this->paymentTotal($order, 'Efectivo'));
+        $yapePlinIncome = $orders->sum(fn (Order $order) => $this->paymentTotal($order, 'Yape/Plin'));
+        $transferIncome = $orders->sum(fn (Order $order) => $this->paymentTotal($order, 'Transferencia'));
         $digitalIncome = $yapePlinIncome + $transferIncome;
-        $incomeByPayment = $orders->groupBy(fn (Order $order) => $order->tipo_pago ?? 'Sin método')
-            ->map(fn ($items) => $items->sum('total'));
+        $incomeByPayment = collect(self::TIPOS_PAGO)->mapWithKeys(fn ($method) => [
+            $method => $orders->sum(fn (Order $order) => $this->paymentTotal($order, $method)),
+        ])->filter();
         $operationalBaseDate = $request->date('operational_base_date')?->toDateString() ?: $baseDate;
         $operationalTipoPago = in_array($request->query('operational_tipo_pago'), self::TIPOS_PAGO, true)
             ? $request->query('operational_tipo_pago')
             : null;
         $operationalStart = Carbon::parse($operationalBaseDate)->startOfDay();
         $operationalEnd = Carbon::parse($operationalBaseDate)->endOfDay();
-        $operationalOrders = Order::with(['patient', 'agreement', 'medicoSolicitante', 'medicoInforme', 'orderExams.exam', 'admissionForm', 'consumables.reagent'])
+        $operationalOrders = Order::with(['patient', 'agreement', 'medicoSolicitante', 'medicoInforme', 'orderExams.exam', 'admissionForm', 'consumables.reagent', 'payments'])
             ->whereBetween('fecha_orden', [$operationalStart, $operationalEnd])
             ->where('estado', '!=', 'Anulado')
-            ->when($operationalTipoPago, fn ($query) => $query->where('tipo_pago', $operationalTipoPago))
+            ->when($operationalTipoPago, fn ($query) => $query->where(fn ($paymentQuery) => $paymentQuery
+                ->whereHas('payments', fn ($payments) => $payments->where('payment_method', $operationalTipoPago))
+                ->orWhere(fn ($legacy) => $legacy->whereDoesntHave('payments')->where('tipo_pago', $operationalTipoPago))))
             ->when($agreementId, fn ($query) => $query->where('agreement_id', $agreementId))
             ->latest('fecha_orden')
             ->get();
@@ -263,8 +268,8 @@ class CashClosingController extends Controller
             ->get();
         $operationalIncomeTotal = $operationalOrders->sum('total');
         $operationalExpenseTotal = $operationalExpenses->sum('monto');
-        $operationalYapePlinIncome = $operationalOrders->where('tipo_pago', 'Yape/Plin')->sum('total');
-        $operationalTransferIncome = $operationalOrders->where('tipo_pago', 'Transferencia')->sum('total');
+        $operationalYapePlinIncome = $operationalOrders->sum(fn (Order $order) => $this->paymentTotal($order, 'Yape/Plin'));
+        $operationalTransferIncome = $operationalOrders->sum(fn (Order $order) => $this->paymentTotal($order, 'Transferencia'));
         $operationalPlateSummary = $this->stockSummary($operationalOrders, $operationalStart, $operationalEnd, 'placa', 'Placas', function (Order $order): float {
             $data = $order->admissionForm?->data ?? [];
 
@@ -298,9 +303,9 @@ class CashClosingController extends Controller
             'periods' => self::PERIODS,
             'months' => self::MONTHS,
             'agreements' => Agreement::query()->where('activo', true)->orderBy('nombre_institucion')->get(['id', 'nombre_institucion']),
-            'cashOrders' => $orders->where('tipo_pago', 'Efectivo'),
-            'yapePlinOrders' => $orders->where('tipo_pago', 'Yape/Plin'),
-            'transferOrders' => $orders->where('tipo_pago', 'Transferencia'),
+            'cashOrders' => $orders->filter(fn (Order $order) => $this->paymentTotal($order, 'Efectivo') > 0),
+            'yapePlinOrders' => $orders->filter(fn (Order $order) => $this->paymentTotal($order, 'Yape/Plin') > 0),
+            'transferOrders' => $orders->filter(fn (Order $order) => $this->paymentTotal($order, 'Transferencia') > 0),
             'fixedExpenses' => $fixedExpenses,
             'currentFixedExpensePeriod' => $currentFixedExpensePeriod,
             'monthlyFixedExpensesPending' => $monthlyFixedExpensesPending,
@@ -314,6 +319,15 @@ class CashClosingController extends Controller
             ->whereDoesntHave('expenses', fn ($query) => $query->where('fixed_expense_period', $period))
             ->orderBy('descripcion')
             ->get();
+    }
+
+    private function paymentTotal(Order $order, string $method): float
+    {
+        if ($order->payments->isNotEmpty()) {
+            return (float) $order->payments->where('payment_method', $method)->sum('amount');
+        }
+
+        return $order->tipo_pago === $method ? (float) $order->total : 0;
     }
 
     private function stockSummary($orders, Carbon $start, Carbon $end, string $reagentSearch, string $fallbackName, callable $deliveredResolver): array
