@@ -23,7 +23,7 @@ use Illuminate\View\View;
 
 class OrderController extends Controller
 {
-    private const ESTADOS = ['Pendiente', 'En proceso', 'Informado', 'Entregado', 'Anulado'];
+    private const ESTADOS = ['Pendiente', 'En proceso', 'Informado'];
     private const TIPOS_PAGO = ['Efectivo', 'Tarjeta', 'Transferencia', 'Yape/Plin', 'Convenio'];
     private const TIPOS_COMPROBANTE = ['Boleta', 'Factura'];
     private const MOTIVOS_ELIMINACION = ['error de digitacion', 'equivocacion', 'error por sistema', 'otros'];
@@ -41,7 +41,7 @@ class OrderController extends Controller
         }
 
         $searchTerms = preg_split('/\s+/', $search, -1, PREG_SPLIT_NO_EMPTY);
-        $orders = Order::with(['patient', 'agreement', 'medicoSolicitante', 'medicoInforme'])
+        $orders = Order::with(['patient', 'agreement', 'medicoSolicitante', 'medicoInforme', 'orderExams.exam'])
             ->withCount('orderExams')
             ->when(! $allDates, fn ($query) => $query->whereDate('fecha_orden', $date))
             ->when($searchTerms !== [], function ($query) use ($searchTerms) {

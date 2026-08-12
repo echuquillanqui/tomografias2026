@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="container">
+<div class="container-fluid px-3 px-xl-4">
     <section class="clinic-page-hero mb-4">
         <div class="d-flex justify-content-between">
             <div>
@@ -55,13 +55,14 @@
     </form>
 
     <div class="card clinic-card">
-        <div class="card-body p-0">
+        <div class="card-body p-0 table-responsive">
             <table class="table table-clinic mb-0 align-middle">
                 <thead>
                     <tr>
                         <th>Código</th>
                         <th>Unidad</th>
                         <th>Paciente</th>
+                        <th>Tipo de estudio</th>
                         <th>Convenio</th>
                         <th>Fecha</th>
                         <th>Total</th>
@@ -77,6 +78,18 @@
                             <td class="fw-bold">{{ $o->codigo_orden ?? '—' }}</td>
                             <td>{{ $o->unidad ?? '—' }}</td>
                             <td>{{ $o->patient->nombres }} {{ $o->patient->apellidos }}</td>
+                            <td>
+                                @forelse($o->orderExams as $orderExam)
+                                    <span class="d-block fw-semibold">
+                                        {{ $orderExam->exam->nombre_examen }}
+                                        @if($orderExam->tipo_contraste)
+                                            <span class="text-muted fw-normal">({{ $orderExam->tipo_contraste }})</span>
+                                        @endif
+                                    </span>
+                                @empty
+                                    <span class="text-muted">Sin estudio</span>
+                                @endforelse
+                            </td>
                             <td>{{ $o->agreement->nombre_institucion }}</td>
                             <td>{{ $o->fecha_orden->format('d/m/Y H:i') }}</td>
                             <td>@if($o->agreement->mostrar_precio_orden) S/ {{ $o->total }} @else <span class="text-muted">Oculto</span> @endif</td>
@@ -101,7 +114,9 @@
                             <td class="text-end">
                                 <a class="btn btn-sm btn-outline-primary" href="{{ route('orders.show', $o) }}">Ver</a>
                                 <a class="btn btn-sm btn-outline-secondary" href="{{ route('orders.edit', $o) }}">Editar</a>
-                                <button type="button" class="btn btn-sm btn-outline-dark" data-bs-toggle="modal" data-bs-target="#file{{ $o->id }}">Subir orden</button>
+                                <button type="button" class="btn btn-sm {{ $o->archivo_orden_path ? 'order-file-uploaded' : 'btn-outline-dark' }}" data-bs-toggle="modal" data-bs-target="#file{{ $o->id }}">
+                                    {{ $o->archivo_orden_path ? 'Subir orden' : 'Sin orden' }}
+                                </button>
                                 <button type="button" class="btn btn-sm btn-outline-info" data-bs-toggle="modal" data-bs-target="#triage{{ $o->id }}">Triaje</button>
                                 <a class="btn btn-sm btn-outline-success" target="_blank" href="{{ route('orders.ficha-ingreso', $o) }}">Ficha PDF</a>
                                 @if(($o->patient->fecha_nacimiento && $o->patient->fecha_nacimiento->age < 18) || (! $o->patient->fecha_nacimiento && $o->patient->edad !== null && $o->patient->edad < 18))
@@ -111,7 +126,7 @@
                             </td>
                         </tr>
                     @empty
-                        <tr><td colspan="10" class="text-center py-5">Sin órdenes.</td></tr>
+                        <tr><td colspan="11" class="text-center py-5">Sin órdenes.</td></tr>
                     @endforelse
                 </tbody>
             </table>
@@ -119,6 +134,18 @@
         <div class="card-footer bg-white">{{ $orders->links() }}</div>
     </div>
 </div>
+
+@push('styles')
+<style>
+    .order-file-uploaded,
+    .order-file-uploaded:hover,
+    .order-file-uploaded:focus {
+        background-color: #075fd8;
+        border-color: #075fd8;
+        color: #fff;
+    }
+</style>
+@endpush
 
 @foreach($orders as $o)
     <div class="modal fade user-modal" id="payment{{ $o->id }}" tabindex="-1" aria-hidden="true">

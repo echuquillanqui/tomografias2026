@@ -3,7 +3,9 @@
 namespace Tests\Feature;
 
 use App\Models\Agreement;
+use App\Models\Exam;
 use App\Models\Order;
+use App\Models\OrderExam;
 use App\Models\Patient;
 use App\Models\User;
 use Carbon\Carbon;
@@ -83,6 +85,52 @@ class OrderFilterTest extends TestCase
             ->assertSee('Buscar en todas las fechas')
             ->assertSee('name="all_dates"', false)
             ->assertSee('checked', false);
+    }
+
+    public function test_index_shows_study_contrast_and_order_file_state(): void
+    {
+        [$user, $agreement] = $this->baseRecords();
+        $patient = Patient::create(['dni' => '44556677', 'nombres' => 'Ana', 'apellidos' => 'Torres']);
+        $order = $this->order($patient, $agreement, 'ORD-ESTUDIO', now()->format('Y-m-d H:i:s'));
+        $exam = Exam::create(['nombre_examen' => 'TEM CEREBRAL', 'tipo_contraste' => 'Ambos', 'activo' => true]);
+        OrderExam::create([
+            'order_id' => $order->id,
+            'exam_id' => $exam->id,
+            'tipo_contraste' => 'Con contraste',
+            'precio' => 100,
+            'estado' => 'Pendiente',
+        ]);
+
+        $this->actingAs($user)->get(route('orders.index'))
+            ->assertOk()
+            ->assertSee('TEM CEREBRAL')
+            ->assertSee('(Con contraste)')
+            ->assertSee('Sin orden');
+
+        $order->update(['archivo_orden_path' => 'ordenes/orden.pdf']);
+
+        $this->actingAs($user)->get(route('orders.index'))
+            ->assertOk()
+            ->assertSee('order-file-uploaded')
+            ->assertSee('Subir orden');
+    }
+
+    public function test_order_statuses_match_tomographic_report_statuses(): void
+    {
+        [$user, $agreement] = $this->baseRecords();
+        $patient = Patient::create(['dni' => '44556677', 'nombres' => 'Ana', 'apellidos' => 'Torres']);
+        $order = $this->order($patient, $agreement, 'ORD-ESTADO', now()->format('Y-m-d H:i:s'));
+
+        $this->actingAs($user)->get(route('orders.index'))
+            ->assertOk()
+            ->assertSee('value="Pendiente"', false)
+            ->assertSee('value="En proceso"', false)
+            ->assertSee('value="Informado"', false)
+            ->assertDontSee('value="Entregado"', false)
+            ->assertDontSee('value="Anulado"', false);
+
+        $this->actingAs($user)->patch(route('orders.update-status', $order), ['estado' => 'Anulado'])
+            ->assertSessionHasErrors('estado');
     }
 
     private function baseRecords(): array
