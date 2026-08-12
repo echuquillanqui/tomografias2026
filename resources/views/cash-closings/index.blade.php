@@ -47,8 +47,8 @@
         </div>
     </section>
 
-    <div class="row g-3 mb-4">
-        <div class="col-md-6 col-xl-3">
+    <div class="row row-cols-1 row-cols-md-2 row-cols-xl-5 g-3 mb-4">
+        <div class="col">
             <div class="card clinic-card h-100">
                 <div class="card-body">
                     <div class="text-muted small fw-bold">INGRESOS</div>
@@ -72,9 +72,10 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-6 col-xl-3"><div class="card clinic-card h-100"><div class="card-body"><div class="text-muted small fw-bold">EGRESOS</div><div class="display-6 fw-bold text-danger">S/ {{ number_format($expenseTotal, 2) }}</div><div class="text-muted">{{ $expenses->count() }} salidas registradas</div></div></div></div>
-        <div class="col-md-6 col-xl-3"><div class="card clinic-card h-100"><div class="card-body"><div class="text-muted small fw-bold">EFECTIVO SALDO</div><div class="display-6 fw-bold {{ $balance < 0 ? 'text-danger' : 'text-primary' }}">S/ {{ number_format($balance, 2) }}</div><div class="text-muted">Efectivo menos egresos</div></div></div></div>
-        <div class="col-md-6 col-xl-3"><div class="card clinic-card h-100 border-0 shadow-sm" style="background: linear-gradient(135deg, #fff7ed, #ffffff);"><div class="card-body"><div class="text-muted small fw-bold">STOCK OPERATIVO</div><div class="display-6 fw-bold text-warning">{{ number_format($plateSummary['initial']) }}</div><div class="text-muted">Placas final: <strong>{{ number_format($plateSummary['final']) }}</strong> · Iopamidol final: <strong>{{ number_format($iopamidolSummary['final'], 2) }}</strong></div></div></div></div>
+        <div class="col"><div class="card clinic-card h-100"><div class="card-body"><div class="text-muted small fw-bold">EGRESOS</div><div class="display-6 fw-bold text-danger">S/ {{ number_format($expenseTotal, 2) }}</div><div class="text-muted">{{ $expenses->count() }} salidas registradas</div></div></div></div>
+        <div class="col"><div class="card clinic-card h-100"><div class="card-body"><div class="text-muted small fw-bold">EFECTIVO SALDO</div><div class="display-6 fw-bold {{ $balance < 0 ? 'text-danger' : 'text-primary' }}">S/ {{ number_format($balance, 2) }}</div><div class="text-muted">Efectivo menos egresos</div></div></div></div>
+        <div class="col"><div class="card clinic-card h-100 border-0 shadow-sm" style="background: linear-gradient(135deg, #ecfeff, #ffffff);"><div class="card-body"><div class="text-muted small fw-bold">SALDO GLOBAL</div><div class="display-6 fw-bold {{ $globalBalance < 0 ? 'text-danger' : 'text-success' }}">S/ {{ number_format($globalBalance, 2) }}</div><div class="text-muted">Todos los ingresos menos egresos</div></div></div></div>
+        <div class="col"><div class="card clinic-card h-100 border-0 shadow-sm" style="background: linear-gradient(135deg, #fff7ed, #ffffff);"><div class="card-body"><div class="text-muted small fw-bold">STOCK OPERATIVO</div><div class="display-6 fw-bold text-warning">{{ number_format($plateSummary['initial']) }}</div><div class="text-muted">Placas final: <strong>{{ number_format($plateSummary['final']) }}</strong> · Iopamidol final: <strong>{{ number_format($iopamidolSummary['final'], 2) }}</strong></div></div></div></div>
     </div>
 
 

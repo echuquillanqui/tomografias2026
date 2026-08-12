@@ -299,6 +299,7 @@ class CashClosingController extends Controller
 
         return compact('from', 'to', 'period', 'baseDate', 'tipoPago', 'agreementId', 'orders', 'expenses', 'incomeTotal', 'expenseTotal', 'cashIncome', 'yapePlinIncome', 'transferIncome', 'digitalIncome', 'incomeByPayment', 'plateSummary', 'iopamidolSummary', 'operationalBaseDate', 'operationalTipoPago', 'operationalOrders', 'operationalExpenses', 'operationalIncomeTotal', 'operationalExpenseTotal', 'operationalYapePlinIncome', 'operationalTransferIncome', 'operationalPlateSummary', 'operationalIopamidolSummary') + [
             'balance' => $cashIncome - $expenseTotal,
+            'globalBalance' => $incomeTotal - $expenseTotal,
             'tiposPago' => self::TIPOS_PAGO,
             'periods' => self::PERIODS,
             'months' => self::MONTHS,
