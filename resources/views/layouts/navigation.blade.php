@@ -1,5 +1,5 @@
         <nav class="navbar navbar-expand-md navbar-clinic shadow-sm py-3">
-            <div class="container">
+            <div class="container-fluid navbar-clinic__container">
                 <a class="navbar-brand d-flex align-items-center" href="{{ url('/') }}">
                     <span class="brand-mark">⦾</span>
                     {{ config('app.name', 'Clínica de Tomografía') }}
