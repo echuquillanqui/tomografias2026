@@ -282,8 +282,13 @@ main {
 }
 
 .navbar-clinic {
-    position: relative;
+    position: sticky;
+    top: 0;
     z-index: 1050;
+}
+
+.navbar-clinic__container {
+    padding-inline: clamp(1rem, 4vw, 4.5rem);
 }
 
 .navbar-clinic .dropdown-menu {
