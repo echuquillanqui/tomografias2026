@@ -23,7 +23,7 @@ class TriageIndexTest extends TestCase
         $app['config']->set('database.connections.sqlite.database', ':memory:');
     }
 
-    public function test_index_lists_only_orders_from_selected_date_without_consumables_column(): void
+    public function test_index_lists_orders_with_plate_quantity_from_admission_form(): void
     {
         $user = User::create([
             'username' => 'tester',
@@ -47,6 +47,10 @@ class TriageIndexTest extends TestCase
             'activo' => true,
         ]);
         $order->consumables()->create(['reagent_id' => $reagent->id, 'cantidad' => 2]);
+        $order->admissionForm()->create(['data' => [
+            'plates_count' => 1,
+            'delivery_quantities' => ['PLACAS' => 3],
+        ]]);
         Order::create([
             'codigo_orden' => 'ORD-AYER',
             'patient_id' => $patient->id,
@@ -63,6 +67,8 @@ class TriageIndexTest extends TestCase
             ->assertDontSee('ORD-AYER')
             ->assertDontSee('<th>Consumibles</th>', false)
             ->assertDontSee('2.00 ml')
+            ->assertSee('<th class="text-center">Placas</th>', false)
+            ->assertSeeText('3')
             ->assertSee('Rellenar plantilla')
             ->assertSee(route('orders.triaje', $order), false)
             ->assertDontSee('Guardar consumibles');

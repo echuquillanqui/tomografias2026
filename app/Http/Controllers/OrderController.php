@@ -80,7 +80,7 @@ class OrderController extends Controller
             $date = now()->toDateString();
         }
 
-        $orders = Order::with(['patient', 'orderExams.exam'])
+        $orders = Order::with(['patient', 'orderExams.exam', 'admissionForm'])
             ->when(! $allDates, fn ($query) => $query->whereDate('fecha_orden', $date))
             ->when($search !== '', fn ($query) => $query->where(function ($query) use ($search) {
                 $query->where('codigo_orden', 'like', "%{$search}%")

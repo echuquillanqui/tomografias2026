@@ -44,6 +44,7 @@
                         <th>Paciente</th>
                         <th>Tomografías</th>
                         <th>Fecha</th>
+                        <th class="text-center">Placas</th>
                         <th class="text-end">Acción</th>
                     </tr>
                 </thead>
@@ -59,6 +60,9 @@
                                 {{ $order->orderExams->pluck('exam.nombre_examen')->filter()->join(', ') ?: 'Sin exámenes' }}
                             </td>
                             <td class="text-nowrap">{{ $order->fecha_orden->format('d/m/Y H:i') }}</td>
+                            <td class="text-center">
+                                {{ $order->admissionForm?->data['delivery_quantities']['PLACAS'] ?? $order->admissionForm?->data['plates_count'] ?? 0 }}
+                            </td>
                             <td class="text-end text-nowrap">
                                 <a class="btn btn-sm btn-clinic-primary" href="{{ route('orders.triaje', $order) }}">
                                     Rellenar plantilla
@@ -66,7 +70,7 @@
                             </td>
                         </tr>
                     @empty
-                        <tr><td colspan="5" class="text-center text-muted py-5">{{ $allDates ? 'No se encontraron órdenes en el historial.' : 'No se encontraron órdenes para la fecha seleccionada.' }}</td></tr>
+                        <tr><td colspan="6" class="text-center text-muted py-5">{{ $allDates ? 'No se encontraron órdenes en el historial.' : 'No se encontraron órdenes para la fecha seleccionada.' }}</td></tr>
                     @endforelse
                 </tbody>
             </table>
