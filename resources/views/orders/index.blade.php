@@ -115,7 +115,7 @@
                                 <a class="btn btn-sm btn-outline-primary" href="{{ route('orders.show', $o) }}">Ver</a>
                                 <a class="btn btn-sm btn-outline-secondary" href="{{ route('orders.edit', $o) }}">Editar</a>
                                 <button type="button" class="btn btn-sm {{ $o->archivo_orden_path ? 'order-file-uploaded' : 'btn-outline-dark' }}" data-bs-toggle="modal" data-bs-target="#file{{ $o->id }}">
-                                    {{ $o->archivo_orden_path ? 'Subir orden' : 'Sin orden' }}
+                                    {{ $o->archivo_orden_path ? 'Con Orden' : 'Sin Orden' }}
                                 </button>
                                 <button type="button" class="btn btn-sm btn-outline-info" data-bs-toggle="modal" data-bs-target="#triage{{ $o->id }}">Triaje</button>
                                 <a class="btn btn-sm btn-outline-success" target="_blank" href="{{ route('orders.ficha-ingreso', $o) }}">Ficha PDF</a>

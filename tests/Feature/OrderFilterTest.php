@@ -105,14 +105,14 @@ class OrderFilterTest extends TestCase
             ->assertOk()
             ->assertSee('TEM CEREBRAL')
             ->assertSee('(Con contraste)')
-            ->assertSee('Sin orden');
+            ->assertSee('Sin Orden');
 
         $order->update(['archivo_orden_path' => 'ordenes/orden.pdf']);
 
         $this->actingAs($user)->get(route('orders.index'))
             ->assertOk()
             ->assertSee('order-file-uploaded')
-            ->assertSee('Subir orden');
+            ->assertSee('Con Orden');
     }
 
     public function test_order_statuses_match_tomographic_report_statuses(): void
