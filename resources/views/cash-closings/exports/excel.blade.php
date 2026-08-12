@@ -25,7 +25,7 @@
             <Row><Cell ss:StyleID="Label"><Data ss:Type="String">Periodo</Data></Cell><Cell><Data ss:Type="String">{{ $periods[$period] }}: {{ $from }} al {{ $to }}</Data></Cell></Row>
             <Row><Cell><Data ss:Type="String">Ingresos efectivo</Data></Cell><Cell><Data ss:Type="Number">{{ $money($cashIncome) }}</Data></Cell></Row>
             <Row><Cell><Data ss:Type="String">Egresos</Data></Cell><Cell><Data ss:Type="Number">{{ $money($expenseTotal) }}</Data></Cell></Row>
-            <Row><Cell><Data ss:Type="String">Saldo global</Data></Cell><Cell><Data ss:Type="Number">{{ $money($balance) }}</Data></Cell></Row>
+            <Row><Cell><Data ss:Type="String">EFECTIVO SALDO</Data></Cell><Cell><Data ss:Type="Number">{{ $money($balance) }}</Data></Cell></Row>
             <Row><Cell><Data ss:Type="String">Yape/Plin</Data></Cell><Cell><Data ss:Type="Number">{{ $money($yapePlinIncome) }}</Data></Cell></Row>
             <Row><Cell><Data ss:Type="String">Transferencias</Data></Cell><Cell><Data ss:Type="Number">{{ $money($transferIncome) }}</Data></Cell></Row>
             <Row><Cell><Data ss:Type="String">Total ingresos</Data></Cell><Cell><Data ss:Type="Number">{{ $money($incomeTotal) }}</Data></Cell></Row>

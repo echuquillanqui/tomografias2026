@@ -293,7 +293,7 @@ class CashClosingController extends Controller
         $shouldShowFixedExpenseModal = now()->isLastOfMonth() && $monthlyFixedExpensesPending->isNotEmpty();
 
         return compact('from', 'to', 'period', 'baseDate', 'tipoPago', 'agreementId', 'orders', 'expenses', 'incomeTotal', 'expenseTotal', 'cashIncome', 'yapePlinIncome', 'transferIncome', 'digitalIncome', 'incomeByPayment', 'plateSummary', 'iopamidolSummary', 'operationalBaseDate', 'operationalTipoPago', 'operationalOrders', 'operationalExpenses', 'operationalIncomeTotal', 'operationalExpenseTotal', 'operationalYapePlinIncome', 'operationalTransferIncome', 'operationalPlateSummary', 'operationalIopamidolSummary') + [
-            'balance' => $incomeTotal - $expenseTotal,
+            'balance' => $cashIncome - $expenseTotal,
             'tiposPago' => self::TIPOS_PAGO,
             'periods' => self::PERIODS,
             'months' => self::MONTHS,
