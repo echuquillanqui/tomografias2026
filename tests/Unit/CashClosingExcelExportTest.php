@@ -64,7 +64,7 @@ class CashClosingExcelExportTest extends TestCase
         $this->assertStringNotContainsString('#999', $dailySheet);
     }
 
-    public function test_summary_uses_all_payment_types_for_the_balance(): void
+    public function test_summary_labels_the_cash_minus_expenses_balance(): void
     {
         $view = view('cash-closings.exports.excel', [
             'periods' => ['day' => 'Día'],
@@ -73,7 +73,7 @@ class CashClosingExcelExportTest extends TestCase
             'to' => '2026-08-06',
             'cashIncome' => 100,
             'expenseTotal' => 50,
-            'balance' => 250,
+            'balance' => 50,
             'yapePlinIncome' => 80,
             'transferIncome' => 70,
             'incomeTotal' => 300,
@@ -88,8 +88,8 @@ class CashClosingExcelExportTest extends TestCase
 
         $summary = str($view)->between('<Worksheet ss:Name="Resumen">', '</Worksheet>')->toString();
 
-        $this->assertStringContainsString('Saldo global', $summary);
-        $this->assertMatchesRegularExpression('/Saldo global.*?250\.00/s', $summary);
-        $this->assertStringNotContainsString('Saldo efectivo', $summary);
+        $this->assertStringContainsString('EFECTIVO SALDO', $summary);
+        $this->assertMatchesRegularExpression('/EFECTIVO SALDO.*?50\.00/s', $summary);
+        $this->assertStringNotContainsString('Saldo global', $summary);
     }
 }

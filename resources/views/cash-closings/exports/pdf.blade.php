@@ -23,7 +23,7 @@
 
     <table class="summary">
         <tr><td>Ingresos efectivo</td><td class="right">S/ {{ number_format($cashIncome, 2) }}</td><td>Egresos</td><td class="right">S/ {{ number_format($expenseTotal, 2) }}</td></tr>
-        <tr><td>Saldo global</td><td class="right">S/ {{ number_format($balance, 2) }}</td><td>Yape/Plin</td><td class="right">S/ {{ number_format($yapePlinIncome, 2) }}</td></tr>
+        <tr><td>EFECTIVO SALDO</td><td class="right">S/ {{ number_format($balance, 2) }}</td><td>Yape/Plin</td><td class="right">S/ {{ number_format($yapePlinIncome, 2) }}</td></tr>
         <tr><td>Transferencias</td><td class="right">S/ {{ number_format($transferIncome, 2) }}</td><td>Total ingresos</td><td class="right">S/ {{ number_format($incomeTotal, 2) }}</td></tr>
         <tr><td>Placas inicial</td><td class="right">{{ $plateSummary['initial'] }}</td><td>Placas final</td><td class="right">{{ $plateSummary['final'] }}</td></tr>
         <tr><td>Iopamidol utilizado</td><td class="right">{{ number_format($iopamidolSummary['delivered'], 2) }}</td><td>Iopamidol final</td><td class="right">{{ number_format($iopamidolSummary['final'], 2) }}</td></tr>
