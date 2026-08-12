@@ -216,7 +216,7 @@ class OrderController extends Controller
             'tipo_pago' => ['nullable', Rule::in(self::TIPOS_PAGO)],
             'payments' => ['nullable', 'array', 'min:1', 'required_without:tipo_pago'],
             'payments.*.payment_method' => ['required', 'distinct', Rule::in(self::TIPOS_PAGO)],
-            'payments.*.amount' => ['required', 'numeric', 'min:0.01'],
+            'payments.*.amount' => ['required', 'numeric', 'min:0'],
             'tipo_comprobante' => ['nullable', Rule::in(self::TIPOS_COMPROBANTE)],
             'numero_comprobante' => ['nullable', 'string', 'max:255'],
         ]);
@@ -355,7 +355,7 @@ class OrderController extends Controller
             'tipo_pago' => ['nullable', Rule::in(self::TIPOS_PAGO)],
             'payments' => ['nullable', 'array', 'min:1', 'required_without:tipo_pago'],
             'payments.*.payment_method' => ['required', 'distinct', Rule::in(self::TIPOS_PAGO)],
-            'payments.*.amount' => ['required', 'numeric', 'min:0.01'],
+            'payments.*.amount' => ['required', 'numeric', 'min:0'],
             'tipo_comprobante' => ['nullable', Rule::in(self::TIPOS_COMPROBANTE)],
             'numero_comprobante' => ['nullable', 'string', 'max:255'],
             'descuento' => ['nullable', 'numeric', 'min:0'],
