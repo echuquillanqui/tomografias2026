@@ -333,7 +333,7 @@ class OrderController extends Controller
         ]);
         $data = $request->validate([
             'patient_id' => ['required', 'exists:patients,id'],
-            'codigo_orden' => ['nullable', 'string', 'max:255', Rule::unique('orders', 'codigo_orden')->ignore($order)],
+            'codigo_orden' => ['nullable', 'string', 'max:255'],
             'unidad' => ['nullable', Rule::in(self::UNIDADES)],
             'archivo_orden' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png,webp', 'max:10240'],
             'agreement_id' => ['required', 'exists:agreements,id'],
