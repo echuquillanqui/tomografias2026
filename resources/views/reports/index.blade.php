@@ -62,7 +62,7 @@
                         <th>Paciente</th>
                         <th>Convenio</th>
                         <th>Fecha</th>
-                        <th>Exámenes</th>
+                        <th>Estudio y tipo de estudio</th>
                         <th>Médico firmante</th>
                         <th>Estado</th>
                         <th></th>
@@ -84,7 +84,16 @@
                             <td>{{ $order->patient->nombres }} {{ $order->patient->apellidos }}<br><small class="text-muted">{{ $order->patient->dni }}</small></td>
                             <td>{{ $order->agreement->nombre_institucion }}</td>
                             <td>{{ $order->fecha_orden->format('d/m/Y H:i') }}</td>
-                            <td>{{ $order->order_exams_count }}</td>
+                            <td>
+                                @forelse($order->orderExams as $orderExam)
+                                    <div class="mb-1">
+                                        <span class="fw-semibold">{{ $orderExam->exam?->nombre_examen ?? 'Estudio sin nombre' }}</span>
+                                        <span class="badge {{ $orderExam->tipo_contraste === 'Con contraste' ? 'text-bg-primary' : 'text-bg-light' }}">{{ $orderExam->tipo_contraste }}</span>
+                                    </div>
+                                @empty
+                                    <span class="text-muted">Sin estudios</span>
+                                @endforelse
+                            </td>
                             <td>{{ $order->report?->medicoFirmante?->nombre_completo ?? $order->medicoInforme?->nombre_completo ?? '—' }}</td>
                             <td><span class="badge report-status {{ $reportStatus['class'] }}">{{ $reportStatus['label'] }}</span></td>
                             <td class="text-end">

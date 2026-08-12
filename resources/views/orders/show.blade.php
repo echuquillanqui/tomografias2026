@@ -29,7 +29,7 @@
                 <p><strong>Convenio:</strong><br>{{ $order->agreement->nombre_institucion }}</p>
                 <p><strong>Archivo de orden:</strong><br>@if($order->archivo_orden_path)<a target="_blank" href="{{ asset('storage/'.$order->archivo_orden_path) }}">Ver archivo</a>@else — @endif</p>
                 <p><strong>Médico solicitante:</strong><br>{{ $order->medicoSolicitante?->nombre ?? '—' }}</p>
-                <p><strong>Tipo de pago:</strong><br>{{ $order->tipo_pago ?? '—' }}</p>
+                <p><strong>Métodos de pago:</strong><br>{{ $order->payment_summary }}</p>
                 <p><strong>Comprobante:</strong><br>{{ $order->tipo_comprobante ?? '—' }} @if($order->numero_comprobante) N° {{ $order->numero_comprobante }} @endif</p>
                 <p><strong>Médico informe:</strong><br>{{ $order->medicoInforme?->nombre_completo ?? '—' }}</p>
                 <span class="badge badge-role align-self-start">{{ $order->estado }}</span>

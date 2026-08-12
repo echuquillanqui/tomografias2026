@@ -95,7 +95,7 @@
                             <td>@if($o->agreement->mostrar_precio_orden) S/ {{ $o->total }} @else <span class="text-muted">Oculto</span> @endif</td>
                             <td>
                                 <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#payment{{ $o->id }}">
-                                    {{ $o->tipo_pago ?? 'Actualizar pago' }}
+                                    {{ $o->payments->count() > 1 ? 'Pago mixto' : ($o->payments->first()?->payment_method ?? $o->tipo_pago ?? 'Actualizar pago') }}
                                 </button>
                             </td>
                             <td>
@@ -150,7 +150,7 @@
 @foreach($orders as $o)
     <div class="modal fade user-modal" id="payment{{ $o->id }}" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog">
-            <form method="POST" action="{{ route('orders.update-payment', $o) }}" class="modal-content">
+            <form method="POST" action="{{ route('orders.update-payment', $o) }}" class="modal-content" x-data="{ payments: {{ Illuminate\Support\Js::from(($o->payments->isNotEmpty() ? $o->payments : collect([['payment_method' => $o->tipo_pago ?? 'Efectivo', 'amount' => $o->total]]))->map(fn ($p) => ['payment_method' => data_get($p, 'payment_method'), 'amount' => (float) data_get($p, 'amount')])->values()) }}, methods: {{ Illuminate\Support\Js::from($tiposPago) }}, add() { const used = this.payments.map(p => p.payment_method); const method = this.methods.find(m => !used.includes(m)); if (method) this.payments.push({ payment_method: method, amount: 0 }); } }">
                 @csrf
                 @method('PATCH')
                 <div class="modal-header text-white">
@@ -158,12 +158,9 @@
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <label class="form-label small fw-bold">MÉTODO DE PAGO</label>
-                    <select name="tipo_pago" class="form-select" required>
-                        @foreach($tiposPago as $tipo)
-                            <option value="{{ $tipo }}" @selected(($o->tipo_pago ?? 'Efectivo') === $tipo)>{{ $tipo }}</option>
-                        @endforeach
-                    </select>
+                    <div class="d-flex justify-content-between align-items-center"><label class="form-label small fw-bold">MÉTODOS DE PAGO</label><button type="button" class="btn btn-sm btn-outline-primary" @click="add()">+ Agregar</button></div>
+                    <template x-for="(payment, index) in payments" :key="index"><div class="row g-2 mb-2"><div class="col-7"><select class="form-select" :name="`payments[${index}][payment_method]`" x-model="payment.payment_method"><template x-for="method in methods"><option :value="method" x-text="method"></option></template></select></div><div class="col-4"><input class="form-control" type="number" min="0.01" step="0.01" :name="`payments[${index}][amount]`" x-model="payment.amount" required></div><div class="col-1"><button type="button" class="btn btn-link text-danger px-0" x-show="payments.length > 1" @click="payments.splice(index, 1)">×</button></div></div></template>
+                    <div class="form-text">La suma debe ser S/ {{ number_format($o->total, 2) }}.</div>
                     <div class="row g-3 mt-1">
                         <div class="col-sm-6">
                             <label class="form-label small fw-bold">TIPO DE COMPROBANTE</label>

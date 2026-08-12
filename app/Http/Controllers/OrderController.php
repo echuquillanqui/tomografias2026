@@ -41,7 +41,7 @@ class OrderController extends Controller
         }
 
         $searchTerms = preg_split('/\s+/', $search, -1, PREG_SPLIT_NO_EMPTY);
-        $orders = Order::with(['patient', 'agreement', 'medicoSolicitante', 'medicoInforme', 'orderExams.exam'])
+        $orders = Order::with(['patient', 'agreement', 'medicoSolicitante', 'medicoInforme', 'orderExams.exam', 'payments'])
             ->withCount('orderExams')
             ->when(! $allDates, fn ($query) => $query->whereDate('fecha_orden', $date))
             ->when($searchTerms !== [], function ($query) use ($searchTerms) {
@@ -180,14 +180,14 @@ class OrderController extends Controller
 
     public function show(Order $order): View
     {
-        $order->load(['patient', 'agreement', 'medicoSolicitante', 'medicoInforme', 'orderExams.exam', 'creator', 'report', 'consumables.reagent']);
+        $order->load(['patient', 'agreement', 'medicoSolicitante', 'medicoInforme', 'orderExams.exam', 'creator', 'report', 'consumables.reagent', 'payments']);
 
         return view('orders.show', compact('order'));
     }
 
     public function edit(Request $request, Order $order): View
     {
-        $order->load(['orderExams', 'consumables']);
+        $order->load(['orderExams', 'consumables', 'payments']);
 
         return view('orders.form', $this->formData($request, $order) + ['order' => $order, 'mode' => 'edit']);
     }
@@ -213,12 +213,24 @@ class OrderController extends Controller
     public function updatePayment(Request $request, Order $order): RedirectResponse
     {
         $data = $request->validate([
-            'tipo_pago' => ['required', Rule::in(self::TIPOS_PAGO)],
+            'tipo_pago' => ['nullable', Rule::in(self::TIPOS_PAGO)],
+            'payments' => ['nullable', 'array', 'min:1', 'required_without:tipo_pago'],
+            'payments.*.payment_method' => ['required', 'distinct', Rule::in(self::TIPOS_PAGO)],
+            'payments.*.amount' => ['required', 'numeric', 'min:0.01'],
             'tipo_comprobante' => ['nullable', Rule::in(self::TIPOS_COMPROBANTE)],
             'numero_comprobante' => ['nullable', 'string', 'max:255'],
         ]);
 
-        $order->update($data);
+        $payments = collect($data['payments'] ?? [[
+            'payment_method' => $data['tipo_pago'],
+            'amount' => $order->total,
+        ]]);
+        if (abs($payments->sum('amount') - (float) $order->total) > 0.009) {
+            return back()->withErrors(['payments' => 'La suma de los métodos de pago debe coincidir con el total de la orden.']);
+        }
+        $order->update(collect($data)->except('payments')->put('tipo_pago', $payments->first()['payment_method'])->all());
+        $order->payments()->delete();
+        $order->payments()->createMany($payments->all());
 
         return redirect()->route('orders.index')->with('success', 'Datos de pago y comprobante actualizados correctamente.');
     }
@@ -340,7 +352,10 @@ class OrderController extends Controller
             'medico_solicitante_id' => ['nullable', 'exists:requesting_doctors,id'],
             'fecha_orden' => ['required', 'date'],
             'estado' => ['required', Rule::in(self::ESTADOS)],
-            'tipo_pago' => ['required', Rule::in(self::TIPOS_PAGO)],
+            'tipo_pago' => ['nullable', Rule::in(self::TIPOS_PAGO)],
+            'payments' => ['nullable', 'array', 'min:1', 'required_without:tipo_pago'],
+            'payments.*.payment_method' => ['required', 'distinct', Rule::in(self::TIPOS_PAGO)],
+            'payments.*.amount' => ['required', 'numeric', 'min:0.01'],
             'tipo_comprobante' => ['nullable', Rule::in(self::TIPOS_COMPROBANTE)],
             'numero_comprobante' => ['nullable', 'string', 'max:255'],
             'descuento' => ['nullable', 'numeric', 'min:0'],
@@ -365,6 +380,14 @@ class OrderController extends Controller
 
         $subtotal = collect($data['exams'])->sum('precio');
         $descuento = $data['descuento'] ?? 0;
+        $total = max($subtotal - $descuento, 0);
+        $payments = collect($data['payments'] ?? [[
+            'payment_method' => $data['tipo_pago'],
+            'amount' => $total,
+        ]]);
+        if (abs($payments->sum('amount') - $total) > 0.009) {
+            back()->withErrors(['payments' => 'La suma de los métodos de pago debe coincidir con el total de la orden.'])->withInput()->throwResponse();
+        }
         if ($request->hasFile('archivo_orden')) {
             if ($order->archivo_orden_path) {
                 Storage::disk('public')->delete($order->archivo_orden_path);
@@ -377,11 +400,14 @@ class OrderController extends Controller
             'unidad' => $data['unidad'] ?? null,
             'subtotal' => $subtotal,
             'descuento' => $descuento,
-            'total' => max($subtotal - $descuento, 0),
+            'total' => $total,
+            'tipo_pago' => $payments->first()['payment_method'],
             'created_by' => $order->exists ? $order->created_by : auth()->id(),
         ];
-        unset($payload['exams'], $payload['consumables'], $payload['archivo_orden']);
+        unset($payload['exams'], $payload['consumables'], $payload['payments'], $payload['archivo_orden']);
         $order->fill($payload)->save();
+        $order->payments()->delete();
+        $order->payments()->createMany($payments->all());
         $order->orderExams()->delete();
         $med = $order->medicoInforme;
         $pct = $med?->comision_porcentaje;
