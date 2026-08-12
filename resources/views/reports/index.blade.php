@@ -12,11 +12,45 @@
         </div>
     </section>
 
-    <form class="card clinic-card p-3 mb-4" method="GET" action="{{ route('reports.index') }}">
-        <div class="input-group">
-            <input name="search" class="form-control" value="{{ $search }}" placeholder="Buscar por orden, DNI o paciente">
-            <button class="btn btn-clinic-primary">Buscar</button>
+    <form method="GET" action="{{ route('reports.index') }}" class="card clinic-card mb-4"
+          x-data="{ loading: false, timer: null, allDates: {{ $allDates ? 'true' : 'false' }}, submitFilters() { clearTimeout(this.timer); this.timer = setTimeout(() => { this.loading = true; this.$root.requestSubmit(); }, 350); } }"
+          x-on:submit="loading = true">
+        <div class="card-body">
+            <div class="row g-3 align-items-end">
+                <div class="col-md-4 col-lg-3">
+                    <label for="report-date-filter" class="form-label small fw-bold">FECHA DE LA ORDEN</label>
+                    <input id="report-date-filter" name="date" type="date" class="form-control" value="{{ $date }}"
+                           max="9999-12-31" x-bind:disabled="allDates" required x-on:change="loading = true; $root.requestSubmit()">
+                </div>
+                <div class="col-md-8 col-lg-7">
+                    <label for="report-search-filter" class="form-label small fw-bold">ORDEN O PACIENTE</label>
+                    <div class="input-group">
+                        <span class="input-group-text" aria-hidden="true">&#128269;</span>
+                        <input id="report-search-filter" name="search" type="search" class="form-control"
+                               value="{{ $search }}" placeholder="Buscar por orden, nombres, apellidos o DNI"
+                               autocomplete="off" x-on:input="submitFilters()">
+                    </div>
+                </div>
+                <div class="col-lg-2 d-grid">
+                    <a class="btn btn-outline-secondary" href="{{ route('reports.index') }}">Limpiar filtros</a>
+                </div>
+                <div class="col-12">
+                    <div class="form-check form-switch">
+                        <input id="report-all-dates-filter" name="all_dates" value="1" type="checkbox" class="form-check-input"
+                               @checked($allDates) x-model="allDates" x-on:change="loading = true; $root.requestSubmit()">
+                        <label for="report-all-dates-filter" class="form-check-label fw-semibold">Buscar en todas las fechas</label>
+                        <div class="form-text">Actívelo para encontrar la orden o el paciente en todo el historial, sin limitar la búsqueda a la fecha seleccionada.</div>
+                    </div>
+                </div>
+            </div>
+            <div class="small text-muted mt-2" aria-live="polite">
+                <span x-show="!loading">{{ $orders->total() }} {{ $orders->total() === 1 ? 'atención encontrada' : 'atenciones encontradas' }}</span>
+                <span x-show="loading" x-cloak>Actualizando resultados...</span>
+            </div>
         </div>
+        <noscript>
+            <div class="card-footer bg-white text-end"><button class="btn btn-clinic-primary">Buscar</button></div>
+        </noscript>
     </form>
 
     <div class="card clinic-card">
@@ -59,7 +93,7 @@
                             </td>
                         </tr>
                     @empty
-                        <tr><td colspan="8" class="text-center py-5">Sin atenciones generadas por órdenes.</td></tr>
+                        <tr><td colspan="8" class="text-center py-5">{{ $allDates ? 'No se encontraron atenciones en el historial.' : 'No se encontraron atenciones para la fecha seleccionada.' }}</td></tr>
                     @endforelse
                 </tbody>
             </table>

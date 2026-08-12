@@ -7,6 +7,7 @@ use App\Models\OrderReportAttachment;
 use App\Models\User;
 use App\Services\ReportAttachmentStorage;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -20,9 +21,15 @@ class ReportController extends Controller
     public function index(Request $request): View
     {
         $search = trim((string) $request->query('search'));
+        $allDates = $search !== '' && $request->boolean('all_dates');
+        $date = (string) $request->query('date', now()->toDateString());
+        if (! Carbon::hasFormat($date, 'Y-m-d')) {
+            $date = now()->toDateString();
+        }
 
         $orders = Order::with(['patient', 'agreement', 'medicoInforme', 'report.medicoFirmante', 'report.attachments'])
             ->withCount('orderExams')
+            ->when(! $allDates, fn ($query) => $query->whereDate('fecha_orden', $date))
             ->when($search !== '', fn ($query) => $query->where(function ($query) use ($search) {
                 $query->where('codigo_orden', 'like', "%{$search}%")
                     ->orWhereHas('patient', fn ($patient) => $patient->where('dni', 'like', "%{$search}%")
@@ -33,7 +40,7 @@ class ReportController extends Controller
             ->paginate(10)
             ->withQueryString();
 
-        return view('reports.index', compact('orders', 'search'));
+        return view('reports.index', compact('orders', 'search', 'date', 'allDates'));
     }
 
     public function edit(Order $order): View
