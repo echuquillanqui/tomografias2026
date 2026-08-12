@@ -74,6 +74,41 @@ class OrderZeroPaymentTest extends TestCase
         ]);
     }
 
+    public function test_an_agreement_order_accepts_a_registered_exam_without_an_agreement_price(): void
+    {
+        [$user, $patient, $agreement, $exam] = $this->orderDependencies();
+        AgreementPrice::query()->delete();
+
+        $response = $this->actingAs($user)->post(route('orders.store'), [
+            'patient_id' => $patient->id,
+            'agreement_id' => $agreement->id,
+            'fecha_orden' => '12/08/2026 10:00',
+            'estado' => 'Pendiente',
+            'payments' => [[
+                'payment_method' => 'Convenio',
+                'amount' => 120,
+            ]],
+            'descuento' => 0,
+            'exams' => [[
+                'exam_id' => $exam->id,
+                'tipo_contraste' => 'Sin contraste',
+                'precio' => 120,
+                'estado' => 'Pendiente',
+            ]],
+        ]);
+
+        $response->assertRedirect()->assertSessionHasNoErrors();
+        $this->assertDatabaseHas('orders', [
+            'agreement_id' => $agreement->id,
+            'tipo_pago' => 'Convenio',
+            'total' => 120,
+        ]);
+        $this->assertDatabaseHas('order_exams', [
+            'exam_id' => $exam->id,
+            'precio' => 120,
+        ]);
+    }
+
     private function orderDependencies(): array
     {
         $user = User::create([

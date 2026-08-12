@@ -577,9 +577,11 @@ function orderSystem() {
             return match ? Number(match.price) : 0;
         },
         defaultContrastFor(examName) {
-            return this.exams.some((exam) => exam.name === examName && this.isExamAllowed(exam.id, 'Sin contraste'))
-                ? 'Sin contraste'
-                : 'Con contraste';
+            const variants = this.exams.filter((exam) => exam.name === examName);
+            if (variants.some((exam) => this.isExamAllowed(exam.id, 'Sin contraste'))) return 'Sin contraste';
+            if (variants.some((exam) => this.isExamAllowed(exam.id, 'Con contraste'))) return 'Con contraste';
+
+            return variants[0]?.configured_contrast || 'Sin contraste';
         },
         preloadConsumablesFromCart(force = false) {
             if (!force && this.consumables.length > 0) return;
@@ -612,8 +614,12 @@ function orderSystem() {
         applyAgreementPrices() {
             this.cart = this.cart
                 .map((item) => ({ ...item, ...this.examVariantFor(item, item.tipo_contraste) }))
-                .filter((item) => this.isExamAllowed(item.id))
-                .map((item) => ({ ...item, price: this.priceFor(item.id, item.tipo_contraste) }));
+                .map((item) => ({
+                    ...item,
+                    price: this.isExamAllowed(item.id, item.tipo_contraste)
+                        ? this.priceFor(item.id, item.tipo_contraste)
+                        : item.price,
+                }));
             this.refreshExamOptions();
             this.rebuildConsumablesFromExams();
         },
@@ -633,7 +639,7 @@ function orderSystem() {
             const names = new Set();
 
             return this.exams.filter((exam) => {
-                if (!this.isExamAllowed(exam.id) || names.has(exam.name)) return false;
+                if (names.has(exam.name)) return false;
                 names.add(exam.name);
 
                 return true;
