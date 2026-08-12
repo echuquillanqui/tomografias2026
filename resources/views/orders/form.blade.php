@@ -263,7 +263,7 @@
                                             <template x-for="method in paymentMethods" :key="method"><option :value="method" x-text="method"></option></template>
                                         </select>
                                     </div>
-                                    <div class="col-4"><input type="number" min="0.01" step="0.01" class="form-control form-control-sm text-end" :name="`payments[${index}][amount]`" x-model.number="payment.amount" required></div>
+                                    <div class="col-4"><input type="number" min="0" step="0.01" class="form-control form-control-sm text-end" :name="`payments[${index}][amount]`" x-model.number="payment.amount" required></div>
                                     <div class="col-1"><button type="button" class="btn btn-sm btn-link text-danger p-0" @click="removePayment(index)" x-show="payments.length > 1" aria-label="Quitar método">×</button></div>
                                 </div>
                             </template>
