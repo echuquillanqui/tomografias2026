@@ -887,6 +887,7 @@ class OrderController extends Controller
         $admissionData['contrast_label'] = $admissionDefaults['contrast_label'];
         $admissionData['has_contrast'] = $admissionDefaults['has_contrast'];
         $admissionData['study'] = $admissionDefaults['study'];
+        $admissionData['requested_by'] = $admissionDefaults['requested_by'];
         $admissionData = $this->applyAutomaticDeliveryMedia($order, $admissionData);
         $admissionData['delivery'] = $this->deliveryLabel($admissionData);
         $admissionData['date'] = $order->fecha_orden?->format('d/m/Y H:i');
