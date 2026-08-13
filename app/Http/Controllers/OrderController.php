@@ -16,6 +16,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Validator;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Validation\Rule;
@@ -339,11 +340,16 @@ class OrderController extends Controller
 
     private function saveOrder(Order $order, Request $request): Order
     {
-        $request->merge([
-            'exams' => collect($request->input('exams', []))->filter(fn ($row) => ! empty($row['exam_id']))->values()->all(),
-            'fecha_orden' => $this->normalizeOrderDateTime($request->input('fecha_orden')),
-        ]);
-        $data = $request->validate([
+        // Validate a normalized copy instead of mutating the request. Laravel can
+        // then flash exactly what the user typed when validation redirects back.
+        $validationInput = $request->all();
+        $validationInput['exams'] = collect($request->input('exams', []))
+            ->filter(fn ($row) => ! empty($row['exam_id']))
+            ->values()
+            ->all();
+        $validationInput['fecha_orden'] = $this->normalizeOrderDateTime($request->input('fecha_orden'));
+
+        $data = Validator::make($validationInput, [
             'patient_id' => ['required', 'exists:patients,id'],
             'codigo_orden' => ['nullable', 'string', 'max:255'],
             'unidad' => ['nullable', Rule::in(self::UNIDADES)],
@@ -368,7 +374,37 @@ class OrderController extends Controller
             'consumables' => ['nullable', 'array'],
             'consumables.*.reagent_id' => ['required', 'exists:reagents,id'],
             'consumables.*.cantidad' => ['required', 'numeric', 'min:0'],
-        ]);
+        ], [
+            'required' => 'El campo :attribute es obligatorio.',
+            'required_without' => 'Debe indicar :attribute cuando no se seleccionó un tipo de pago.',
+            'exists' => 'El valor seleccionado para :attribute no es válido.',
+            'in' => 'El valor seleccionado para :attribute no es válido.',
+            'date' => 'El campo :attribute debe contener una fecha y hora válidas.',
+            'array' => 'El campo :attribute no tiene un formato válido.',
+            'min.array' => 'Debe agregar al menos un elemento en :attribute.',
+            'min.numeric' => 'El campo :attribute debe ser mayor o igual a :min.',
+            'numeric' => 'El campo :attribute debe ser un número.',
+            'distinct' => 'No se puede repetir el mismo :attribute.',
+            'file' => 'El campo :attribute debe ser un archivo válido.',
+            'mimes' => 'El archivo de la orden debe ser PDF, JPG, JPEG, PNG o WEBP.',
+            'max.file' => 'El archivo de la orden no debe superar los 10 MB.',
+        ], [
+            'patient_id' => 'paciente',
+            'agreement_id' => 'convenio',
+            'fecha_orden' => 'fecha y hora',
+            'estado' => 'estado de la orden',
+            'payments' => 'los métodos de pago',
+            'payments.*.payment_method' => 'método de pago',
+            'payments.*.amount' => 'monto del pago',
+            'exams' => 'exámenes',
+            'exams.*.exam_id' => 'examen',
+            'exams.*.tipo_contraste' => 'tipo de contraste',
+            'exams.*.precio' => 'precio del examen',
+            'exams.*.estado' => 'estado del examen',
+            'consumables.*.reagent_id' => 'consumible',
+            'consumables.*.cantidad' => 'cantidad del consumible',
+            'archivo_orden' => 'archivo de la orden',
+        ])->validate();
         $subtotal = collect($data['exams'])->sum('precio');
         $descuento = $data['descuento'] ?? 0;
         $total = max($subtotal - $descuento, 0);

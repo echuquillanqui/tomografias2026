@@ -40,7 +40,9 @@
     </section>
 
     @if ($errors->any())
-        <div class="alert alert-danger shadow-sm border-0">
+        <div id="order-validation-errors" class="alert alert-danger shadow-sm border-0" role="alert" tabindex="-1">
+            <div class="fw-bold mb-1">No se pudo guardar la orden.</div>
+            <div class="small mb-2">Corrige los siguientes campos. La información que ingresaste se conserva en el formulario.</div>
             <ul class="mb-0">
                 @foreach ($errors->all() as $error)
                     <li>{{ $error }}</li>
@@ -64,12 +66,13 @@
                             <div class="order-search-panel__icon"><i class="bi bi-person-vcard"></i></div>
                             <div class="flex-grow-1">
                                 <label class="form-label small fw-bold">PACIENTE</label>
-                                <select id="patient_select" name="patient_id" class="form-select js-tom-select" data-placeholder="Buscar paciente por DNI, nombres o apellidos" required x-model="selectedPatientId">
+                                <select id="patient_select" name="patient_id" class="form-select js-tom-select @error('patient_id') is-invalid @enderror" data-placeholder="Buscar paciente por DNI, nombres o apellidos" required x-model="selectedPatientId" @error('patient_id') aria-invalid="true" aria-describedby="patient-error" @enderror>
                                     <option value=""></option>
                                     @foreach($patients as $p)
                                         <option value="{{ $p->id }}" @selected(old('patient_id', $order->patient_id) == $p->id)>{{ $p->dni }} - {{ $p->nombres }} {{ $p->apellidos }}</option>
                                     @endforeach
                                 </select>
+                                @error('patient_id')<div id="patient-error" class="invalid-feedback d-block">{{ $message }}</div>@enderror
                                 <div class="d-flex flex-wrap gap-2 mt-2">
                                     <button type="button" class="btn btn-sm btn-outline-primary" @click="openPatientModal()">
                                         <i class="bi bi-person-plus"></i> Registrar paciente
@@ -83,11 +86,12 @@
                         <div class="row g-3">
                             <div class="col-md-6">
                                 <label class="form-label small fw-bold">CONVENIO</label>
-                                <select name="agreement_id" class="form-select" x-model="selectedAgreement" @change="applyAgreementPrices()" required>
+                                <select name="agreement_id" class="form-select @error('agreement_id') is-invalid @enderror" x-model="selectedAgreement" @change="applyAgreementPrices()" required>
                                     @foreach($agreements as $a)
                                         <option value="{{ $a->id }}" @selected(old('agreement_id', $order->agreement_id) == $a->id)>{{ $a->nombre_institucion }}</option>
                                     @endforeach
                                 </select>
+                                @error('agreement_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label small fw-bold">BOLETA O FACTURA</label>
@@ -108,7 +112,8 @@
                             </div>
                             <div class="col-md-4">
                                 <label class="form-label small fw-bold">FECHA Y HORA</label>
-                                <input name="fecha_orden" type="text" inputmode="text" class="form-control" value="{{ old('fecha_orden', optional($order->fecha_orden)->format('d/m/Y H:i') ?? now()->format('d/m/Y H:i')) }}" placeholder="dd/mm/aaaa 14:30 o dd/mm/aaaa 2:30 PM" pattern="\d{1,2}/\d{1,2}/\d{4}\s+([01]?\d|2[0-3]):[0-5]\d(\s*[AaPp]\.?[Mm]\.?)?" required>
+                                <input name="fecha_orden" type="text" inputmode="text" class="form-control @error('fecha_orden') is-invalid @enderror" value="{{ old('fecha_orden', optional($order->fecha_orden)->format('d/m/Y H:i') ?? now()->format('d/m/Y H:i')) }}" placeholder="dd/mm/aaaa 14:30 o dd/mm/aaaa 2:30 PM" pattern="\d{1,2}/\d{1,2}/\d{4}\s+([01]?\d|2[0-3]):[0-5]\d(\s*[AaPp]\.?[Mm]\.?)?" required>
+                                @error('fecha_orden')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                 <div class="form-text">Usa 24 horas (ej. 15/07/2026 14:30). También se acepta AM/PM y se convierte automáticamente.</div>
                             </div>
                             <div class="col-md-4">
@@ -284,6 +289,7 @@
                             <h2 class="fw-bold text-primary mb-0">S/ <span x-text="total().toFixed(2)"></span></h2>
                         </div>
 
+                        <div class="alert alert-danger py-2 small" x-show="clientError" x-text="clientError" x-cloak></div>
                         <button type="submit" class="btn btn-primary w-100 py-3 shadow fw-bold" :disabled="cart.length === 0 || isSubmitting">
                             <span x-show="!isSubmitting">CONFIRMAR Y GUARDAR</span>
                             <span x-show="isSubmitting">GUARDANDO...</span>
@@ -389,8 +395,11 @@ function orderSystem() {
         cartSearch: '',
         exams: [],
         isSubmitting: false,
+        clientError: '',
         init() {
             this.preloadConsumablesFromCart(false);
+
+            this.$nextTick(() => document.getElementById('order-validation-errors')?.focus());
 
             document.querySelectorAll('.js-tom-select').forEach((select) => {
                 if (!select.tomselect) {
@@ -656,9 +665,10 @@ function orderSystem() {
             return this.cart.reduce((sum, item) => sum + (Number(item.price) || 0), 0);
         },
         submitOrder(event) {
+            this.clientError = '';
             if (this.paymentDifference() !== 0 || new Set(this.payments.map((payment) => payment.payment_method)).size !== this.payments.length) {
                 event.preventDefault();
-                alert(this.paymentDifference() !== 0 ? 'La suma de los pagos debe coincidir con el total de la orden.' : 'No se puede repetir un método de pago.');
+                this.clientError = this.paymentDifference() !== 0 ? 'La suma de los pagos debe coincidir con el total de la orden.' : 'No se puede repetir un método de pago.';
                 return false;
             }
             if (this.isSubmitting) {
