@@ -6,6 +6,7 @@ use App\Models\Agreement;
 use App\Models\Exam;
 use App\Models\Order;
 use App\Models\Patient;
+use App\Models\Reagent;
 use App\Models\RequestingDoctor;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -190,5 +191,39 @@ class OrderValidationPersistenceTest extends TestCase
         $declarationData = $order->fresh()->swornDeclaration->data;
         $this->assertSame('99887766', $declarationData['legal_representative_dni']);
         $this->assertSame('El paciente mantiene su autorización.', $declarationData['revocation']);
+    }
+
+    public function test_admission_fields_are_not_lost_when_consumables_are_synchronized(): void
+    {
+        $user = User::create(['username' => 'admission-consumables', 'email' => 'admission-consumables@example.com', 'password' => 'password']);
+        $patient = Patient::create(['dni' => '55443322', 'nombres' => 'Rosa', 'apellidos' => 'Flores']);
+        $agreement = Agreement::create(['nombre_institucion' => 'Particular', 'activo' => true]);
+        $exam = Exam::create(['nombre_examen' => 'Tórax', 'tipo_contraste' => 'Ambos', 'activo' => true]);
+        $plate = Reagent::create(['nombre' => 'Placa radiográfica', 'unidad' => 'unidad', 'stock_actual' => 10, 'stock_minimo' => 0]);
+        $order = Order::create(['patient_id' => $patient->id, 'agreement_id' => $agreement->id, 'fecha_orden' => now(), 'estado' => 'Pendiente']);
+        $order->orderExams()->create(['exam_id' => $exam->id, 'tipo_contraste' => 'Con contraste', 'precio' => 120]);
+        $order->admissionForm()->create(['data' => ['cause' => '', 'medication' => '', 'antecedents' => '']]);
+
+        $this->actingAs($user)->put(route('orders.ficha-ingreso.update', $order), [
+            'cause' => 'Control por dolor torácico',
+            'medication' => 'Metformina',
+            'antecedents' => 'Hipertensión arterial',
+            'allergy' => 'Alergia al yodo',
+            'fasting' => 'SI',
+            'creatinine' => '1.1',
+            'consumables' => [
+                ['reagent_id' => $plate->id, 'cantidad' => 2],
+            ],
+        ])->assertRedirect(route('orders.ficha-ingreso.template', $order));
+
+        $admissionData = $order->fresh()->admissionForm->data;
+        $this->assertSame('Control por dolor torácico', $admissionData['cause']);
+        $this->assertSame('Metformina', $admissionData['medication']);
+        $this->assertSame('Hipertensión arterial', $admissionData['antecedents']);
+        $this->assertSame('Alergia al yodo', $admissionData['allergy']);
+        $this->assertSame('SI', $admissionData['fasting']);
+        $this->assertSame('1.1', $admissionData['creatinine']);
+        $this->assertSame(2, $admissionData['plates_count']);
+        $this->assertSame(2, $admissionData['delivery_quantities']['PLACAS']);
     }
 }
