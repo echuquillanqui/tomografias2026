@@ -154,7 +154,11 @@ class OrderController extends Controller
         }
 
         $plateQuantity = (int) $plateConsumables->sum('cantidad');
-        $admissionData = $order->admissionForm?->data ?? [];
+        // The admission form may have been updated earlier in the same request
+        // (for example, before synchronizing the submitted consumables). Read it
+        // again from the database so plate synchronization never restores the
+        // stale, pre-submit JSON held by the loaded relationship.
+        $admissionData = $order->admissionForm()->first()?->data ?? [];
         $deliveryQuantities = $admissionData['delivery_quantities'] ?? [];
         $deliveryQuantities = is_array($deliveryQuantities) ? $deliveryQuantities : [];
         $deliveryQuantities['PLACAS'] = $plateQuantity;
