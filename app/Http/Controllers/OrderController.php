@@ -880,6 +880,13 @@ class OrderController extends Controller
             'creatinine' => '',
         ];
         $admissionData = array_merge($admissionDefaults, $order->admissionForm?->data ?? []);
+        // These values describe the order itself, so they must not remain frozen
+        // with the values that were copied into the admission form when the order
+        // was first created. Keep the clinical fields entered in the form, but
+        // always reflect the currently saved exams and contrast selection.
+        $admissionData['contrast_label'] = $admissionDefaults['contrast_label'];
+        $admissionData['has_contrast'] = $admissionDefaults['has_contrast'];
+        $admissionData['study'] = $admissionDefaults['study'];
         $admissionData = $this->applyAutomaticDeliveryMedia($order, $admissionData);
         $admissionData['delivery'] = $this->deliveryLabel($admissionData);
         $admissionData['date'] = $order->fecha_orden?->format('d/m/Y H:i');
@@ -901,7 +908,11 @@ class OrderController extends Controller
             'revocation' => '',
         ];
         $order->swornDeclaration()->updateOrCreate([], [
-            'data' => array_merge($declarationDefaults, $order->swornDeclaration?->data ?? []),
+            'data' => array_merge(
+                $declarationDefaults,
+                $order->swornDeclaration?->data ?? [],
+                ['study' => $declarationDefaults['study']]
+            ),
         ]);
     }
 
