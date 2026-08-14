@@ -27,7 +27,8 @@
         .totals-label { text-align: right; font-weight: bold; background: #eee; }
         .payment { margin-top: 13px; }
         .cancelled { margin: 28px 0 12px auto; width: 42%; border: 1px solid #333; background: #ffe59b; padding: 12px; text-align: center; font-size: 22px; }
-        .footer { margin-top: 18px; font-size: 8px; color: #38516b; }
+        .footer { margin-top: 18px; font-size: 10px; color: #38516b; }
+        .fiscal-notice { display: inline-block; background: #ffe59b; padding: 3px 5px; font-weight: bold; line-height: 1.4; }
         .contact { float: right; }
     </style>
 </head>
@@ -78,7 +79,7 @@
 
     <div class="payment"><strong>Medio de pago:</strong> {{ $order->payment_summary }}</div>
     <div class="cancelled">CANCELADO</div>
-    <div class="footer"><span>Documento no válido para crédito fiscal.</span><span class="contact">{{ $setting->telefono ? 'CEL. '.$setting->telefono : '' }}</span><br>Si desea cambio por factura o boleta de venta, solicítelo dentro de las 72 horas.</div>
+    <div class="footer"><span class="fiscal-notice">Documento no válido para crédito fiscal.<br>Si desea cambio por factura o boleta de venta, solicítelo dentro de las 72 horas.</span><span class="contact">{{ $setting->telefono ? 'CEL. '.$setting->telefono : '' }}</span></div>
 </div>
 </body>
 </html>

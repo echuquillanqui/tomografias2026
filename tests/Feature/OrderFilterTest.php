@@ -123,11 +123,22 @@ class OrderFilterTest extends TestCase
 
         $this->actingAs($user)->get(route('orders.index'))
             ->assertOk()
+            ->assertSee('order-status order-status-pending', false)
             ->assertSee('value="Pendiente"', false)
             ->assertSee('value="En proceso"', false)
             ->assertSee('value="Informado"', false)
             ->assertDontSee('value="Entregado"', false)
             ->assertDontSee('value="Anulado"', false);
+
+        $order->update(['estado' => 'En proceso']);
+        $this->actingAs($user)->get(route('orders.index'))
+            ->assertOk()
+            ->assertSee('order-status order-status-progress', false);
+
+        $order->update(['estado' => 'Informado']);
+        $this->actingAs($user)->get(route('orders.index'))
+            ->assertOk()
+            ->assertSee('order-status order-status-complete', false);
 
         $this->actingAs($user)->patch(route('orders.update-status', $order), ['estado' => 'Anulado'])
             ->assertSessionHasErrors('estado');

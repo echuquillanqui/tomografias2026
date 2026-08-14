@@ -74,6 +74,13 @@
                 </thead>
                 <tbody>
                     @forelse($orders as $o)
+                        @php
+                            $orderStatusClass = match ($o->estado) {
+                                'En proceso' => 'order-status-progress',
+                                'Informado' => 'order-status-complete',
+                                default => 'order-status-pending',
+                            };
+                        @endphp
                         <tr>
                             <td class="fw-bold">{{ $o->codigo_orden ?? '—' }}</td>
                             <td>{{ $o->unidad ?? '—' }}</td>
@@ -107,7 +114,7 @@
                                 @endif
                             </td>
                             <td>
-                                <button type="button" class="btn btn-sm badge badge-role border-0" data-bs-toggle="modal" data-bs-target="#status{{ $o->id }}">
+                                <button type="button" class="btn btn-sm badge order-status {{ $orderStatusClass }}" data-bs-toggle="modal" data-bs-target="#status{{ $o->id }}">
                                     {{ $o->estado }}
                                 </button>
                             </td>
@@ -145,6 +152,16 @@
         border-color: #075fd8;
         color: #fff;
     }
+    .order-status {
+        border: 1px solid transparent;
+        font-weight: 800;
+        letter-spacing: .03em;
+        padding: .45rem .7rem;
+        text-transform: uppercase;
+    }
+    .order-status-pending { background: #fff0db; border-color: #fdba74; color: #c2410c; }
+    .order-status-progress { background: #e0f2fe; border-color: #7dd3fc; color: #0369a1; }
+    .order-status-complete { background: #dcfce7; border-color: #86efac; color: #15803d; }
 </style>
 @endpush
 
