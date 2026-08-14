@@ -14,7 +14,7 @@
                 <a class="btn btn-outline-light" href="{{ route('orders.triaje', $order) }}">Parte de triaje</a>
                 <a class="btn btn-outline-light" href="{{ route('orders.ficha-ingreso.template', $order) }}">Ficha plantilla</a>
                 <a class="btn btn-outline-light" target="_blank" href="{{ route('orders.ficha-ingreso', $order) }}">Ficha PDF</a>
-                <a class="btn btn-outline-light" target="_blank" href="{{ route('orders.sale-note', $order) }}">Nota de venta</a>
+                <button type="button" class="btn btn-outline-light" data-bs-toggle="modal" data-bs-target="#saleNoteModal" data-sale-note-url="{{ route('orders.sale-note', $order) }}" data-sale-note-number="{{ $order->sale_note_number }}">Nota de venta</button>
                 <a class="btn btn-outline-light" href="{{ route('orders.declaracion-jurada.template', $order) }}">Declaración plantilla</a>
                 <a class="btn btn-outline-light" target="_blank" href="{{ route('orders.declaracion-jurada', $order) }}">Declaración PDF</a>
                 <a class="btn btn-outline-light" href="{{ route('orders.index') }}">Volver</a>
@@ -90,4 +90,5 @@
     </div>
 </div>
 
+@include('orders.partials.sale-note-modal')
 @endsection

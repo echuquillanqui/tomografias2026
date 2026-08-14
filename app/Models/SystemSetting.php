@@ -9,7 +9,7 @@ class SystemSetting extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['ruc', 'razon_social', 'direccion', 'telefono', 'logo_path', 'sale_note_series', 'next_receipt_number'];
+    protected $fillable = ['ruc', 'razon_social', 'descripcion_empresa', 'direccion', 'telefono', 'logo_path', 'sale_note_series', 'next_receipt_number'];
 
     protected $casts = ['next_receipt_number' => 'integer'];
 

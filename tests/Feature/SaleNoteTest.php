@@ -60,6 +60,31 @@ class SaleNoteTest extends TestCase
         $this->assertSame('004-210', $firstOrder->fresh()->sale_note_number);
     }
 
+    public function test_company_description_is_saved_and_rendered_in_sale_note(): void
+    {
+        [$user, $patient, $agreement, $exam] = $this->dependencies();
+        $setting = SystemSetting::current();
+
+        $this->actingAs($user)->put(route('system-settings.update'), [
+            'razon_social' => 'Diagnóstico Médico SAC',
+            'descripcion_empresa' => 'Centro de diagnóstico médico',
+            'sale_note_series' => '004',
+            'next_receipt_number' => 210,
+        ])->assertSessionHasNoErrors();
+
+        $this->assertDatabaseHas('system_settings', [
+            'id' => $setting->id,
+            'descripcion_empresa' => 'Centro de diagnóstico médico',
+        ]);
+
+        $this->actingAs($user)->post(route('orders.store'), $this->orderPayload($patient, $agreement, $exam));
+
+        $order = Order::firstOrFail()->load(['patient', 'orderExams.exam', 'payments']);
+        $html = view('orders.pdfs.sale-note', ['order' => $order, 'setting' => $setting->fresh()])->render();
+
+        $this->assertStringContainsString('CENTRO DE DIAGNÓSTICO MÉDICO', $html);
+    }
+
     private function dependencies(): array
     {
         $user = User::factory()->create();

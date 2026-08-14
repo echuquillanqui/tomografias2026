@@ -42,6 +42,7 @@
             </td>
             <td class="company">
                 <div style="font-size:13px">{{ mb_strtoupper($setting->razon_social) }}</div>
+                @if($setting->descripcion_empresa)<div style="font-size:10px;font-weight:normal">{{ mb_strtoupper($setting->descripcion_empresa) }}</div>@endif
                 @if($setting->direccion)<div>{{ $setting->direccion }}</div>@endif
                 @if($setting->ruc)<div>RUC: {{ $setting->ruc }}</div>@endif
             </td>

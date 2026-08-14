@@ -21,6 +21,7 @@ class SystemSettingController extends Controller
         $data = $request->validate([
             'ruc' => ['nullable', 'string', 'max:20'],
             'razon_social' => ['required', 'string', 'max:255'],
+            'descripcion_empresa' => ['nullable', 'string', 'max:255'],
             'direccion' => ['nullable', 'string', 'max:255'],
             'telefono' => ['nullable', 'string', 'max:50'],
             'sale_note_series' => ['required', 'string', 'max:20', 'regex:/^[A-Za-z0-9]+$/'],
