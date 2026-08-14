@@ -85,6 +85,32 @@ class SaleNoteTest extends TestCase
         $this->assertStringContainsString('CENTRO DE DIAGNÓSTICO MÉDICO', $html);
     }
 
+    public function test_fiscal_notice_is_emphasized_in_sale_note(): void
+    {
+        [, $patient, $agreement, $exam] = $this->dependencies();
+        $order = Order::create([
+            'patient_id' => $patient->id,
+            'agreement_id' => $agreement->id,
+            'fecha_orden' => now(),
+            'estado' => 'Pendiente',
+        ]);
+        $order->orderExams()->create([
+            'exam_id' => $exam->id,
+            'tipo_contraste' => 'Sin contraste',
+            'precio' => 330,
+            'estado' => 'Pendiente',
+        ]);
+
+        $html = view('orders.pdfs.sale-note', [
+            'order' => $order->load(['patient', 'orderExams.exam', 'payments']),
+            'setting' => SystemSetting::current(),
+        ])->render();
+
+        $this->assertStringContainsString('class="fiscal-notice"', $html);
+        $this->assertStringContainsString('background: #ffe59b', $html);
+        $this->assertStringContainsString('font-size: 10px', $html);
+    }
+
     private function dependencies(): array
     {
         $user = User::factory()->create();
