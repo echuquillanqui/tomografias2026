@@ -10,6 +10,7 @@ use App\Models\Order;
 use App\Models\Patient;
 use App\Models\Reagent;
 use App\Models\RequestingDoctor;
+use App\Models\SystemSetting;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -426,6 +427,10 @@ class OrderController extends Controller
             $data['archivo_orden_path'] = $request->file('archivo_orden')->store('ordenes', 'public');
         }
 
+        if (! $order->exists) {
+            $this->assignSaleNoteNumber($order);
+        }
+
         $payload = $data + [
             'codigo_orden' => $data['codigo_orden'] ?? null,
             'unidad' => $data['unidad'] ?? null,
@@ -469,6 +474,39 @@ class OrderController extends Controller
         $this->createInitialReport($order);
 
         return $order;
+    }
+
+    private function assignSaleNoteNumber(Order $order): void
+    {
+        $setting = SystemSetting::query()->lockForUpdate()->first();
+        if (! $setting) {
+            SystemSetting::current();
+            $setting = SystemSetting::query()->lockForUpdate()->firstOrFail();
+        }
+
+        $order->sale_note_series = $setting->sale_note_series ?: '004';
+        $order->receipt_number = $setting->next_receipt_number ?: 1;
+        $setting->increment('next_receipt_number');
+    }
+
+    public function saleNotePdf(Order $order)
+    {
+        if ($order->receipt_number === null) {
+            DB::transaction(function () use ($order): void {
+                $lockedOrder = Order::query()->lockForUpdate()->findOrFail($order->id);
+                if ($lockedOrder->receipt_number === null) {
+                    $this->assignSaleNoteNumber($lockedOrder);
+                    $lockedOrder->save();
+                }
+            });
+        }
+
+        $order->refresh()->load(['patient', 'agreement', 'orderExams.exam', 'payments']);
+        $setting = SystemSetting::current();
+
+        return Pdf::loadView('orders.pdfs.sale-note', compact('order', 'setting'))
+            ->setPaper('a4')
+            ->stream('nota-venta-'.$order->sale_note_number.'.pdf');
     }
 
 

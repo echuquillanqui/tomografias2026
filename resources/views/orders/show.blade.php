@@ -14,6 +14,7 @@
                 <a class="btn btn-outline-light" href="{{ route('orders.triaje', $order) }}">Parte de triaje</a>
                 <a class="btn btn-outline-light" href="{{ route('orders.ficha-ingreso.template', $order) }}">Ficha plantilla</a>
                 <a class="btn btn-outline-light" target="_blank" href="{{ route('orders.ficha-ingreso', $order) }}">Ficha PDF</a>
+                <a class="btn btn-outline-light" target="_blank" href="{{ route('orders.sale-note', $order) }}">Nota de venta</a>
                 <a class="btn btn-outline-light" href="{{ route('orders.declaracion-jurada.template', $order) }}">Declaración plantilla</a>
                 <a class="btn btn-outline-light" target="_blank" href="{{ route('orders.declaracion-jurada', $order) }}">Declaración PDF</a>
                 <a class="btn btn-outline-light" href="{{ route('orders.index') }}">Volver</a>
@@ -31,6 +32,7 @@
                 <p><strong>Médico solicitante:</strong><br>{{ $order->medicoSolicitante?->nombre ?? '—' }}</p>
                 <p><strong>Métodos de pago:</strong><br>{{ $order->payment_summary }}</p>
                 <p><strong>Comprobante:</strong><br>{{ $order->tipo_comprobante ?? '—' }} @if($order->numero_comprobante) N° {{ $order->numero_comprobante }} @endif</p>
+                <p><strong>Nota de venta:</strong><br>{{ $order->sale_note_number ?? '—' }}</p>
                 <p><strong>Médico informe:</strong><br>{{ $order->medicoInforme?->nombre_completo ?? '—' }}</p>
                 <span class="badge badge-role align-self-start">{{ $order->estado }}</span>
             </div>

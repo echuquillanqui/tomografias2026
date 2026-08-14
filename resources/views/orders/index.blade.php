@@ -119,6 +119,7 @@
                                 </button>
                                 <button type="button" class="btn btn-sm btn-outline-info" data-bs-toggle="modal" data-bs-target="#triage{{ $o->id }}">Triaje</button>
                                 <a class="btn btn-sm btn-outline-success" target="_blank" href="{{ route('orders.ficha-ingreso', $o) }}">Ficha PDF</a>
+                                <a class="btn btn-sm btn-outline-primary" target="_blank" href="{{ route('orders.sale-note', $o) }}">Nota de venta</a>
                                 @if($o->orderExams->contains('tipo_contraste', 'Con contraste'))
                                     <a class="btn btn-sm btn-outline-warning" target="_blank" href="{{ route('orders.declaracion-jurada', $o) }}">DJ PDF</a>
                                 @endif
