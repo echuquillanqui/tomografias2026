@@ -66,6 +66,7 @@ Route::middleware('auth')->group(function () {
     Route::get('orders/{order}/ficha-ingreso/plantilla', [OrderController::class, 'fichaIngresoTemplate'])->name('orders.ficha-ingreso.template');
     Route::put('orders/{order}/ficha-ingreso/plantilla', [OrderController::class, 'updateFichaIngreso'])->name('orders.ficha-ingreso.update');
     Route::get('orders/{order}/ficha-ingreso', [OrderController::class, 'fichaIngresoPdf'])->name('orders.ficha-ingreso');
+    Route::get('orders/{order}/nota-venta', [OrderController::class, 'saleNotePdf'])->name('orders.sale-note');
     Route::get('orders/{order}/declaracion-jurada/plantilla', [OrderController::class, 'declaracionJuradaTemplate'])->name('orders.declaracion-jurada.template');
     Route::put('orders/{order}/declaracion-jurada/plantilla', [OrderController::class, 'updateDeclaracionJurada'])->name('orders.declaracion-jurada.update');
     Route::get('orders/{order}/declaracion-jurada', [OrderController::class, 'declaracionJuradaPdf'])->name('orders.declaracion-jurada');
