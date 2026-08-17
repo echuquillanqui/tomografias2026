@@ -12,6 +12,7 @@ use App\Models\Reagent;
 use App\Models\RequestingDoctor;
 use App\Models\SystemSetting;
 use App\Models\User;
+use App\Services\OrderStockService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -25,6 +26,9 @@ use Illuminate\View\View;
 
 class OrderController extends Controller
 {
+    public function __construct(private OrderStockService $orderStockService)
+    {
+    }
     private const ESTADOS = ['Pendiente', 'En proceso', 'Informado'];
     private const TIPOS_PAGO = ['Efectivo', 'Tarjeta', 'Transferencia', 'Yape/Plin', 'Convenio'];
     private const TIPOS_COMPROBANTE = ['Boleta', 'Factura'];
@@ -121,13 +125,7 @@ class OrderController extends Controller
                 }
             }
 
-            $order->consumables()->delete();
-            foreach ($consumables->filter(fn ($row) => (float) $row['cantidad'] > 0) as $row) {
-                $order->consumables()->create([
-                    'reagent_id' => $row['reagent_id'],
-                    'cantidad' => $row['cantidad'],
-                ]);
-            }
+            $this->orderStockService->sync($order, $consumables);
 
             $this->syncAdmissionPlateQuantity($order);
             if (array_key_exists('plates_count', $data)) {
@@ -270,7 +268,10 @@ class OrderController extends Controller
             ? trim((string) $data['motivo_eliminacion_otro'])
             : $data['motivo_eliminacion'];
 
-        $order->delete();
+        DB::transaction(function () use ($order): void {
+            $this->orderStockService->sync($order, []);
+            $order->delete();
+        });
 
         return redirect()->route('orders.index')->with('success', 'Orden eliminada correctamente. Motivo: '.$motivo);
     }
@@ -278,7 +279,7 @@ class OrderController extends Controller
     private function formData(Request $request, ?Order $order = null): array
     {
         return [
-            'patients' => Patient::select(['id', 'dni', 'nombres', 'apellidos', 'telefono', 'fecha_nacimiento', 'edad'])->orderBy('apellidos')->orderBy('nombres')->get(),
+            'patients' => Patient::select(['id', 'dni', 'nombres', 'apellidos', 'telefono', 'fecha_nacimiento', 'edad', 'sexo'])->orderBy('apellidos')->orderBy('nombres')->get(),
             'agreements' => Agreement::select(['id', 'nombre_institucion', 'mostrar_precio_orden'])->where('activo', true)->orderByRaw("CASE WHEN UPPER(nombre_institucion) = 'PARTICULAR' THEN 0 ELSE 1 END")->orderBy('nombre_institucion')->get(),
             'exams' => Exam::select(['id', 'nombre_examen', 'tipo_contraste'])->where('activo', true)->orderBy('nombre_examen')->get(),
             'reagents' => Reagent::select(['id', 'nombre', 'unidad'])->where('activo', true)->orderBy('nombre')->get(),
@@ -454,20 +455,15 @@ class OrderController extends Controller
             ]);
         }
 
-        $order->consumables()->delete();
         $configuredReagentIds = GlobalContrastConsumable::whereIn(
             'tipo_contraste',
             collect($data['exams'])->pluck('tipo_contraste')->unique()
         )->pluck('reagent_id')->map(fn ($id) => (int) $id);
-        foreach (collect($data['consumables'] ?? [])->filter(fn ($row) =>
+        $orderConsumables = collect($data['consumables'] ?? [])->filter(fn ($row) =>
             (float) ($row['cantidad'] ?? 0) > 0
             && $configuredReagentIds->contains((int) $row['reagent_id'])
-        ) as $row) {
-            $order->consumables()->updateOrCreate(
-                ['reagent_id' => $row['reagent_id']],
-                ['cantidad' => $row['cantidad']]
-            );
-        }
+        );
+        $this->orderStockService->sync($order, $orderConsumables);
 
         $order->load(['patient', 'agreement', 'medicoSolicitante', 'orderExams.exam']);
         $this->syncPrintableDocuments($order);
@@ -606,10 +602,7 @@ class OrderController extends Controller
         $formData['medication'] = implode(PHP_EOL, $medications);
         $order->admissionForm()->updateOrCreate([], ['data' => array_merge($current, $formData)]);
         $order->update(['unidad' => $data['unit'] ?? null]);
-        $order->consumables()->delete();
-        foreach (collect($data['consumables'] ?? [])->filter(fn ($row) => (float) ($row['cantidad'] ?? 0) > 0) as $row) {
-            $order->consumables()->updateOrCreate(['reagent_id' => $row['reagent_id']], ['cantidad' => $row['cantidad']]);
-        }
+        $this->orderStockService->sync($order, collect($data['consumables'] ?? []));
         $this->syncAdmissionPlateQuantity($order);
 
         return redirect()->route('orders.triaje', $order)->with('success', 'Parte de triaje guardado correctamente.');
@@ -640,6 +633,7 @@ class OrderController extends Controller
             'patient_phone' => ['nullable', 'string', 'max:255'],
             'patient_birthdate' => ['nullable', 'string', 'max:255'],
             'patient_age' => ['nullable', 'string', 'max:255'],
+            'patient_sex' => ['nullable', Rule::in(['MASCULINO', 'FEMENINO'])],
             'requested_by' => ['nullable', 'string', 'max:255'],
             'contrast_label' => ['nullable', 'string', 'max:255'],
             'study' => ['nullable', 'string'],
@@ -696,23 +690,16 @@ class OrderController extends Controller
         }
         $order->admissionForm()->updateOrCreate([], ['data' => array_merge($current, collect($data)->except('consumables')->all())]);
         if (array_key_exists('consumables', $data)) {
-            $order->consumables()->delete();
-            foreach (collect($data['consumables'] ?? [])->filter(fn ($row) => (float) ($row['cantidad'] ?? 0) > 0) as $row) {
-                $order->consumables()->updateOrCreate(['reagent_id' => $row['reagent_id']], ['cantidad' => $row['cantidad']]);
-            }
+            $this->orderStockService->sync($order, collect($data['consumables'] ?? []));
             $this->syncAdmissionPlateQuantity($order);
         }
         if (array_key_exists('plates_count', $data) && $data['plates_count'] !== null) {
             $plateReagent = Reagent::whereRaw('LOWER(nombre) LIKE ?', ['%placa%'])->first();
             if ($plateReagent) {
-                if ((int) $data['plates_count'] > 0) {
-                    $order->consumables()->updateOrCreate(
-                        ['reagent_id' => $plateReagent->id],
-                        ['cantidad' => (int) $data['plates_count']]
-                    );
-                } else {
-                    $order->consumables()->where('reagent_id', $plateReagent->id)->delete();
-                }
+                $rows = $order->consumables()->get(['reagent_id', 'cantidad'])->map->only(['reagent_id', 'cantidad']);
+                $rows = $rows->reject(fn ($row) => (int) $row['reagent_id'] === (int) $plateReagent->id);
+                if ((int) $data['plates_count'] > 0) $rows->push(['reagent_id' => $plateReagent->id, 'cantidad' => (int) $data['plates_count']]);
+                $this->orderStockService->sync($order, $rows);
             }
         }
 
