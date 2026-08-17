@@ -124,6 +124,7 @@ class PatientController extends Controller
             'apellidos' => ['required', 'string', 'max:255'],
             'telefono' => ['nullable', 'string', 'max:30'],
             'fecha_nacimiento' => ['nullable', 'date', 'before_or_equal:today'],
+            'sexo' => ['required', Rule::in(['MASCULINO', 'FEMENINO'])],
         ]);
 
         $data['edad'] = filled($data['fecha_nacimiento'] ?? null)
@@ -143,6 +144,7 @@ class PatientController extends Controller
             'telefono' => $patient->telefono,
             'fecha_nacimiento' => optional($patient->fecha_nacimiento)->format('Y-m-d'),
             'edad' => $patient->edad,
+            'sexo' => $patient->sexo,
             'label' => $patient->dni.' - '.$patient->nombres.' '.$patient->apellidos,
         ];
     }

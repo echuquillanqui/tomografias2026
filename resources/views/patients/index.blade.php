@@ -35,6 +35,7 @@
                             <th>Teléfono</th>
                             <th>Fecha nacimiento</th>
                             <th>Edad</th>
+                            <th>Sexo</th>
                             <th class="text-end">Acciones</th>
                         </tr>
                     </thead>
@@ -54,6 +55,7 @@
                                 <td><span class="text-clinic-muted">{{ $patient->telefono ?: '—' }}</span></td>
                                 <td>{{ $patient->fecha_nacimiento?->format('d/m/Y') ?? '—' }}</td>
                                 <td>{{ filled($patient->edad) ? $patient->edad.' años' : '—' }}</td>
+                                <td>{{ $patient->sexo ?: '—' }}</td>
                                 <td class="text-end">
                                     <div class="d-inline-flex gap-2">
                                         <button type="button" class="btn btn-sm btn-outline-primary btn-soft-primary" data-bs-toggle="modal" data-bs-target="#editPatientModal{{ $patient->id }}">Editar</button>
@@ -63,7 +65,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="6" class="text-center py-5 text-clinic-muted">No se encontraron pacientes.</td>
+                                <td colspan="7" class="text-center py-5 text-clinic-muted">No se encontraron pacientes.</td>
                             </tr>
                         @endforelse
                     </tbody>

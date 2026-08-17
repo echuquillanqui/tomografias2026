@@ -345,6 +345,10 @@
                             <label class="form-label small fw-bold">Edad</label>
                             <input type="number" class="form-control" x-model="patientForm.edad" readonly>
                         </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold">Sexo</label>
+                            <select class="form-select" x-model="patientForm.sexo" required><option value="">Seleccione</option><option value="MASCULINO">MASCULINO</option><option value="FEMENINO">FEMENINO</option></select>
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -376,8 +380,8 @@ function orderSystem() {
         selectedReagent: '',
         itemSelect: null,
         selectedPatientId: String({{ Illuminate\Support\Js::from(old('patient_id', $order->patient_id)) }} || ''),
-        patients: {{ Illuminate\Support\Js::from($patients->map(fn ($p) => ['id' => (string) $p->id, 'dni' => $p->dni, 'nombres' => $p->nombres, 'apellidos' => $p->apellidos, 'telefono' => $p->telefono, 'fecha_nacimiento' => optional($p->fecha_nacimiento)->format('Y-m-d'), 'edad' => $p->edad, 'label' => $p->dni.' - '.$p->nombres.' '.$p->apellidos])->values()) }},
-        patientForm: { id: null, dni: '', nombres: '', apellidos: '', telefono: '', fecha_nacimiento: '', edad: '' },
+        patients: {{ Illuminate\Support\Js::from($patients->map(fn ($p) => ['id' => (string) $p->id, 'dni' => $p->dni, 'nombres' => $p->nombres, 'apellidos' => $p->apellidos, 'telefono' => $p->telefono, 'fecha_nacimiento' => optional($p->fecha_nacimiento)->format('Y-m-d'), 'edad' => $p->edad, 'sexo' => $p->sexo, 'label' => $p->dni.' - '.$p->nombres.' '.$p->apellidos])->values()) }},
+        patientForm: { id: null, dni: '', nombres: '', apellidos: '', telefono: '', fecha_nacimiento: '', edad: '', sexo: '' },
         patientError: '',
         patientNotice: '',
         patientSaving: false,
@@ -445,7 +449,7 @@ function orderSystem() {
             });
         },
         resetPatientForm() {
-            this.patientForm = { id: null, dni: '', nombres: '', apellidos: '', telefono: '', fecha_nacimiento: '', edad: '' };
+            this.patientForm = { id: null, dni: '', nombres: '', apellidos: '', telefono: '', fecha_nacimiento: '', edad: '', sexo: '' };
             this.patientError = '';
             this.patientNotice = '';
             this.lastReniecDni = '';
@@ -527,6 +531,7 @@ function orderSystem() {
                         apellidos: this.patientForm.apellidos,
                         telefono: this.patientForm.telefono,
                         fecha_nacimiento: this.patientForm.fecha_nacimiento,
+                        sexo: this.patientForm.sexo,
                     }),
                 });
                 const data = await response.json();

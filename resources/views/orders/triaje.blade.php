@@ -37,6 +37,7 @@
             <div class="col-md-3"><strong>Paciente</strong><br>{{ $order->patient->nombres }} {{ $order->patient->apellidos }}</div>
             <div class="col-md-2"><strong>DNI</strong><br>{{ $order->patient->dni }}</div>
             <div class="col-md-1"><strong>Edad</strong><br>{{ $order->patient->edad ?? $order->patient->fecha_nacimiento?->age ?? '—' }}</div>
+            <div class="col-md-1"><strong>Sexo</strong><br>{{ $order->patient->sexo ?? '—' }}</div>
             <div class="col-md-3"><strong>Tipo de estudio</strong><br>{{ $order->orderExams->pluck('exam.nombre_examen')->filter()->join(', ') ?: 'Sin estudios registrados' }}</div>
             <div class="col-md-2"><strong>Contraste</strong><br>{{ $order->orderExams->pluck('tipo_contraste')->filter()->unique()->join(', ') ?: 'No registrado' }}</div>
             <div class="col-md-1"><strong>Placas</strong><br><input form="triage-consumables-form" name="plates_count" type="number" min="0" step="1" class="form-control form-control-sm" value="{{ old('plates_count', $admissionData['delivery_quantities']['PLACAS'] ?? $admissionData['plates_count'] ?? 0) }}" aria-label="Cantidad de placas"></div>

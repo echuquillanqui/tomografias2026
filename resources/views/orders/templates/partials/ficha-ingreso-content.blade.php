@@ -46,8 +46,9 @@
         <tr>
             <th>F. nacimiento</th><td><input name="patient_birthdate" class="form-control form-control-sm" value="{{ old('patient_birthdate', $admissionData['patient_birthdate'] ?? (optional($order->patient->fecha_nacimiento)->format('d/m/Y') ?? '—')) }}"></td>
             <th>Edad</th><td><input name="patient_age" class="form-control form-control-sm" value="{{ $patientAgeLabel }}" placeholder="30 años"></td>
-            <th>Celular</th><td><input name="patient_phone" class="form-control form-control-sm" value="{{ old('patient_phone', $admissionData['patient_phone'] ?? ($order->patient->telefono ?? '—')) }}"></td>
+            <th>Sexo</th><td><select name="patient_sex" class="form-select form-select-sm"><option value="">—</option>@foreach(['MASCULINO', 'FEMENINO'] as $sex)<option value="{{ $sex }}" @selected(old('patient_sex', $admissionData['patient_sex'] ?? $order->patient->sexo) === $sex)>{{ $sex }}</option>@endforeach</select></td>
         </tr>
+        <tr><th>Celular</th><td colspan="5"><input name="patient_phone" class="form-control form-control-sm" value="{{ old('patient_phone', $admissionData['patient_phone'] ?? ($order->patient->telefono ?? '—')) }}"></td></tr>
         <tr><th>Solicitado por</th><td colspan="5"><input name="requested_by" class="form-control form-control-sm" value="{{ old('requested_by', $admissionData['requested_by'] ?? ($order->medicoSolicitante?->nombre ?? '—')) }}"></td></tr>
         <tr>
             <th>Estudio solicitado</th><td colspan="3"><textarea name="study" class="form-control form-control-lg fw-bold" rows="2" placeholder="Ej.: TEM cerebral">{{ old('study', $admissionData['study'] ?? $order->orderExams->pluck('exam.nombre_examen')->join(', ')) }}</textarea></td>

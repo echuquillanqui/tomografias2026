@@ -42,6 +42,15 @@
                         @error('edad') <div class="invalid-feedback">{{ $message }}</div> @enderror
                         <div class="form-text">Se calcula automáticamente desde la fecha de nacimiento.</div>
                     </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Sexo</label>
+                        <select name="sexo" class="form-select @error('sexo') is-invalid @enderror" required>
+                            <option value="">Seleccione</option>
+                            <option value="MASCULINO" @selected(old('sexo', $patient->sexo ?? '') === 'MASCULINO')>MASCULINO</option>
+                            <option value="FEMENINO" @selected(old('sexo', $patient->sexo ?? '') === 'FEMENINO')>FEMENINO</option>
+                        </select>
+                        @error('sexo') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                    </div>
                 </div>
             </div>
             <div class="modal-footer">
