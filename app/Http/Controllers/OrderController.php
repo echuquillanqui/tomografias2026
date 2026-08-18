@@ -925,23 +925,29 @@ class OrderController extends Controller
             'data' => $admissionData,
         ]);
 
-        $now = now();
+        $orderDate = $order->fecha_orden ?? now();
         $declarationDefaults = [
             'patient_name' => trim($order->patient->nombres.' '.$order->patient->apellidos),
             'patient_dni' => $order->patient->dni,
             'legal_representative_dni' => '',
             'study' => $examNames,
-            'day' => $now->format('d'),
-            'month' => $now->translatedFormat('F'),
-            'year' => $now->format('Y'),
-            'hour' => '',
+            'day' => $orderDate->format('d'),
+            'month' => $orderDate->translatedFormat('F'),
+            'year' => $orderDate->format('Y'),
+            'hour' => $orderDate->format('H:i'),
             'revocation' => '',
         ];
         $order->swornDeclaration()->updateOrCreate([], [
             'data' => array_merge(
                 $declarationDefaults,
                 $order->swornDeclaration?->data ?? [],
-                ['study' => $declarationDefaults['study']]
+                [
+                    'study' => $declarationDefaults['study'],
+                    'day' => $declarationDefaults['day'],
+                    'month' => $declarationDefaults['month'],
+                    'year' => $declarationDefaults['year'],
+                    'hour' => $declarationDefaults['hour'],
+                ]
             ),
         ]);
     }
