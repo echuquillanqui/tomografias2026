@@ -927,8 +927,8 @@ class OrderController extends Controller
 
         $orderDate = $order->fecha_orden ?? now();
         $declarationDefaults = [
-            'patient_name' => trim($order->patient->nombres.' '.$order->patient->apellidos),
-            'patient_dni' => $order->patient->dni,
+            'patient_name' => '',
+            'patient_dni' => '',
             'legal_representative_dni' => '',
             'study' => $examNames,
             'day' => $orderDate->format('d'),
