@@ -127,9 +127,7 @@
                                 <button type="button" class="btn btn-sm btn-outline-info" data-bs-toggle="modal" data-bs-target="#triage{{ $o->id }}">Triaje</button>
                                 <a class="btn btn-sm btn-outline-success" target="_blank" href="{{ route('orders.ficha-ingreso', $o) }}">Ficha PDF</a>
                                 <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#saleNoteModal" data-sale-note-url="{{ route('orders.sale-note', $o) }}" data-sale-note-number="{{ $o->sale_note_number }}">Nota de venta</button>
-                                @if($o->orderExams->contains('tipo_contraste', 'Con contraste'))
-                                    <a class="btn btn-sm btn-outline-warning" target="_blank" href="{{ route('orders.declaracion-jurada', $o) }}">DJ PDF</a>
-                                @endif
+                                <a class="btn btn-sm btn-outline-warning" target="_blank" href="{{ route('orders.declaracion-jurada', $o) }}">DJ PDF</a>
                                 <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteOrder{{ $o->id }}">Eliminar</button>
                             </td>
                         </tr>
