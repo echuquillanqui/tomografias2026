@@ -6,9 +6,9 @@
     <h3 class="h6 fw-bold">RECOMENDACIONES PARA LLENAR EL FORMATO CORRECTAMENTE</h3>
     <p>El registro del consentimiento Informado, posterior a la información que debe dar el Médico Tratante, será efectuado por el paciente o su representante legal, sin borrones o enmendaduras y con la misma letra.</p>
     <p>
-        Yo, <input name="patient_name" class="form-control form-control-sm d-inline-block mx-1 text-center" style="width:260px" value="{{ old('patient_name', $declarationData['patient_name'] ?? ($order->patient->nombres.' '.$order->patient->apellidos)) }}"> con DNI Nº
-        <input name="patient_dni" class="form-control form-control-sm d-inline-block mx-1 text-center" style="width:150px" value="{{ old('patient_dni', $declarationData['patient_dni'] ?? $order->patient->dni) }}"> en mi condición de paciente/o representante legal del DNI Nº
-        <input name="legal_representative_dni" class="form-control form-control-sm d-inline-block mx-1 text-center" style="width:150px" value="{{ old('legal_representative_dni', $declarationData['legal_representative_dni'] ?? '') }}"> autorizo a los profesionales Médico tratante, Médico Radiólogo, Tecnólogo Médico, Enfermera y Anestesiólogo, a efectuar los procedimientos necesarios para la realización del Estudio de Tomografía Computarizada.
+        Yo, <input name="patient_name" class="form-control form-control-sm d-inline-block mx-1 text-center" style="width:260px" value="{{ old('patient_name', '') }}"> con DNI Nº
+        <input name="patient_dni" class="form-control form-control-sm d-inline-block mx-1 text-center" style="width:150px" value="{{ old('patient_dni', '') }}"> en mi condición de paciente/o representante legal del DNI Nº
+        <input name="legal_representative_dni" class="form-control form-control-sm d-inline-block mx-1 text-center" style="width:150px" value="{{ old('legal_representative_dni', '') }}"> autorizo a los profesionales Médico tratante, Médico Radiólogo, Tecnólogo Médico, Enfermera y Anestesiólogo, a efectuar los procedimientos necesarios para la realización del Estudio de Tomografía Computarizada.
     </p>
     <div class="mb-3"><label class="form-label fw-bold">Estudio(s)</label><textarea name="study" class="form-control" rows="2">{{ old('study', $declarationData['study'] ?? $order->orderExams->pluck('exam.nombre_examen')->join(', ')) }}</textarea></div>
     <p>Manifiesto haber recibido la información siguiente:</p>
@@ -27,7 +27,7 @@
     </div>
     <div class="row text-center mt-5">
         <div class="col"><div class="border rounded mx-auto mb-2" style="height:120px;max-width:260px"></div>Firma Paciente/Representante Legal</div>
-        <div class="col"><div class="border rounded mx-auto mb-2" style="height:120px;max-width:260px"></div>Huella digital<br>DNI Nº <input class="form-control form-control-sm d-inline-block text-center" style="width:160px" value="{{ old('patient_dni', $declarationData['patient_dni'] ?? $order->patient->dni) }}" readonly></div>
+        <div class="col"><div class="border rounded mx-auto mb-2" style="height:120px;max-width:260px"></div>Huella digital<br>DNI Nº <input class="form-control form-control-sm d-inline-block text-center" style="width:160px" value="{{ old('patient_dni', '') }}" readonly></div>
     </div>
     <div class="border rounded p-3 mt-4"><strong>REVOCATORIA:</strong><textarea name="revocation" class="form-control mt-2" rows="3" placeholder="Completar revocatoria si corresponde">{{ old('revocation', $declarationData['revocation'] ?? '') }}</textarea></div>
 </div>
