@@ -147,14 +147,14 @@ class OrderValidationPersistenceTest extends TestCase
             ->assertSee('Dr. Actualizado');
     }
 
-    public function test_contrast_orders_show_the_sworn_declaration_action(): void
+    public function test_all_orders_show_the_sworn_declaration_action(): void
     {
         $user = User::create(['username' => 'contrast-user', 'email' => 'contrast-user@example.com', 'password' => 'password']);
         $patient = Patient::create(['dni' => '44332211', 'nombres' => 'Elena', 'apellidos' => 'Mamani', 'edad' => 35]);
         $agreement = Agreement::create(['nombre_institucion' => 'Particular', 'activo' => true]);
-        $exam = Exam::create(['nombre_examen' => 'Abdomen', 'tipo_contraste' => 'Ambos', 'activo' => true]);
+        $exam = Exam::create(['nombre_examen' => 'Abdomen', 'tipo_contraste' => 'Sin contraste', 'activo' => true]);
         $order = Order::create(['patient_id' => $patient->id, 'agreement_id' => $agreement->id, 'fecha_orden' => now(), 'estado' => 'Pendiente']);
-        $order->orderExams()->create(['exam_id' => $exam->id, 'tipo_contraste' => 'Con contraste', 'precio' => 100]);
+        $order->orderExams()->create(['exam_id' => $exam->id, 'tipo_contraste' => 'Sin contraste', 'precio' => 100]);
 
         $this->actingAs($user)->get(route('orders.index'))
             ->assertOk()
