@@ -68,6 +68,26 @@ class ReportFilterTest extends TestCase
             ->assertDontSee('ORD-OTRA');
     }
 
+    public function test_order_without_report_has_no_report_actions(): void
+    {
+        $user = User::create(['username' => 'tester', 'email' => 'tester@example.com', 'password' => 'password']);
+        $agreement = Agreement::create(['nombre_institucion' => 'Particular', 'activo' => true]);
+        $patient = Patient::create(['dni' => '12345678', 'nombres' => 'Ana', 'apellidos' => 'Torres']);
+        $order = $this->order($patient, $agreement, 'ORD-SIN-INFORME', now()->format('Y-m-d H:i:s'));
+        $order->update(['tipo_informe' => 'SIN INFORME']);
+
+        $this->actingAs($user)->get(route('reports.index'))
+            ->assertOk()
+            ->assertSee('ORD-SIN-INFORME')
+            ->assertSee('SIN INFORME')
+            ->assertSee('Sin informe')
+            ->assertDontSee(route('reports.edit', $order))
+            ->assertDontSee('data-bs-target="#reportFilesModal'.$order->id.'"', false);
+
+        $this->actingAs($user)->get(route('reports.edit', $order))->assertNotFound();
+        $this->actingAs($user)->get(route('reports.pdf', $order))->assertNotFound();
+    }
+
     private function order(Patient $patient, Agreement $agreement, string $code, string $date): Order
     {
         return Order::create([

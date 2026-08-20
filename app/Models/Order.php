@@ -12,7 +12,7 @@ class Order extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['codigo_orden', 'unidad', 'patient_id', 'agreement_id', 'medico_solicitante_id', 'medico_informe_id', 'archivo_orden_path', 'fecha_orden', 'estado', 'tipo_pago', 'tipo_comprobante', 'numero_comprobante', 'sale_note_series', 'receipt_number', 'subtotal', 'descuento', 'total', 'observaciones', 'created_by'];
+    protected $fillable = ['codigo_orden', 'unidad', 'patient_id', 'agreement_id', 'medico_solicitante_id', 'medico_informe_id', 'archivo_orden_path', 'fecha_orden', 'estado', 'tipo_informe', 'tipo_pago', 'tipo_comprobante', 'numero_comprobante', 'sale_note_series', 'receipt_number', 'subtotal', 'descuento', 'total', 'observaciones', 'created_by'];
 
     protected $casts = ['fecha_orden' => 'datetime', 'receipt_number' => 'integer', 'subtotal' => 'decimal:2', 'descuento' => 'decimal:2', 'total' => 'decimal:2'];
 

@@ -44,6 +44,7 @@ class ReportController extends Controller
 
     public function edit(Order $order): View
     {
+        $this->ensureOrderRequiresReport($order);
         $order->load(['patient', 'agreement', 'medicoSolicitante', 'medicoInforme', 'admissionForm', 'orderExams.exam', 'report.attachments']);
         $this->ensureReport($order);
 
@@ -55,6 +56,7 @@ class ReportController extends Controller
 
     public function update(Request $request, Order $order): RedirectResponse
     {
+        $this->ensureOrderRequiresReport($order);
         $data = $request->validate([
             'medico_firmante_id' => ['nullable', 'exists:users,id'],
             'adjuntos' => ['nullable', 'array'],
@@ -84,6 +86,7 @@ class ReportController extends Controller
 
     public function pdf(Order $order)
     {
+        $this->ensureOrderRequiresReport($order);
         $order->load(['patient', 'agreement', 'medicoSolicitante', 'orderExams.exam', 'report.medicoFirmante']);
         $this->ensureReport($order);
         $order->load('report.medicoFirmante');
@@ -93,6 +96,7 @@ class ReportController extends Controller
 
     public function downloadAttachment(Order $order, OrderReportAttachment $attachment)
     {
+        $this->ensureOrderRequiresReport($order);
         abort_unless($attachment->report()->where('order_id', $order->id)->exists(), 404);
         abort_unless(Storage::disk('local')->exists($attachment->stored_name), 404);
 
@@ -115,6 +119,7 @@ class ReportController extends Controller
 
     public function viewAttachment(Order $order, OrderReportAttachment $attachment)
     {
+        $this->ensureOrderRequiresReport($order);
         $this->authorizeAttachment($order, $attachment);
         abort_unless(Storage::disk('local')->exists($attachment->stored_name), 404);
 
@@ -145,6 +150,7 @@ class ReportController extends Controller
 
     public function updateAttachment(Request $request, Order $order, OrderReportAttachment $attachment): RedirectResponse
     {
+        $this->ensureOrderRequiresReport($order);
         $this->authorizeAttachment($order, $attachment);
         $data = $request->validate([
             'nombre' => ['required', 'string', 'max:255'],
@@ -162,6 +168,7 @@ class ReportController extends Controller
 
     public function destroyAttachment(Order $order, OrderReportAttachment $attachment): RedirectResponse
     {
+        $this->ensureOrderRequiresReport($order);
         $this->authorizeAttachment($order, $attachment);
         Storage::disk('local')->delete($attachment->stored_name);
         $attachment->delete();
@@ -206,6 +213,11 @@ class ReportController extends Controller
         }
 
         app(OrderController::class)->createInitialReport($order);
+    }
+
+    private function ensureOrderRequiresReport(Order $order): void
+    {
+        abort_if($order->tipo_informe === 'SIN INFORME', 404);
     }
 
     private function medicosInformantes()

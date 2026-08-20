@@ -349,6 +349,7 @@ class OrderController extends Controller
         // Validate a normalized copy instead of mutating the request. Laravel can
         // then flash exactly what the user typed when validation redirects back.
         $validationInput = $request->all();
+        $validationInput['tipo_informe'] = $request->input('tipo_informe', $order->tipo_informe ?? 'CON INFORME');
         $validationInput['exams'] = collect($request->input('exams', []))
             ->filter(fn ($row) => ! empty($row['exam_id']))
             ->values()
@@ -364,6 +365,7 @@ class OrderController extends Controller
             'medico_solicitante_id' => ['nullable', 'exists:requesting_doctors,id'],
             'fecha_orden' => ['required', 'date'],
             'estado' => ['required', Rule::in(self::ESTADOS)],
+            'tipo_informe' => ['required', Rule::in(['CON INFORME', 'SIN INFORME'])],
             'tipo_pago' => ['nullable', Rule::in(self::TIPOS_PAGO)],
             'payments' => ['nullable', 'array', 'min:1', 'required_without:tipo_pago'],
             'payments.*.payment_method' => ['required', 'distinct', Rule::in(self::TIPOS_PAGO)],
@@ -399,6 +401,7 @@ class OrderController extends Controller
             'agreement_id' => 'convenio',
             'fecha_orden' => 'fecha y hora',
             'estado' => 'estado de la orden',
+            'tipo_informe' => 'tipo de informe',
             'payments' => 'los métodos de pago',
             'payments.*.payment_method' => 'método de pago',
             'payments.*.amount' => 'monto del pago',
@@ -963,6 +966,10 @@ class OrderController extends Controller
 
     public function createInitialReport(Order $order): void
     {
+        if ($order->tipo_informe === 'SIN INFORME') {
+            return;
+        }
+
         $order->load(['patient', 'medicoSolicitante', 'medicoInforme', 'orderExams.exam']);
 
         $patient = $order->patient;
