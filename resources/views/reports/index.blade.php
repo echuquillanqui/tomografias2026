@@ -95,10 +95,20 @@
                                 @endforelse
                             </td>
                             <td>{{ $order->report?->medicoFirmante?->nombre_completo ?? $order->medicoInforme?->nombre_completo ?? '—' }}</td>
-                            <td><span class="badge report-status {{ $reportStatus['class'] }}">{{ $reportStatus['label'] }}</span></td>
+                            <td>
+                                @if($order->tipo_informe === 'SIN INFORME')
+                                    <span class="badge report-status report-status-without">SIN INFORME</span>
+                                @else
+                                    <span class="badge report-status {{ $reportStatus['class'] }}">{{ $reportStatus['label'] }}</span>
+                                @endif
+                            </td>
                             <td class="text-end">
-                                <a class="btn btn-sm btn-outline-primary" href="{{ route('reports.edit', $order) }}">Rellenar</a>
-                                <button type="button" class="btn btn-sm {{ $order->report?->attachments->isNotEmpty() ? 'btn-success' : 'btn-outline-secondary' }}" data-bs-toggle="modal" data-bs-target="#reportFilesModal{{ $order->id }}">PDF</button>
+                                @if($order->tipo_informe === 'SIN INFORME')
+                                    <span class="fw-bold text-muted">Sin informe</span>
+                                @else
+                                    <a class="btn btn-sm btn-outline-primary" href="{{ route('reports.edit', $order) }}">Rellenar</a>
+                                    <button type="button" class="btn btn-sm {{ $order->report?->attachments->isNotEmpty() ? 'btn-success' : 'btn-outline-secondary' }}" data-bs-toggle="modal" data-bs-target="#reportFilesModal{{ $order->id }}">PDF</button>
+                                @endif
                             </td>
                         </tr>
                     @empty
@@ -111,6 +121,7 @@
     </div>
 
     @foreach($orders as $order)
+        @if($order->tipo_informe !== 'SIN INFORME')
         @php($attachments = $order->report?->attachments ?? collect())
         <div class="modal fade report-files-modal" id="reportFilesModal{{ $order->id }}" tabindex="-1" aria-labelledby="reportFilesModalLabel{{ $order->id }}" aria-hidden="true">
             <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
@@ -162,6 +173,7 @@
                 </div>
             </div>
         </div>
+        @endif
     @endforeach
 </div>
 
@@ -171,6 +183,7 @@
     .report-status-pending { background: #fff0db; border-color: #fdba74; color: #c2410c; }
     .report-status-progress { background: #e0f2fe; border-color: #7dd3fc; color: #0369a1; }
     .report-status-complete { background: #dcfce7; border-color: #86efac; color: #15803d; }
+    .report-status-without { background: #f1f5f9; border-color: #cbd5e1; color: #475569; }
     .report-files-layout { display: grid; grid-template-columns: minmax(220px, 28%) minmax(0, 1fr); height: min(75vh, 760px); }
     .report-files-list { border-right: 1px solid #dee2e6; overflow-y: auto; }
     .report-files-list .list-group-item { color: #334155; }

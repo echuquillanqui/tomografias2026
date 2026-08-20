@@ -125,6 +125,14 @@
                                 </select>
                             </div>
                             <div class="col-md-4">
+                                <label class="form-label small fw-bold" for="tipo_informe">INFORME</label>
+                                <select id="tipo_informe" name="tipo_informe" class="form-select fw-bold @error('tipo_informe') is-invalid @enderror" required>
+                                    <option value="CON INFORME" @selected(old('tipo_informe', $order->tipo_informe ?? 'CON INFORME') === 'CON INFORME')>CON INFORME</option>
+                                    <option value="SIN INFORME" @selected(old('tipo_informe', $order->tipo_informe ?? 'CON INFORME') === 'SIN INFORME')>SIN INFORME</option>
+                                </select>
+                                @error('tipo_informe')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                            </div>
+                            <div class="col-md-4">
                                 <label class="form-label small fw-bold">MÉDICO SOLICITANTE</label>
                                 <select name="medico_solicitante_id" class="form-select js-tom-select" data-placeholder="Buscar médico solicitante">
                                     <option value=""></option>
