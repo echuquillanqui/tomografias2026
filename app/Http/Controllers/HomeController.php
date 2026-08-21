@@ -4,84 +4,127 @@ namespace App\Http\Controllers;
 
 use App\Models\Order;
 use App\Models\OrderConsumable;
+use Carbon\CarbonImmutable;
+use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class HomeController extends Controller
 {
-    /**
-     * Create a new controller instance.
-     *
-     * @return void
-     */
+    private const PRODUCTS = [
+        'all' => 'Todos los productos',
+        'plates' => 'Placas RX',
+        'plate_envelopes' => 'Sobres de placas',
+        'cds' => 'CD entregados',
+        'iopamidol' => 'Iopamidol',
+    ];
+
     public function __construct()
     {
         $this->middleware('auth');
     }
 
-    /**
-     * Show the application dashboard.
-     *
-     * @return \Illuminate\Contracts\Support\Renderable
-     */
-    public function index()
+    public function index(Request $request)
     {
-        $orders = Order::with(['admissionForm', 'consumables.reagent', 'patient', 'agreement'])
-            ->latest('fecha_orden')
-            ->get();
+        [$startDate, $endDate] = $this->dateRange($request);
+        $product = array_key_exists($request->string('product')->toString(), self::PRODUCTS)
+            ? $request->string('product')->toString()
+            : 'all';
 
-        $summary = $this->consumptionSummary($orders);
+        $orders = $this->ordersBetween($startDate, $endDate);
+        $periodDays = $startDate->diffInDays($endDate) + 1;
+        $previousEnd = $startDate->subDay();
+        $previousStart = $previousEnd->subDays($periodDays - 1);
+        $previousSummary = $this->consumptionSummary($this->ordersBetween($previousStart, $previousEnd));
+        $summary = $this->consumptionSummary($orders, $previousSummary['totals']);
         $monthlyConsumption = $this->monthlyConsumption($orders);
         $recentOrders = $orders->take(8)->map(fn (Order $order) => $this->orderConsumptionRow($order));
-        $topConsumables = $this->topConsumables();
+        $topConsumables = $this->topConsumables($orders->pluck('id'));
+        $filters = [
+            'start_date' => $startDate->toDateString(),
+            'end_date' => $endDate->toDateString(),
+            'product' => $product,
+            'product_label' => self::PRODUCTS[$product],
+            'products' => self::PRODUCTS,
+            'period_label' => $startDate->translatedFormat('d M Y').' — '.$endDate->translatedFormat('d M Y'),
+        ];
 
-        return view('home', compact('summary', 'monthlyConsumption', 'recentOrders', 'topConsumables'));
+        return view('home', compact('summary', 'monthlyConsumption', 'recentOrders', 'topConsumables', 'filters'));
     }
 
-    private function consumptionSummary(Collection $orders): array
+    private function dateRange(Request $request): array
+    {
+        $end = $this->safeDate($request->input('end_date')) ?? CarbonImmutable::today();
+        $start = $this->safeDate($request->input('start_date')) ?? $end->startOfMonth();
+
+        return $start->greaterThan($end) ? [$end, $start] : [$start, $end];
+    }
+
+    private function safeDate(?string $value): ?CarbonImmutable
+    {
+        if (! $value || ! preg_match('/^\d{4}-\d{2}-\d{2}$/', $value)) {
+            return null;
+        }
+
+        try {
+            $date = CarbonImmutable::createFromFormat('!Y-m-d', $value);
+            return $date->format('Y-m-d') === $value ? $date : null;
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
+    private function ordersBetween(CarbonImmutable $start, CarbonImmutable $end): Collection
+    {
+        return Order::with(['admissionForm', 'consumables.reagent', 'patient', 'agreement'])
+            ->whereBetween('fecha_orden', [$start->startOfDay(), $end->endOfDay()])
+            ->latest('fecha_orden')
+            ->get();
+    }
+
+    private function consumptionSummary(Collection $orders, ?array $previousTotals = null): array
     {
         $totals = ['plates' => 0.0, 'plate_envelopes' => 0.0, 'cds' => 0.0, 'iopamidol' => 0.0, 'orders' => $orders->count()];
 
         foreach ($orders as $order) {
             $row = $this->orderConsumptionRow($order);
-            $totals['plates'] += $row['plates'];
-            $totals['plate_envelopes'] += $row['plate_envelopes'];
-            $totals['cds'] += $row['cds'];
-            $totals['iopamidol'] += $row['iopamidol'];
+            foreach (['plates', 'plate_envelopes', 'cds', 'iopamidol'] as $key) {
+                $totals[$key] += $row[$key];
+            }
         }
 
-        $cards = [
-            ['key' => 'plates', 'label' => 'Placas RX', 'value' => $totals['plates'], 'unit' => 'unid.', 'accent' => 'primary'],
-            ['key' => 'plate_envelopes', 'label' => 'Sobres de placas', 'value' => $totals['plate_envelopes'], 'unit' => 'unid.', 'accent' => 'warning'],
-            ['key' => 'cds', 'label' => 'CD entregados', 'value' => $totals['cds'], 'unit' => 'unid.', 'accent' => 'success'],
-            ['key' => 'iopamidol', 'label' => 'Iopamidol', 'value' => $totals['iopamidol'], 'unit' => 'ml/unid.', 'accent' => 'info'],
+        $definitions = [
+            ['key' => 'plates', 'label' => 'Placas RX', 'value' => $totals['plates'], 'unit' => 'unidades', 'accent' => 'blue', 'icon' => '▣'],
+            ['key' => 'plate_envelopes', 'label' => 'Sobres de placas', 'value' => $totals['plate_envelopes'], 'unit' => 'unidades', 'accent' => 'amber', 'icon' => '✉'],
+            ['key' => 'cds', 'label' => 'CD entregados', 'value' => $totals['cds'], 'unit' => 'unidades', 'accent' => 'green', 'icon' => '◉'],
+            ['key' => 'iopamidol', 'label' => 'Iopamidol', 'value' => $totals['iopamidol'], 'unit' => 'ml / unid.', 'accent' => 'purple', 'icon' => '◆'],
         ];
 
-        $max = max(1, ...array_map(fn ($card) => $card['value'], $cards));
+        $cards = collect($definitions)->map(function (array $card) use ($previousTotals) {
+            $previous = (float) ($previousTotals[$card['key']] ?? 0);
+            $card['change'] = $previous > 0 ? (($card['value'] - $previous) / $previous) * 100 : null;
+            return $card;
+        })->all();
 
-        return compact('totals', 'cards', 'max');
+        return compact('totals', 'cards');
     }
 
     private function monthlyConsumption(Collection $orders): Collection
     {
-        return $orders
-            ->filter(fn (Order $order) => $order->fecha_orden !== null)
+        return $orders->filter(fn (Order $order) => $order->fecha_orden !== null)
             ->sortBy('fecha_orden')
             ->groupBy(fn (Order $order) => $order->fecha_orden->format('Y-m'))
-            ->map(function (Collection $monthOrders, string $month) {
+            ->map(function (Collection $monthOrders) {
                 $rows = $monthOrders->map(fn (Order $order) => $this->orderConsumptionRow($order));
-
                 return [
-                    'label' => $monthOrders->first()->fecha_orden->translatedFormat('M Y'),
+                    'label' => Str::ucfirst($monthOrders->first()->fecha_orden->translatedFormat('M y')),
                     'plates' => $rows->sum('plates'),
                     'plate_envelopes' => $rows->sum('plate_envelopes'),
                     'cds' => $rows->sum('cds'),
                     'iopamidol' => $rows->sum('iopamidol'),
                 ];
-            })
-            ->values()
-            ->take(-6);
+            })->values();
     }
 
     private function orderConsumptionRow(Order $order): array
@@ -95,49 +138,33 @@ class HomeController extends Controller
         if ($plateEnvelopes <= 0 && $plates > 0) {
             $plateEnvelopes = $plates;
         }
-        $iopamidol = $this->sumConsumableLike($consumables, ['iopamidol']);
 
-        return [
-            'order' => $order,
-            'plates' => $plates,
-            'plate_envelopes' => $plateEnvelopes,
-            'cds' => $cds,
-            'iopamidol' => $iopamidol,
-        ];
+        return ['order' => $order, 'plates' => $plates, 'plate_envelopes' => $plateEnvelopes, 'cds' => $cds, 'iopamidol' => $this->sumConsumableLike($consumables, ['iopamidol'])];
     }
 
     private function sumConsumableLike(Collection $consumables, array $needles): float
     {
-        return (float) $consumables
-            ->filter(function ($consumable) use ($needles) {
-                $name = Str::lower($consumable->reagent->nombre ?? '');
-
-                foreach ($needles as $needle) {
-                    if (str_contains($name, $needle)) {
-                        return true;
-                    }
-                }
-
-                return false;
-            })
-            ->sum('cantidad');
+        return (float) $consumables->filter(function ($consumable) use ($needles) {
+            $name = Str::lower($consumable->reagent->nombre ?? '');
+            return collect($needles)->contains(fn ($needle) => str_contains($name, $needle));
+        })->sum('cantidad');
     }
 
     private function fallbackSelectedDeliveryQuantity(array $data, string $item): int
     {
         $selected = array_merge((array) ($data['delivery_options'] ?? []), (array) ($data['delivery_media_options'] ?? []));
-
         return in_array($item, $selected, true) ? 1 : 0;
     }
 
-    private function topConsumables(): Collection
+    private function topConsumables(Collection $orderIds): Collection
     {
+        if ($orderIds->isEmpty()) {
+            return collect();
+        }
+
         return OrderConsumable::query()
             ->select('reagent_id', DB::raw('SUM(cantidad) as total_used'), DB::raw('COUNT(DISTINCT order_id) as orders_count'))
-            ->with('reagent')
-            ->groupBy('reagent_id')
-            ->orderByDesc('total_used')
-            ->limit(6)
-            ->get();
+            ->whereIn('order_id', $orderIds)
+            ->with('reagent')->groupBy('reagent_id')->orderByDesc('total_used')->limit(6)->get();
     }
 }
