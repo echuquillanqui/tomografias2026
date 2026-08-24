@@ -68,6 +68,38 @@ class OrderFilterTest extends TestCase
             ->assertDontSee('ORD-002');
     }
 
+    public function test_index_displays_agreements_with_the_requested_color_classes(): void
+    {
+        Carbon::setTestNow('2026-08-07 10:00:00');
+        [$user, $particular] = $this->baseRecords();
+        $essalud = Agreement::create(['nombre_institucion' => 'EsSalud', 'activo' => true]);
+        $other = Agreement::create(['nombre_institucion' => 'Clínica asociada', 'activo' => true]);
+
+        foreach ([
+            [$particular, 'ORD-PARTICULAR', 'Particular', 'agreement-badge-particular'],
+            [$essalud, 'ORD-ESSALUD', 'EsSalud', 'agreement-badge-essalud'],
+            [$other, 'ORD-OTHER', 'Clínica asociada', 'agreement-badge-other'],
+        ] as $index => [$agreement, $code, $name, $class]) {
+            $patient = Patient::create([
+                'dni' => '1000000'.($index + 1),
+                'nombres' => 'Paciente',
+                'apellidos' => (string) ($index + 1),
+            ]);
+            $this->order($patient, $agreement, $code, '2026-08-07 09:0'.$index.':00');
+        }
+
+        $response = $this->actingAs($user)->get(route('orders.index'));
+
+        $response->assertOk();
+        foreach ([
+            ['Particular', 'agreement-badge-particular'],
+            ['EsSalud', 'agreement-badge-essalud'],
+            ['Clínica asociada', 'agreement-badge-other'],
+        ] as [$name, $class]) {
+            $response->assertSeeInOrder([$class, $name], false);
+        }
+    }
+
     public function test_global_search_finds_patient_without_restricting_the_date(): void
     {
         Carbon::setTestNow('2026-08-07 10:00:00');
