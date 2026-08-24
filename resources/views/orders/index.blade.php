@@ -80,6 +80,11 @@
                                 'Informado' => 'order-status-complete',
                                 default => 'order-status-pending',
                             };
+                            $agreementClass = match (mb_strtolower(trim($o->agreement->nombre_institucion))) {
+                                'particular' => 'agreement-badge-particular',
+                                'essalud' => 'agreement-badge-essalud',
+                                default => 'agreement-badge-other',
+                            };
                         @endphp
                         <tr>
                             <td class="fw-bold">{{ $o->codigo_orden ?? '—' }}</td>
@@ -97,7 +102,11 @@
                                     <span class="text-muted">Sin estudio</span>
                                 @endforelse
                             </td>
-                            <td>{{ $o->agreement->nombre_institucion }}</td>
+                            <td>
+                                <span class="badge agreement-badge {{ $agreementClass }}">
+                                    {{ $o->agreement->nombre_institucion }}
+                                </span>
+                            </td>
                             <td>{{ $o->fecha_orden->format('d/m/Y H:i') }}</td>
                             <td>@if($o->agreement->mostrar_precio_orden) S/ {{ $o->total }} @else <span class="text-muted">Oculto</span> @endif</td>
                             <td>
@@ -160,6 +169,17 @@
     .order-status-pending { background: #fff0db; border-color: #fdba74; color: #c2410c; }
     .order-status-progress { background: #e0f2fe; border-color: #7dd3fc; color: #0369a1; }
     .order-status-complete { background: #dcfce7; border-color: #86efac; color: #15803d; }
+    .agreement-badge {
+        border: 1px solid transparent;
+        font-size: .72rem;
+        font-weight: 800;
+        letter-spacing: .03em;
+        padding: .45rem .7rem;
+        text-transform: uppercase;
+    }
+    .agreement-badge-particular { background: #e5e7eb; border-color: #9ca3af; color: #4b5563; }
+    .agreement-badge-essalud { background: #e0f2fe; border-color: #7dd3fc; color: #0369a1; }
+    .agreement-badge-other { background: #dcfce7; border-color: #86efac; color: #15803d; }
 </style>
 @endpush
 
