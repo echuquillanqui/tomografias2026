@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('order_payments', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('order_id')->constrained('orders')->cascadeOnDelete();
+            $table->foreignId('order_id')->constrained('orders', indexName: 'op_order_fk')->cascadeOnDelete();
             $table->string('payment_method');
             $table->decimal('amount', 10, 2);
             $table->timestamps();

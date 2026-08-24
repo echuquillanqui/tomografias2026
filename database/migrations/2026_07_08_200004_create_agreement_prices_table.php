@@ -10,8 +10,8 @@ return new class extends Migration
     {
         Schema::create('agreement_prices', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('agreement_id')->constrained('agreements')->cascadeOnDelete();
-            $table->foreignId('exam_id')->constrained('exams')->cascadeOnDelete();
+            $table->foreignId('agreement_id')->constrained('agreements', indexName: 'ap_agreement_fk')->cascadeOnDelete();
+            $table->foreignId('exam_id')->constrained('exams', indexName: 'ap_exam_fk')->cascadeOnDelete();
             $table->enum('tipo_contraste', ['Con contraste', 'Sin contraste']);
             $table->decimal('precio_pactado', 10, 2);
             $table->timestamps();

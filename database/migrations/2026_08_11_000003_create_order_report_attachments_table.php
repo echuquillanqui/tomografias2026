@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('order_report_attachments', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('order_report_id')->constrained('order_reports')->cascadeOnDelete();
+            $table->foreignId('order_report_id')->constrained('order_reports', indexName: 'ora_report_fk')->cascadeOnDelete();
             $table->string('original_name');
             $table->string('stored_name');
             $table->string('mime_type', 100);

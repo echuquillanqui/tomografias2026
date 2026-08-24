@@ -10,8 +10,8 @@ return new class extends Migration
     {
         Schema::create('order_consumables', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('order_id')->constrained('orders')->cascadeOnDelete();
-            $table->foreignId('reagent_id')->constrained('reagents')->restrictOnDelete();
+            $table->foreignId('order_id')->constrained('orders', indexName: 'oc_order_fk')->cascadeOnDelete();
+            $table->foreignId('reagent_id')->constrained('reagents', indexName: 'oc_reagent_fk')->restrictOnDelete();
             $table->decimal('cantidad', 10, 2);
             $table->timestamps();
             $table->unique(['order_id', 'reagent_id']);

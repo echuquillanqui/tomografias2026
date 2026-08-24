@@ -14,7 +14,7 @@ return new class extends Migration
             $table->string('descripcion');
             $table->decimal('monto', 10, 2);
             $table->string('archivo_path')->nullable();
-            $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('created_by')->nullable()->constrained('users', indexName: 'ce_creator_fk')->nullOnDelete();
             $table->timestamps();
         });
     }

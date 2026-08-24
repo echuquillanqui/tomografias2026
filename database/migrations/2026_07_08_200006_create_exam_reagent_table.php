@@ -10,8 +10,8 @@ return new class extends Migration
     {
         Schema::create('exam_reagent', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('exam_id')->constrained('exams')->cascadeOnDelete();
-            $table->foreignId('reagent_id')->constrained('reagents')->cascadeOnDelete();
+            $table->foreignId('exam_id')->constrained('exams', indexName: 'er_exam_fk')->cascadeOnDelete();
+            $table->foreignId('reagent_id')->constrained('reagents', indexName: 'er_reagent_fk')->cascadeOnDelete();
             $table->decimal('cantidad_estimada', 10, 2);
             $table->timestamps();
             $table->unique(['exam_id', 'reagent_id']);

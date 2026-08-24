@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('order_sworn_declarations', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('order_id')->unique()->constrained()->cascadeOnDelete();
+            $table->foreignId('order_id')->unique()->constrained(indexName: 'osd_order_fk')->cascadeOnDelete();
             $table->json('data');
             $table->timestamps();
         });
