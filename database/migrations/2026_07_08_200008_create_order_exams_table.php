@@ -10,8 +10,8 @@ return new class extends Migration
     {
         Schema::create('order_exams', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('order_id')->constrained('orders')->cascadeOnDelete();
-            $table->foreignId('exam_id')->constrained('exams')->restrictOnDelete();
+            $table->foreignId('order_id')->constrained('orders', indexName: 'oe_order_fk')->cascadeOnDelete();
+            $table->foreignId('exam_id')->constrained('exams', indexName: 'oe_exam_fk')->restrictOnDelete();
             $table->enum('tipo_contraste', ['Con contraste', 'Sin contraste']);
             $table->decimal('precio', 10, 2);
             $table->enum('estado', ['Pendiente', 'Realizado', 'Informado', 'Anulado'])->default('Pendiente');

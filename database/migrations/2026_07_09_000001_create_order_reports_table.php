@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('order_reports', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('order_id')->unique()->constrained('orders')->cascadeOnDelete();
+            $table->foreignId('order_id')->unique()->constrained('orders', indexName: 'or_order_fk')->cascadeOnDelete();
             $table->string('titulo')->default('REPORTE DE TOMOGRAFÍA COMPUTARIZADA');
             $table->longText('contenido');
             $table->timestamps();

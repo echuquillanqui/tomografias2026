@@ -38,8 +38,8 @@ return new class extends Migration
         }
 
         Schema::table('orders', function (Blueprint $table) {
-            $table->dropForeign(['medico_solicitante_id']);
-            $table->foreign('medico_solicitante_id')->references('id')->on('requesting_doctors')->nullOnDelete();
+            $table->dropForeign('orders_requesting_doctor_fk');
+            $table->foreign('medico_solicitante_id', 'orders_requesting_doctor_fk')->references('id')->on('requesting_doctors')->nullOnDelete();
         });
     }
 
@@ -52,8 +52,8 @@ return new class extends Migration
         DB::table('orders')->whereNotNull('medico_solicitante_id')->update(['medico_solicitante_id' => null]);
 
         Schema::table('orders', function (Blueprint $table) {
-            $table->dropForeign(['medico_solicitante_id']);
-            $table->foreign('medico_solicitante_id')->references('id')->on('users')->nullOnDelete();
+            $table->dropForeign('orders_requesting_doctor_fk');
+            $table->foreign('medico_solicitante_id', 'orders_requesting_doctor_fk')->references('id')->on('users')->nullOnDelete();
         });
     }
 };

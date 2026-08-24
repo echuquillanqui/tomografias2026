@@ -13,7 +13,7 @@ return new class extends Migration
             $table->string('descripcion');
             $table->decimal('monto', 10, 2);
             $table->boolean('activo')->default(true);
-            $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('created_by')->nullable()->constrained('users', indexName: 'cfe_creator_fk')->nullOnDelete();
             $table->timestamps();
         });
     }
