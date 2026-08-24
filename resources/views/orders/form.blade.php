@@ -86,7 +86,7 @@
                         <div class="row g-3">
                             <div class="col-md-6">
                                 <label class="form-label small fw-bold">CONVENIO</label>
-                                <select name="agreement_id" class="form-select @error('agreement_id') is-invalid @enderror" x-model="selectedAgreement" @change="applyAgreementPrices()" required>
+                                <select name="agreement_id" class="form-select @error('agreement_id') is-invalid @enderror" x-model="selectedAgreement" @change="handleAgreementChange()" required>
                                     @foreach($agreements as $a)
                                         <option value="{{ $a->id }}" @selected(old('agreement_id', $order->agreement_id) == $a->id)>{{ $a->nombre_institucion }}</option>
                                     @endforeach
@@ -403,6 +403,7 @@ function orderSystem() {
             'tipo_contraste' => $price->tipo_contraste,
             'price' => (float) $price->precio_pactado,
         ])->values()) }},
+        agreements: {{ Illuminate\Support\Js::from($agreements->map(fn ($agreement) => ['id' => (string) $agreement->id, 'name' => $agreement->nombre_institucion])->values()) }},
         selectedAgreement: String({{ Illuminate\Support\Js::from(old('agreement_id', $order->agreement_id ?? $agreements->first()?->id)) }} || ''),
         discount: Number({{ Illuminate\Support\Js::from(old('descuento', $order->descuento ?? 0)) }}) || 0,
         payments: {{ Illuminate\Support\Js::from($paymentRows->map(fn ($payment) => ['payment_method' => $payment['payment_method'], 'amount' => (float) $payment['amount']])->values()) }},
@@ -413,6 +414,10 @@ function orderSystem() {
         clientError: '',
         init() {
             this.preloadConsumablesFromCart(false);
+
+            @if($mode === 'create' && old('payments') === null)
+                this.syncPaymentMethodWithAgreement();
+            @endif
 
             this.$nextTick(() => document.getElementById('order-validation-errors')?.focus());
 
@@ -647,6 +652,17 @@ function orderSystem() {
                 }));
             this.refreshExamOptions();
             this.rebuildConsumablesFromExams();
+        },
+        handleAgreementChange() {
+            this.applyAgreementPrices();
+            this.syncPaymentMethodWithAgreement();
+        },
+        syncPaymentMethodWithAgreement() {
+            const agreement = this.agreements.find((item) => item.id === String(this.selectedAgreement));
+            const normalizedName = String(agreement?.name || '').trim().toLocaleLowerCase('es');
+            const paymentMethod = normalizedName === 'particular' ? 'Efectivo' : 'Convenio';
+
+            this.payments = [{ payment_method: paymentMethod, amount: this.total() }];
         },
         allowedExamIds() {
             return new Set(this.agreementPrices
