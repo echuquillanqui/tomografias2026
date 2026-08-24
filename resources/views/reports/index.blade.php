@@ -2,7 +2,7 @@
 
 @section('content')
 <div class="container">
-    <section class="clinic-page-hero mb-4">
+    <section class="clinic-page-hero report-page-hero mb-4">
         <div class="d-flex justify-content-between align-items-start gap-3">
             <div>
                 <div class="clinic-eyebrow mb-2">Informes</div>
@@ -78,11 +78,18 @@
                                 $hasReportingDoctor || $hasReportFile => ['label' => 'EN PROCESO', 'class' => 'report-status-progress'],
                                 default => ['label' => 'PENDIENTE', 'class' => 'report-status-pending'],
                             };
+                            $agreementName = trim($order->agreement->nombre_institucion);
+                            $normalizedAgreement = mb_strtolower($agreementName);
+                            $agreementClass = match (true) {
+                                $normalizedAgreement === 'particular' => 'agreement-badge-particular',
+                                $normalizedAgreement === 'essalud' => 'agreement-badge-essalud',
+                                default => 'agreement-badge-other',
+                            };
                         @endphp
                         <tr>
                             <td class="fw-bold">{{ $order->codigo_orden ?? 'Orden #'.$order->id }}</td>
                             <td>{{ $order->patient->nombres }} {{ $order->patient->apellidos }}<br><small class="text-muted">{{ $order->patient->dni }}</small></td>
-                            <td>{{ $order->agreement->nombre_institucion }}</td>
+                            <td><span class="badge agreement-badge {{ $agreementClass }}">{{ $agreementName }}</span></td>
                             <td>{{ $order->fecha_orden->format('d/m/Y H:i') }}</td>
                             <td>
                                 @forelse($order->orderExams as $orderExam)
@@ -179,6 +186,11 @@
 
 @push('scripts')
 <style>
+    .report-page-hero { position: sticky; top: .75rem; z-index: 1020; }
+    .agreement-badge { border: 1px solid transparent; font-size: .75rem; font-weight: 700; padding: .4rem .65rem; }
+    .agreement-badge-particular { background: #e5e7eb; border-color: #9ca3af; color: #374151; }
+    .agreement-badge-essalud { background: #e0f2fe; border-color: #7dd3fc; color: #0369a1; }
+    .agreement-badge-other { background: #dcfce7; border-color: #86efac; color: #15803d; }
     .report-status { border: 1px solid transparent; font-weight: 800; letter-spacing: .03em; padding: .45rem .7rem; }
     .report-status-pending { background: #fff0db; border-color: #fdba74; color: #c2410c; }
     .report-status-progress { background: #e0f2fe; border-color: #7dd3fc; color: #0369a1; }
@@ -196,6 +208,7 @@
     .report-file-preview-frame { background: #fff; border: 0; height: 100%; width: 100%; }
     .report-file-preview-image { height: auto; max-height: 100%; max-width: 100%; object-fit: contain; width: auto; }
     @media (max-width: 767.98px) {
+        .report-page-hero { position: static; }
         .report-files-layout { grid-template-columns: 1fr; grid-template-rows: auto minmax(420px, 1fr); height: auto; }
         .report-files-list { border-bottom: 1px solid #dee2e6; border-right: 0; max-height: 180px; }
     }
