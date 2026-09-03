@@ -42,6 +42,32 @@ class SaleNoteTest extends TestCase
         $this->assertSame(212, SystemSetting::current()->next_receipt_number);
     }
 
+    public function test_stale_counter_skips_receipt_numbers_already_assigned(): void
+    {
+        [$user, $patient, $agreement, $exam] = $this->dependencies();
+        SystemSetting::current()->update([
+            'sale_note_series' => '004',
+            'next_receipt_number' => 210,
+        ]);
+        Order::create([
+            'patient_id' => $patient->id,
+            'agreement_id' => $agreement->id,
+            'fecha_orden' => now(),
+            'estado' => 'Pendiente',
+            'sale_note_series' => '004',
+            'receipt_number' => 210,
+        ]);
+
+        $this->actingAs($user)->post(route('orders.store'), $this->orderPayload($patient, $agreement, $exam))
+            ->assertSessionHasNoErrors();
+
+        $this->assertDatabaseHas('orders', [
+            'sale_note_series' => '004',
+            'receipt_number' => 211,
+        ]);
+        $this->assertSame(212, SystemSetting::current()->next_receipt_number);
+    }
+
     public function test_changing_the_series_does_not_change_numbers_already_assigned(): void
     {
         [$user, $patient, $agreement, $exam] = $this->dependencies();
