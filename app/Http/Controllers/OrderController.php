@@ -483,9 +483,15 @@ class OrderController extends Controller
             $setting = SystemSetting::query()->lockForUpdate()->firstOrFail();
         }
 
+        // The configured counter may be stale (for example after restoring a
+        // database backup or changing it manually). Never reuse a number that
+        // has already been assigned to an order.
+        $lastAssignedNumber = (int) Order::query()->max('receipt_number');
+        $receiptNumber = max($setting->next_receipt_number ?: 1, $lastAssignedNumber + 1);
+
         $order->sale_note_series = $setting->sale_note_series ?: '004';
-        $order->receipt_number = $setting->next_receipt_number ?: 1;
-        $setting->increment('next_receipt_number');
+        $order->receipt_number = $receiptNumber;
+        $setting->update(['next_receipt_number' => $receiptNumber + 1]);
     }
 
     public function saleNotePdf(Order $order)
