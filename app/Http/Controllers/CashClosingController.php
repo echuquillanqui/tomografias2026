@@ -92,6 +92,7 @@ class CashClosingController extends Controller
                 'expenses' => $expenses,
                 'incomeTotal' => $orders->sum('total'),
                 'expenseTotal' => $expenses->sum('monto'),
+                'cashIncome' => $orders->sum(fn (Order $order) => $this->paymentTotal($order, 'Efectivo')),
                 'yapePlinIncome' => $orders->sum(fn (Order $order) => $this->paymentTotal($order, 'Yape/Plin')),
                 'transferIncome' => $orders->sum(fn (Order $order) => $this->paymentTotal($order, 'Transferencia')),
                 'plateSummary' => $this->stockSummary($orders, $start, $end, 'placa', 'Placas', function (Order $order): float {
@@ -268,6 +269,7 @@ class CashClosingController extends Controller
             ->get();
         $operationalIncomeTotal = $operationalOrders->sum('total');
         $operationalExpenseTotal = $operationalExpenses->sum('monto');
+        $operationalCashIncome = $operationalOrders->sum(fn (Order $order) => $this->paymentTotal($order, 'Efectivo'));
         $operationalYapePlinIncome = $operationalOrders->sum(fn (Order $order) => $this->paymentTotal($order, 'Yape/Plin'));
         $operationalTransferIncome = $operationalOrders->sum(fn (Order $order) => $this->paymentTotal($order, 'Transferencia'));
         $operationalPlateSummary = $this->stockSummary($operationalOrders, $operationalStart, $operationalEnd, 'placa', 'Placas', function (Order $order): float {
@@ -297,7 +299,7 @@ class CashClosingController extends Controller
         $monthlyFixedExpensesPending = $this->pendingFixedExpenses($currentFixedExpensePeriod);
         $shouldShowFixedExpenseModal = now()->isLastOfMonth() && $monthlyFixedExpensesPending->isNotEmpty();
 
-        return compact('from', 'to', 'period', 'baseDate', 'tipoPago', 'agreementId', 'orders', 'expenses', 'incomeTotal', 'expenseTotal', 'cashIncome', 'yapePlinIncome', 'transferIncome', 'digitalIncome', 'incomeByPayment', 'plateSummary', 'iopamidolSummary', 'operationalBaseDate', 'operationalTipoPago', 'operationalOrders', 'operationalExpenses', 'operationalIncomeTotal', 'operationalExpenseTotal', 'operationalYapePlinIncome', 'operationalTransferIncome', 'operationalPlateSummary', 'operationalIopamidolSummary') + [
+        return compact('from', 'to', 'period', 'baseDate', 'tipoPago', 'agreementId', 'orders', 'expenses', 'incomeTotal', 'expenseTotal', 'cashIncome', 'yapePlinIncome', 'transferIncome', 'digitalIncome', 'incomeByPayment', 'plateSummary', 'iopamidolSummary', 'operationalBaseDate', 'operationalTipoPago', 'operationalOrders', 'operationalExpenses', 'operationalIncomeTotal', 'operationalExpenseTotal', 'operationalCashIncome', 'operationalYapePlinIncome', 'operationalTransferIncome', 'operationalPlateSummary', 'operationalIopamidolSummary') + [
             'balance' => $cashIncome - $expenseTotal,
             'globalBalance' => $incomeTotal - $expenseTotal,
             'tiposPago' => self::TIPOS_PAGO,
@@ -324,11 +326,7 @@ class CashClosingController extends Controller
 
     private function paymentTotal(Order $order, string $method): float
     {
-        if ($order->payments->isNotEmpty()) {
-            return (float) $order->payments->where('payment_method', $method)->sum('amount');
-        }
-
-        return $order->tipo_pago === $method ? (float) $order->total : 0;
+        return $order->paymentAmount($method);
     }
 
     private function stockSummary($orders, Carbon $start, Carbon $end, string $reagentSearch, string $fallbackName, callable $deliveredResolver): array
