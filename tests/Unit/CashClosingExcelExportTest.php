@@ -4,6 +4,7 @@ namespace Tests\Unit;
 
 use App\Models\Agreement;
 use App\Models\Order;
+use App\Models\OrderPayment;
 use App\Models\Patient;
 use Illuminate\Support\Collection;
 use Tests\TestCase;
@@ -28,6 +29,7 @@ class CashClosingExcelExportTest extends TestCase
         $order->setRelation('consumables', collect());
         $order->setRelation('medicoSolicitante', null);
         $order->setRelation('medicoInforme', null);
+        $order->setRelation('payments', collect());
 
         $orders = collect([$order]);
         $stockSummary = ['initial' => 10, 'delivered' => 0, 'final' => 10];
@@ -62,6 +64,38 @@ class CashClosingExcelExportTest extends TestCase
         $this->assertStringContainsString('Boleta', $dailySheet);
         $this->assertStringContainsString('B001-000045', $dailySheet);
         $this->assertStringNotContainsString('#999', $dailySheet);
+    }
+
+    public function test_daily_sheet_separates_a_mixed_payment_by_its_actual_amounts(): void
+    {
+        $order = new Order(['tipo_pago' => 'Efectivo', 'total' => 450]);
+        $order->setRelation('patient', new Patient());
+        $order->setRelation('agreement', new Agreement());
+        $order->setRelation('orderExams', collect());
+        $order->setRelation('admissionForm', null);
+        $order->setRelation('consumables', collect());
+        $order->setRelation('medicoSolicitante', null);
+        $order->setRelation('medicoInforme', null);
+        $order->setRelation('payments', collect([
+            new OrderPayment(['payment_method' => 'Efectivo', 'amount' => 200]),
+            new OrderPayment(['payment_method' => 'Yape/Plin', 'amount' => 250]),
+        ]));
+
+        $xml = view('cash-closings.exports.excel', [
+            'periods' => ['day' => 'Día'], 'period' => 'day', 'from' => '2026-08-06', 'to' => '2026-08-06',
+            'cashIncome' => 200, 'expenseTotal' => 0, 'balance' => 200, 'yapePlinIncome' => 250,
+            'transferIncome' => 0, 'incomeTotal' => 450,
+            'plateSummary' => ['initial' => 0, 'delivered' => 0, 'final' => 0],
+            'iopamidolSummary' => ['initial' => 0, 'delivered' => 0, 'final' => 0],
+            'orders' => collect([$order]), 'expenses' => collect(), 'cashOrders' => collect([$order]),
+            'yapePlinOrders' => collect([$order]), 'transferOrders' => collect(),
+        ])->render();
+
+        $dailySheet = str($xml)->between('<Worksheet ss:Name="Cuadre diario">', '</Worksheet>')->toString();
+
+        $this->assertStringContainsString('<Data ss:Type="String">Efectivo</Data>', $dailySheet);
+        $this->assertMatchesRegularExpression('/<Data ss:Type="Number">200\.00<\/Data>.*<Data ss:Type="Number">250\.00<\/Data>.*<Data ss:Type="Number">0\.00<\/Data>/s', $dailySheet);
+        $this->assertStringNotContainsString('<Data ss:Type="String">Total cobrado</Data>', $dailySheet);
     }
 
     public function test_summary_labels_the_cash_minus_expenses_balance(): void

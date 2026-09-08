@@ -36,6 +36,19 @@ class Order extends Model
     public function consumables(): HasMany { return $this->hasMany(OrderConsumable::class); }
     public function payments(): HasMany { return $this->hasMany(OrderPayment::class); }
 
+    public function paymentAmount(string $method): float
+    {
+        $payments = $this->relationLoaded('payments')
+            ? $this->payments
+            : $this->payments()->get();
+
+        if ($payments->isNotEmpty()) {
+            return (float) $payments->where('payment_method', $method)->sum('amount');
+        }
+
+        return $this->tipo_pago === $method ? (float) $this->total : 0;
+    }
+
     public function getPaymentSummaryAttribute(): string
     {
         if ($this->relationLoaded('payments') && $this->payments->isNotEmpty()) {

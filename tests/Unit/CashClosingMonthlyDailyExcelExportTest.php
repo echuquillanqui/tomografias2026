@@ -15,6 +15,7 @@ class CashClosingMonthlyDailyExcelExportTest extends TestCase
             'expenses' => collect(),
             'incomeTotal' => 0,
             'expenseTotal' => 0,
+            'cashIncome' => 0,
             'yapePlinIncome' => 0,
             'transferIncome' => 0,
             'plateSummary' => ['initial' => 10, 'delivered' => 0, 'final' => 10],
