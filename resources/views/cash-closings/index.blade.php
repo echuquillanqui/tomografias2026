@@ -125,7 +125,36 @@
 
             <div class="card clinic-card">
                 <div class="card-header bg-white border-0 pt-4 px-4"><h5 class="fw-bold mb-0">Entradas por órdenes</h5></div>
-                <div class="card-body p-0"><div class="table-responsive"><table class="table table-clinic table-content-fit align-middle mb-0"><thead><tr><th>Fecha</th><th>Orden</th><th>Paciente</th><th>Tipo de prueba</th><th>Contraste</th><th>Convenio</th><th>Pago</th><th>Tipo de comprobante</th><th>N° comprobante</th><th>Placas usadas</th><th>Iopamidol usado</th><th>Total</th></tr></thead><tbody>@forelse($orders as $order) @php $platesUsed = (float) ($order->admissionForm?->data['delivery_quantities']['PLACAS'] ?? $order->admissionForm?->data['plates_count'] ?? 0); $iopamidolUsed = (float) $order->consumables->filter(fn ($item) => str_contains(strtolower($item->reagent->nombre ?? ''), 'iopamidol'))->sum('cantidad'); @endphp <tr><td>{{ $order->fecha_orden->format('d/m/Y H:i') }}</td><td><a href="{{ route('orders.show', $order) }}" class="fw-bold">{{ $order->codigo_orden ?? '#'.$order->id }}</a></td><td>{{ $order->patient->nombres }} {{ $order->patient->apellidos }}</td><td>@forelse($order->orderExams as $orderExam)<div class="fw-semibold">{{ $orderExam->exam->nombre_examen ?? '—' }}</div>@empty — @endforelse</td><td>@forelse($order->orderExams as $orderExam)<div class="text-nowrap">{{ $orderExam->tipo_contraste ?? '—' }}</div>@empty — @endforelse</td><td>{{ $order->agreement->nombre_institucion }}</td><td>{{ $order->payment_summary }}</td><td>{{ $order->tipo_comprobante ?? '—' }}</td><td>{{ $order->numero_comprobante ?? '—' }}</td><td class="text-center">{{ number_format($platesUsed, 2) }}</td><td class="text-center">{{ number_format($iopamidolUsed, 2) }}</td><td class="text-success fw-bold">S/ {{ number_format($order->total, 2) }}</td></tr>@empty<tr><td colspan="12" class="text-center py-4">Sin órdenes en el rango.</td></tr>@endforelse</tbody></table></div></div>
+                <div class="card-body p-0"><div class="table-responsive"><table class="table table-clinic table-content-fit align-middle mb-0"><thead><tr><th>Fecha</th><th>Orden</th><th>Paciente</th><th>Tipo de prueba</th><th>Contraste</th><th>Convenio</th><th>Pago</th><th>Tipo de comprobante</th><th>N° comprobante</th><th>Placas usadas</th><th>Iopamidol usado</th><th>Total</th></tr></thead><tbody>
+                    @forelse($orders as $order)
+                        @php
+                            $platesUsed = (float) ($order->admissionForm?->data['delivery_quantities']['PLACAS'] ?? $order->admissionForm?->data['plates_count'] ?? 0);
+                            $iopamidolUsed = (float) $order->consumables->filter(fn ($item) => str_contains(strtolower($item->reagent->nombre ?? ''), 'iopamidol'))->sum('cantidad');
+                            $agreementName = trim($order->agreement->nombre_institucion);
+                            $agreementClass = match (mb_strtolower($agreementName)) {
+                                'particular' => 'agreement-badge-particular',
+                                'essalud' => 'agreement-badge-essalud',
+                                default => 'agreement-badge-other',
+                            };
+                        @endphp
+                        <tr>
+                            <td>{{ $order->fecha_orden->format('d/m/Y H:i') }}</td>
+                            <td><a href="{{ route('orders.show', $order) }}" class="fw-bold">{{ $order->codigo_orden ?? '#'.$order->id }}</a></td>
+                            <td>{{ $order->patient->nombres }} {{ $order->patient->apellidos }}</td>
+                            <td>@forelse($order->orderExams as $orderExam)<div class="fw-semibold">{{ $orderExam->exam->nombre_examen ?? '—' }}</div>@empty — @endforelse</td>
+                            <td>@forelse($order->orderExams as $orderExam)<div class="mb-1 text-nowrap"><span class="badge cash-contrast-badge {{ $orderExam->tipo_contraste === 'Con contraste' ? 'cash-contrast-badge-with' : 'cash-contrast-badge-without' }}">{{ $orderExam->tipo_contraste ?? '—' }}</span></div>@empty — @endforelse</td>
+                            <td><span class="badge cash-agreement-badge {{ $agreementClass }}">{{ $agreementName }}</span></td>
+                            <td>{{ $order->payment_summary }}</td>
+                            <td>{{ $order->tipo_comprobante ?? '—' }}</td>
+                            <td>{{ $order->numero_comprobante ?? '—' }}</td>
+                            <td class="text-center">{{ number_format($platesUsed, 2) }}</td>
+                            <td class="text-center">{{ number_format($iopamidolUsed, 2) }}</td>
+                            <td class="text-success fw-bold">S/ {{ number_format($order->total, 2) }}</td>
+                        </tr>
+                    @empty
+                        <tr><td colspan="12" class="text-center py-4">Sin órdenes en el rango.</td></tr>
+                    @endforelse
+                </tbody></table></div></div>
             </div>
         </div>
         </div>
@@ -216,3 +245,20 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<style>
+    .cash-contrast-badge,
+    .cash-agreement-badge {
+        border: 1px solid transparent;
+        font-size: .72rem;
+        font-weight: 800;
+        padding: .4rem .65rem;
+    }
+    .cash-contrast-badge-with { background: #0d6efd; border-color: #0d6efd; color: #fff; }
+    .cash-contrast-badge-without { background: #f8f9fa; border-color: #d1d5db; color: #374151; }
+    .agreement-badge-particular { background: #e5e7eb; border-color: #9ca3af; color: #4b5563; }
+    .agreement-badge-essalud { background: #e0f2fe; border-color: #7dd3fc; color: #0369a1; }
+    .agreement-badge-other { background: #dcfce7; border-color: #86efac; color: #15803d; }
+</style>
+@endpush
