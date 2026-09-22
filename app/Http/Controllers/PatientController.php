@@ -13,6 +13,8 @@ use Illuminate\View\View;
 
 class PatientController extends Controller
 {
+    private const DOCUMENT_TYPES = ['DNI', 'PASAPORTE', 'CARNET DE EXTRANJERIA'];
+
     public function index(Request $request): View
     {
         $search = trim((string) $request->query('search'));
@@ -119,7 +121,13 @@ class PatientController extends Controller
     private function validatedData(Request $request, ?Patient $patient = null): array
     {
         $data = $request->validate([
-            'dni' => ['required', 'string', 'max:20', Rule::unique('patients', 'dni')->ignore($patient?->id)],
+            'tipo_documento' => ['required', Rule::in(self::DOCUMENT_TYPES)],
+            'dni' => [
+                'required',
+                'string',
+                Rule::when($request->input('tipo_documento') === 'DNI', ['digits:8'], ['max:20', 'regex:/^[A-Za-z0-9-]+$/']),
+                Rule::unique('patients', 'dni')->ignore($patient?->id),
+            ],
             'nombres' => ['required', 'string', 'max:255'],
             'apellidos' => ['required', 'string', 'max:255'],
             'telefono' => ['nullable', 'string', 'max:30'],
@@ -138,6 +146,7 @@ class PatientController extends Controller
     {
         return [
             'id' => $patient->id,
+            'tipo_documento' => $patient->tipo_documento,
             'dni' => $patient->dni,
             'nombres' => $patient->nombres,
             'apellidos' => $patient->apellidos,
@@ -145,7 +154,7 @@ class PatientController extends Controller
             'fecha_nacimiento' => optional($patient->fecha_nacimiento)->format('Y-m-d'),
             'edad' => $patient->edad,
             'sexo' => $patient->sexo,
-            'label' => $patient->dni.' - '.$patient->nombres.' '.$patient->apellidos,
+            'label' => $patient->tipo_documento.' '.$patient->dni.' - '.$patient->nombres.' '.$patient->apellidos,
         ];
     }
 }

@@ -20,7 +20,7 @@
             <form class="clinic-search-form" method="GET" action="{{ route('patients.index') }}" data-reactive-search>
                 <div class="clinic-search">
                     <span class="clinic-search-icon">⌕</span>
-                    <input type="search" name="search" value="{{ $search }}" class="form-control" placeholder="Buscar por DNI, nombres, apellidos o teléfono..." autocomplete="off" data-search-input>
+                    <input type="search" name="search" value="{{ $search }}" class="form-control" placeholder="Buscar por documento, nombres, apellidos o teléfono..." autocomplete="off" data-search-input>
                     <span class="clinic-search-status" data-search-status>Busca al escribir</span>
                 </div>
             </form>
@@ -31,7 +31,7 @@
                     <thead>
                         <tr>
                             <th>Paciente</th>
-                            <th>DNI</th>
+                            <th>Documento</th>
                             <th>Teléfono</th>
                             <th>Fecha nacimiento</th>
                             <th>Edad</th>
@@ -51,7 +51,7 @@
                                         </div>
                                     </div>
                                 </td>
-                                <td><span class="badge rounded-pill badge-role px-3 py-2">{{ $patient->dni }}</span></td>
+                                <td><small class="d-block text-clinic-muted">{{ $patient->tipo_documento }}</small><span class="badge rounded-pill badge-role px-3 py-2">{{ $patient->dni }}</span></td>
                                 <td><span class="text-clinic-muted">{{ $patient->telefono ?: '—' }}</span></td>
                                 <td>{{ $patient->fecha_nacimiento?->format('d/m/Y') ?? '—' }}</td>
                                 <td>{{ filled($patient->edad) ? $patient->edad.' años' : '—' }}</td>

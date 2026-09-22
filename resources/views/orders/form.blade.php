@@ -66,10 +66,10 @@
                             <div class="order-search-panel__icon"><i class="bi bi-person-vcard"></i></div>
                             <div class="flex-grow-1">
                                 <label class="form-label small fw-bold">PACIENTE</label>
-                                <select id="patient_select" name="patient_id" class="form-select js-tom-select @error('patient_id') is-invalid @enderror" data-placeholder="Buscar paciente por DNI, nombres o apellidos" required x-model="selectedPatientId" @error('patient_id') aria-invalid="true" aria-describedby="patient-error" @enderror>
+                                <select id="patient_select" name="patient_id" class="form-select js-tom-select @error('patient_id') is-invalid @enderror" data-placeholder="Buscar paciente por documento, nombres o apellidos" required x-model="selectedPatientId" @error('patient_id') aria-invalid="true" aria-describedby="patient-error" @enderror>
                                     <option value=""></option>
                                     @foreach($patients as $p)
-                                        <option value="{{ $p->id }}" @selected(old('patient_id', $order->patient_id) == $p->id)>{{ $p->dni }} - {{ $p->nombres }} {{ $p->apellidos }}</option>
+                                        <option value="{{ $p->id }}" @selected(old('patient_id', $order->patient_id) == $p->id)>{{ $p->tipo_documento }} {{ $p->dni }} - {{ $p->nombres }} {{ $p->apellidos }}</option>
                                     @endforeach
                                 </select>
                                 @error('patient_id')<div id="patient-error" class="invalid-feedback d-block">{{ $message }}</div>@enderror
@@ -322,16 +322,24 @@
                     <div class="alert alert-danger" x-show="patientError" x-text="patientError"></div>
                     <div class="alert alert-warning" x-show="patientNotice" x-text="patientNotice"></div>
                     <div class="row g-3">
-                        <div class="col-md-5">
-                            <label class="form-label small fw-bold">DNI</label>
+                        <div class="col-md-3">
+                            <label class="form-label small fw-bold">TIPO</label>
+                            <select class="form-select" x-model="patientForm.tipo_documento" @change="handleDocumentTypeChange()">
+                                <option value="DNI">DNI</option>
+                                <option value="PASAPORTE">PASAPORTE</option>
+                                <option value="CARNET DE EXTRANJERIA">CARNET DE EXTRANJERIA</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold">NÚMERO DE DOCUMENTO</label>
                             <div class="input-group">
-                                <input type="text" inputmode="numeric" maxlength="8" class="form-control" x-model="patientForm.dni" placeholder="8 dígitos" @input="handleDniInput($event)" @blur="lookupReniec()">
-                                <button type="button" class="btn btn-outline-primary" @click="lookupReniec()" :disabled="reniecLoading || !/^\d{8}$/.test(patientForm.dni)">
+                                <input type="text" :inputmode="patientForm.tipo_documento === 'DNI' ? 'numeric' : 'text'" :maxlength="patientForm.tipo_documento === 'DNI' ? 8 : 20" class="form-control" x-model="patientForm.dni" :placeholder="patientForm.tipo_documento === 'DNI' ? '8 dígitos' : 'Número de documento'" @input="handleDocumentInput($event)" @blur="lookupReniec()">
+                                <button x-show="patientForm.tipo_documento === 'DNI'" type="button" class="btn btn-outline-primary" @click="lookupReniec()" :disabled="reniecLoading || !/^\d{8}$/.test(patientForm.dni)">
                                     <span x-show="!reniecLoading">RENIEC</span>
                                     <span x-show="reniecLoading">Buscando...</span>
                                 </button>
                             </div>
-                            <div class="form-text">Consulta Decolecta RENIEC por DNI para completar nombres y apellidos.</div>
+                            <div class="form-text" x-show="patientForm.tipo_documento === 'DNI'">Consulta RENIEC para completar nombres y apellidos.</div>
                         </div>
                         <div class="col-md-7">
                             <label class="form-label small fw-bold">Nombres</label>
@@ -388,8 +396,8 @@ function orderSystem() {
         selectedReagent: '',
         itemSelect: null,
         selectedPatientId: String({{ Illuminate\Support\Js::from(old('patient_id', $order->patient_id)) }} || ''),
-        patients: {{ Illuminate\Support\Js::from($patients->map(fn ($p) => ['id' => (string) $p->id, 'dni' => $p->dni, 'nombres' => $p->nombres, 'apellidos' => $p->apellidos, 'telefono' => $p->telefono, 'fecha_nacimiento' => optional($p->fecha_nacimiento)->format('Y-m-d'), 'edad' => $p->edad, 'sexo' => $p->sexo, 'label' => $p->dni.' - '.$p->nombres.' '.$p->apellidos])->values()) }},
-        patientForm: { id: null, dni: '', nombres: '', apellidos: '', telefono: '', fecha_nacimiento: '', edad: '', sexo: '' },
+        patients: {{ Illuminate\Support\Js::from($patients->map(fn ($p) => ['id' => (string) $p->id, 'tipo_documento' => $p->tipo_documento, 'dni' => $p->dni, 'nombres' => $p->nombres, 'apellidos' => $p->apellidos, 'telefono' => $p->telefono, 'fecha_nacimiento' => optional($p->fecha_nacimiento)->format('Y-m-d'), 'edad' => $p->edad, 'sexo' => $p->sexo, 'label' => $p->tipo_documento.' '.$p->dni.' - '.$p->nombres.' '.$p->apellidos])->values()) }},
+        patientForm: { id: null, tipo_documento: 'DNI', dni: '', nombres: '', apellidos: '', telefono: '', fecha_nacimiento: '', edad: '', sexo: '' },
         patientError: '',
         patientNotice: '',
         patientSaving: false,
@@ -462,7 +470,7 @@ function orderSystem() {
             });
         },
         resetPatientForm() {
-            this.patientForm = { id: null, dni: '', nombres: '', apellidos: '', telefono: '', fecha_nacimiento: '', edad: '', sexo: '' };
+            this.patientForm = { id: null, tipo_documento: 'DNI', dni: '', nombres: '', apellidos: '', telefono: '', fecha_nacimiento: '', edad: '', sexo: '' };
             this.patientError = '';
             this.patientNotice = '';
             this.lastReniecDni = '';
@@ -474,6 +482,7 @@ function orderSystem() {
             bootstrap.Modal.getOrCreateInstance(this.$refs.patientModal).show();
         },
         async lookupReniec() {
+            if (this.patientForm.tipo_documento !== 'DNI') return;
             const dni = String(this.patientForm.dni || '').replace(/\D/g, '');
             if (dni.length !== 8 || this.reniecLoading || this.lastReniecDni === dni) return;
             if (this.fillExistingPatientByDni(dni)) return;
@@ -499,15 +508,23 @@ function orderSystem() {
                 this.reniecLoading = false;
             }
         },
-        handleDniInput(event) {
-            const dni = event.target.value.replace(/\D/g, '').slice(0, 8);
+        handleDocumentTypeChange() {
+            this.patientForm.dni = '';
+            this.patientError = '';
+            this.patientNotice = '';
+            this.lastReniecDni = '';
+        },
+        handleDocumentInput(event) {
+            const dni = this.patientForm.tipo_documento === 'DNI'
+                ? event.target.value.replace(/\D/g, '').slice(0, 8)
+                : event.target.value.toUpperCase().replace(/[^A-Z0-9-]/g, '').slice(0, 20);
             this.patientForm.dni = dni;
             this.patientNotice = '';
             if (this.lastReniecDni !== dni) this.lastReniecDni = '';
-            if (dni.length === 8 && !this.fillExistingPatientByDni(dni)) this.lookupReniec();
+            if (this.patientForm.tipo_documento === 'DNI' && dni.length === 8 && !this.fillExistingPatientByDni(dni)) this.lookupReniec();
         },
         fillExistingPatientByDni(dni) {
-            const existing = this.patients.find((patient) => String(patient.dni || '') === String(dni));
+            const existing = this.patients.find((patient) => patient.tipo_documento === this.patientForm.tipo_documento && String(patient.dni || '') === String(dni));
             if (!existing) return false;
 
             this.patientForm = { ...existing };
@@ -539,6 +556,7 @@ function orderSystem() {
                         'X-CSRF-TOKEN': '{{ csrf_token() }}',
                     },
                     body: JSON.stringify({
+                        tipo_documento: this.patientForm.tipo_documento,
                         dni: this.patientForm.dni,
                         nombres: this.patientForm.nombres,
                         apellidos: this.patientForm.apellidos,
