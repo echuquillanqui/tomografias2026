@@ -47,4 +47,34 @@ class OrderRequestingDoctorTest extends TestCase
         $this->assertSame('150.00', $order->total);
         $this->assertSame('Dr. Nuevo', $order->admissionForm->data['requested_by']);
     }
+
+    public function test_index_highlights_whether_an_order_has_a_requesting_doctor(): void
+    {
+        $user = User::create(['username' => 'orders', 'email' => 'orders@example.com', 'password' => 'password']);
+        $patient = Patient::create(['dni' => '12345678', 'nombres' => 'Ana', 'apellidos' => 'Torres']);
+        $agreement = Agreement::create(['nombre_institucion' => 'Particular', 'activo' => true]);
+        $doctor = RequestingDoctor::create(['nombre' => 'Dra. Solicitante', 'activo' => true]);
+
+        foreach ([
+            ['code' => 'ORD-CON-MEDICO', 'doctor_id' => $doctor->id],
+            ['code' => 'ORD-SIN-MEDICO', 'doctor_id' => null],
+        ] as $data) {
+            Order::create([
+                'codigo_orden' => $data['code'],
+                'patient_id' => $patient->id,
+                'agreement_id' => $agreement->id,
+                'medico_solicitante_id' => $data['doctor_id'],
+                'fecha_orden' => now(),
+                'estado' => 'Pendiente',
+            ]);
+        }
+
+        $response = $this->actingAs($user)->get(route('orders.index'));
+
+        $response->assertOk()
+            ->assertSee('requesting-doctor-button requesting-doctor-assigned', false)
+            ->assertSeeText('Médico solicitante')
+            ->assertSee('requesting-doctor-button requesting-doctor-missing', false)
+            ->assertSeeText('No médico solicitante');
+    }
 }
