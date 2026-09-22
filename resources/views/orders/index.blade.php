@@ -130,7 +130,9 @@
                             <td class="text-end">
                                 <a class="btn btn-sm btn-outline-primary" href="{{ route('orders.show', $o) }}">Ver</a>
                                 <a class="btn btn-sm btn-outline-secondary" href="{{ route('orders.edit', $o) }}">Editar</a>
-                                <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#requestingDoctor{{ $o->id }}">Médico solicitante</button>
+                                <button type="button" class="btn btn-sm requesting-doctor-button {{ $o->medico_solicitante_id ? 'requesting-doctor-assigned' : 'requesting-doctor-missing' }}" data-bs-toggle="modal" data-bs-target="#requestingDoctor{{ $o->id }}">
+                                    {{ $o->medico_solicitante_id ? 'Médico solicitante' : 'No médico solicitante' }}
+                                </button>
                                 <button type="button" class="btn btn-sm {{ $o->archivo_orden_path ? 'order-file-uploaded' : 'btn-outline-dark' }}" data-bs-toggle="modal" data-bs-target="#file{{ $o->id }}">
                                     {{ $o->archivo_orden_path ? 'Con Orden' : 'Sin Orden' }}
                                 </button>
@@ -159,6 +161,23 @@
         background-color: #075fd8;
         border-color: #075fd8;
         color: #fff;
+    }
+    .requesting-doctor-button,
+    .requesting-doctor-button:hover,
+    .requesting-doctor-button:focus {
+        color: #fff;
+    }
+    .requesting-doctor-assigned,
+    .requesting-doctor-assigned:hover,
+    .requesting-doctor-assigned:focus {
+        background-color: #ffc107;
+        border-color: #ffc107;
+    }
+    .requesting-doctor-missing,
+    .requesting-doctor-missing:hover,
+    .requesting-doctor-missing:focus {
+        background-color: #dc3545;
+        border-color: #dc3545;
     }
     .order-status {
         border: 1px solid transparent;
