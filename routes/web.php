@@ -61,6 +61,7 @@ Route::middleware('auth')->group(function () {
     Route::get('triajes', [OrderController::class, 'triajesIndex'])->name('triajes.index');
     Route::put('triajes/{order}/consumibles', [OrderController::class, 'updateTriageConsumables'])->name('triajes.consumables.update');
     Route::patch('orders/{order}/status', [OrderController::class, 'updateStatus'])->name('orders.update-status');
+    Route::patch('orders/{order}/requesting-doctor', [OrderController::class, 'updateRequestingDoctor'])->name('orders.update-requesting-doctor');
     Route::get('orders/{order}/triaje', [OrderController::class, 'triaje'])->name('orders.triaje');
     Route::put('orders/{order}/triaje', [OrderController::class, 'updateTriaje'])->name('orders.triaje.update');
     Route::get('orders/{order}/ficha-ingreso/plantilla', [OrderController::class, 'fichaIngresoTemplate'])->name('orders.ficha-ingreso.template');

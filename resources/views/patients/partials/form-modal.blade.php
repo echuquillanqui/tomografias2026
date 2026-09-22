@@ -11,8 +11,17 @@
             </div>
             <div class="modal-body">
                 <div class="row g-3">
-                    <div class="col-md-6">
-                        <label class="form-label">DNI</label>
+                    <div class="col-md-3">
+                        <label class="form-label">Tipo</label>
+                        <select name="tipo_documento" class="form-select @error('tipo_documento') is-invalid @enderror" required>
+                            @foreach(['DNI', 'PASAPORTE', 'CARNET DE EXTRANJERIA'] as $tipoDocumento)
+                                <option value="{{ $tipoDocumento }}" @selected(old('tipo_documento', $patient->tipo_documento ?? 'DNI') === $tipoDocumento)>{{ $tipoDocumento }}</option>
+                            @endforeach
+                        </select>
+                        @error('tipo_documento') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Número de documento</label>
                         <input type="text" name="dni" class="form-control @error('dni') is-invalid @enderror" value="{{ old('dni', $patient->dni ?? '') }}" required>
                         @error('dni') <div class="invalid-feedback">{{ $message }}</div> @enderror
                     </div>

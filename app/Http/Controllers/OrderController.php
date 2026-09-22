@@ -74,6 +74,10 @@ class OrderController extends Controller
             'tiposComprobante' => self::TIPOS_COMPROBANTE,
             'motivosEliminacion' => self::MOTIVOS_ELIMINACION,
             'unidades' => self::UNIDADES,
+            'medicosSolicitantes' => RequestingDoctor::select(['id', 'nombre'])
+                ->where('activo', true)
+                ->orderBy('nombre')
+                ->get(),
         ]);
     }
 
@@ -214,6 +218,20 @@ class OrderController extends Controller
         return redirect()->route('orders.index')->with('success', 'Estado de la orden actualizado correctamente.');
     }
 
+    public function updateRequestingDoctor(Request $request, Order $order): RedirectResponse
+    {
+        $data = $request->validate([
+            'medico_solicitante_id' => ['nullable', 'exists:requesting_doctors,id'],
+        ]);
+
+        $order->update($data);
+        $order->load(['patient', 'agreement', 'medicoSolicitante', 'orderExams.exam', 'admissionForm']);
+        $this->syncPrintableDocuments($order);
+
+        return redirect()->route('orders.index', $request->only(['search', 'date', 'all_dates', 'page']))
+            ->with('success', 'Médico solicitante actualizado correctamente.');
+    }
+
     public function updatePayment(Request $request, Order $order): RedirectResponse
     {
         $data = $request->validate([
@@ -279,7 +297,7 @@ class OrderController extends Controller
     private function formData(Request $request, ?Order $order = null): array
     {
         return [
-            'patients' => Patient::select(['id', 'dni', 'nombres', 'apellidos', 'telefono', 'fecha_nacimiento', 'edad', 'sexo'])->orderBy('apellidos')->orderBy('nombres')->get(),
+            'patients' => Patient::select(['id', 'tipo_documento', 'dni', 'nombres', 'apellidos', 'telefono', 'fecha_nacimiento', 'edad', 'sexo'])->orderBy('apellidos')->orderBy('nombres')->get(),
             'agreements' => Agreement::select(['id', 'nombre_institucion', 'mostrar_precio_orden'])->where('activo', true)->orderByRaw("CASE WHEN UPPER(nombre_institucion) = 'PARTICULAR' THEN 0 ELSE 1 END")->orderBy('nombre_institucion')->get(),
             'exams' => Exam::select(['id', 'nombre_examen', 'tipo_contraste'])->where('activo', true)->orderBy('nombre_examen')->get(),
             'reagents' => Reagent::select(['id', 'nombre', 'unidad'])->where('activo', true)->orderBy('nombre')->get(),

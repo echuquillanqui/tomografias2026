@@ -130,6 +130,7 @@
                             <td class="text-end">
                                 <a class="btn btn-sm btn-outline-primary" href="{{ route('orders.show', $o) }}">Ver</a>
                                 <a class="btn btn-sm btn-outline-secondary" href="{{ route('orders.edit', $o) }}">Editar</a>
+                                <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#requestingDoctor{{ $o->id }}">Médico solicitante</button>
                                 <button type="button" class="btn btn-sm {{ $o->archivo_orden_path ? 'order-file-uploaded' : 'btn-outline-dark' }}" data-bs-toggle="modal" data-bs-target="#file{{ $o->id }}">
                                     {{ $o->archivo_orden_path ? 'Con Orden' : 'Sin Orden' }}
                                 </button>
@@ -184,6 +185,37 @@
 @endpush
 
 @foreach($orders as $o)
+    <div class="modal fade user-modal" id="requestingDoctor{{ $o->id }}" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <form method="POST" action="{{ route('orders.update-requesting-doctor', $o) }}" class="modal-content">
+                @csrf
+                @method('PATCH')
+                <input type="hidden" name="search" value="{{ $search }}">
+                <input type="hidden" name="date" value="{{ $date }}">
+                @if($allDates)<input type="hidden" name="all_dates" value="1">@endif
+                <input type="hidden" name="page" value="{{ $orders->currentPage() }}">
+                <div class="modal-header text-white">
+                    <h5 class="modal-title">Cambiar médico solicitante</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-muted">Orden <strong>{{ $o->codigo_orden ?? '#'.$o->id }}</strong> · {{ $o->patient->nombres }} {{ $o->patient->apellidos }}</p>
+                    <label class="form-label small fw-bold" for="requesting-doctor-{{ $o->id }}">MÉDICO SOLICITANTE</label>
+                    <select id="requesting-doctor-{{ $o->id }}" name="medico_solicitante_id" class="form-select">
+                        <option value="">Sin médico solicitante</option>
+                        @foreach($medicosSolicitantes as $medico)
+                            <option value="{{ $medico->id }}" @selected($o->medico_solicitante_id === $medico->id)>{{ $medico->nombre }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
+                    <button class="btn btn-clinic-primary">Guardar médico</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <div class="modal fade user-modal" id="payment{{ $o->id }}" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog">
             <form method="POST" action="{{ route('orders.update-payment', $o) }}" class="modal-content" x-data="{ payments: {{ Illuminate\Support\Js::from(($o->payments->isNotEmpty() ? $o->payments : collect([['payment_method' => $o->tipo_pago ?? 'Efectivo', 'amount' => $o->total]]))->map(fn ($p) => ['payment_method' => data_get($p, 'payment_method'), 'amount' => (float) data_get($p, 'amount')])->values()) }}, methods: {{ Illuminate\Support\Js::from($tiposPago) }}, add() { const used = this.payments.map(p => p.payment_method); const method = this.methods.find(m => !used.includes(m)); if (method) this.payments.push({ payment_method: method, amount: 0 }); } }">
