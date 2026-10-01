@@ -70,6 +70,15 @@
                                 </a>
 
                                 <div class="dropdown-menu dropdown-menu-end shadow border-0" aria-labelledby="navbarDropdown">
+                                    <a class="dropdown-item {{ request()->routeIs('profile.*') ? 'active' : '' }}" href="{{ route('profile.edit') }}">
+                                        Mi perfil
+                                    </a>
+                                    @if(Auth::user()->isSuperAdmin())
+                                        <a class="dropdown-item" href="{{ route('database-backup.download') }}">
+                                            Descargar respaldo
+                                        </a>
+                                    @endif
+                                    <div class="dropdown-divider"></div>
                                     <a class="dropdown-item" href="{{ route('logout') }}"
                                        onclick="event.preventDefault();
                                                      document.getElementById('logout-form').submit();">

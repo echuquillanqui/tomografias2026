@@ -28,11 +28,13 @@ class RolesAndPermissionsSeeder extends Seeder
             Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
         }
 
+        $superadmin = Role::firstOrCreate(['name' => 'Superadmin', 'guard_name' => 'web']);
         $admin = Role::firstOrCreate(['name' => 'Admin', 'guard_name' => 'web']);
         $recepcion = Role::firstOrCreate(['name' => 'Recepción', 'guard_name' => 'web']);
         $medico = Role::firstOrCreate(['name' => 'Médico', 'guard_name' => 'web']);
         $almacen = Role::firstOrCreate(['name' => 'Almacén', 'guard_name' => 'web']);
 
+        $superadmin->syncPermissions($permissions);
         $admin->syncPermissions($permissions);
         $recepcion->syncPermissions([
             'pacientes.ver', 'pacientes.crear', 'pacientes.editar', 'pacientes.eliminar',

@@ -3,10 +3,12 @@
 use App\Http\Controllers\AgreementController;
 use App\Http\Controllers\AgreementPriceController;
 use App\Http\Controllers\CashClosingController;
+use App\Http\Controllers\DatabaseBackupController;
 use App\Http\Controllers\ExamController;
 use App\Http\Controllers\GlobalContrastConsumableController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\PatientController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ReagentController;
 use App\Http\Controllers\RequestingDoctorController;
@@ -35,6 +37,10 @@ Auth::routes();
 Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
 
 Route::middleware('auth')->group(function () {
+    Route::get('perfil', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::put('perfil', [ProfileController::class, 'update'])->name('profile.update');
+    Route::put('perfil/contrasena', [ProfileController::class, 'updatePassword'])->name('profile.password.update');
+    Route::get('respaldo-base-de-datos', DatabaseBackupController::class)->name('database-backup.download');
     Route::resource('users', UserController::class)->except(['create', 'show', 'edit']);
     Route::get('patients/reniec/dni', [PatientController::class, 'reniec'])->name('patients.reniec');
     Route::resource('patients', PatientController::class)->except(['create', 'show', 'edit']);

@@ -13,7 +13,7 @@ use Spatie\Permission\Models\Role;
 
 class UserController extends Controller
 {
-    private const ROLES = ['Admin', 'Recepción', 'Médico', 'Almacén'];
+    private const ROLES = ['Superadmin', 'Admin', 'Recepción', 'Médico', 'Almacén'];
 
     private const TIPOS_MEDICO = ['De Informe'];
 
@@ -37,7 +37,7 @@ class UserController extends Controller
 
         return view('users.index', [
             'users' => $users,
-            'roles' => self::ROLES,
+            'roles' => $request->user()->isSuperAdmin() ? self::ROLES : array_values(array_diff(self::ROLES, ['Superadmin'])),
             'tiposMedico' => self::TIPOS_MEDICO,
             'search' => $search,
         ]);
@@ -62,6 +62,8 @@ class UserController extends Controller
 
     public function update(Request $request, User $user): RedirectResponse
     {
+        abort_if($user->isSuperAdmin() && ! $request->user()->isSuperAdmin(), 403);
+
         $data = $this->validatedData($request, $user);
 
         if (! empty($data['password'])) {
@@ -88,6 +90,8 @@ class UserController extends Controller
 
     public function destroy(User $user): RedirectResponse
     {
+        abort_if($user->isSuperAdmin() && ! auth()->user()->isSuperAdmin(), 403);
+
         if (auth()->id() === $user->id) {
             return redirect()->route('users.index')->with('error', 'No puedes eliminar tu propio usuario.');
         }
@@ -107,7 +111,7 @@ class UserController extends Controller
             'nombre_completo' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($userId)],
             'password' => $passwordRules,
-            'rol' => ['required', Rule::in(self::ROLES)],
+            'rol' => ['required', Rule::in($request->user()->isSuperAdmin() ? self::ROLES : array_values(array_diff(self::ROLES, ['Superadmin'])))],
             'tipo_medico' => ['nullable', Rule::requiredIf($request->input('rol') === 'Médico'), Rule::in(self::TIPOS_MEDICO)],
             'cmp' => ['nullable', 'string', 'max:50'],
             'rne' => ['nullable', 'string', 'max:50'],
