@@ -37,7 +37,7 @@ class UserController extends Controller
 
         return view('users.index', [
             'users' => $users,
-            'roles' => $request->user()->isSuperAdmin() ? self::ROLES : array_values(array_diff(self::ROLES, ['Superadmin'])),
+            'roles' => self::ROLES,
             'tiposMedico' => self::TIPOS_MEDICO,
             'search' => $search,
         ]);
@@ -111,7 +111,7 @@ class UserController extends Controller
             'nombre_completo' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($userId)],
             'password' => $passwordRules,
-            'rol' => ['required', Rule::in($request->user()->isSuperAdmin() ? self::ROLES : array_values(array_diff(self::ROLES, ['Superadmin'])))],
+            'rol' => ['required', Rule::in(self::ROLES)],
             'tipo_medico' => ['nullable', Rule::requiredIf($request->input('rol') === 'Médico'), Rule::in(self::TIPOS_MEDICO)],
             'cmp' => ['nullable', 'string', 'max:50'],
             'rne' => ['nullable', 'string', 'max:50'],
