@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::table('users', function (Blueprint $table) {
             $table->string('nombre_completo')->nullable()->after('username');
-            $table->enum('rol', ['Admin', 'Recepción', 'Médico', 'Almacén'])->default('Recepción')->after('password');
+            $table->enum('rol', ['Superadmin', 'Admin', 'Recepción', 'Médico', 'Almacén'])->default('Recepción')->after('password');
             $table->enum('tipo_medico', ['Solicitante', 'De Informe', 'Ambos'])->nullable()->after('rol');
             $table->string('cmp')->nullable()->after('tipo_medico');
             $table->string('rne')->nullable()->after('cmp');
