@@ -141,6 +141,25 @@ class CashClosingController extends Controller
         return redirect()->route('cash-closings.index', $request->only(['period', 'base_date', 'base_month', 'from', 'to', 'tipo_pago', 'agreement_id', 'tab']))->with('success', 'Egreso registrado correctamente.');
     }
 
+    public function updateExpenseFile(Request $request, CashExpense $cashExpense): RedirectResponse
+    {
+        $request->validate([
+            'archivo' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png,webp,doc,docx,xls,xlsx', 'max:10240'],
+        ]);
+
+        $previousPath = $cashExpense->archivo_path;
+        $newPath = $request->file('archivo')->store('egresos-caja', 'public');
+
+        $cashExpense->update(['archivo_path' => $newPath]);
+
+        if ($previousPath) {
+            Storage::disk('public')->delete($previousPath);
+        }
+
+        return redirect()->route('cash-closings.index', $request->only(['period', 'base_date', 'base_month', 'from', 'to', 'tipo_pago', 'agreement_id', 'tab']))
+            ->with('success', $previousPath ? 'Archivo del egreso reemplazado correctamente.' : 'Archivo del egreso subido correctamente.');
+    }
+
     public function storeFixedExpense(Request $request): RedirectResponse
     {
         $data = $request->validate([
