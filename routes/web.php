@@ -58,6 +58,7 @@ Route::middleware('auth')->group(function () {
     Route::get('cash-closings/export/monthly-daily-excel', [CashClosingController::class, 'exportMonthlyDailyExcel'])->name('cash-closings.export.monthly-daily-excel');
     Route::get('cash-closings/export/pdf', [CashClosingController::class, 'exportPdf'])->name('cash-closings.export.pdf');
     Route::post('cash-closings/expenses', [CashClosingController::class, 'storeExpense'])->name('cash-closings.expenses.store');
+    Route::patch('cash-closings/expenses/{cashExpense}/file', [CashClosingController::class, 'updateExpenseFile'])->name('cash-closings.expenses.file.update');
     Route::post('cash-closings/fixed-expenses', [CashClosingController::class, 'storeFixedExpense'])->name('cash-closings.fixed-expenses.store');
     Route::put('cash-closings/fixed-expenses/{cashFixedExpense}', [CashClosingController::class, 'updateFixedExpense'])->name('cash-closings.fixed-expenses.update');
     Route::post('cash-closings/fixed-expenses/execute', [CashClosingController::class, 'executeFixedExpenses'])->name('cash-closings.fixed-expenses.execute');

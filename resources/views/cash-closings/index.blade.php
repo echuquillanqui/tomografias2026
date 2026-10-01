@@ -120,8 +120,73 @@
         <div class="col-lg-8">
             <div class="card clinic-card mb-4">
                 <div class="card-header bg-white border-0 pt-4 px-4"><h5 class="fw-bold mb-0">Egresos del periodo</h5></div>
-                <div class="card-body p-0"><div class="table-responsive"><table class="table table-clinic align-middle mb-0"><thead><tr><th>Fecha</th><th>Descripción</th><th>Monto</th><th>Archivo</th><th>Usuario</th><th></th></tr></thead><tbody>@forelse($expenses as $expense)<tr><td>{{ $expense->fecha_egreso->format('d/m/Y') }}</td><td class="fw-semibold">{{ $expense->descripcion }}</td><td class="text-danger fw-bold">S/ {{ number_format($expense->monto, 2) }}</td><td>@if($expense->archivo_path)<a target="_blank" href="{{ asset('storage/'.$expense->archivo_path) }}">Ver archivo</a>@else — @endif</td><td>{{ $expense->creator->username ?? '—' }}</td><td class="text-end"><form method="POST" action="{{ route('cash-closings.expenses.destroy', $expense) }}" onsubmit="return confirm('¿Eliminar este egreso?')">@csrf @method('DELETE')<button class="btn btn-sm btn-outline-danger">Eliminar</button></form></td></tr>@empty<tr><td colspan="6" class="text-center py-4">Sin egresos registrados.</td></tr>@endforelse</tbody></table></div></div>
+                <div class="card-body p-0"><div class="table-responsive"><table class="table table-clinic align-middle mb-0"><thead><tr><th>Fecha</th><th>Descripción</th><th>Monto</th><th>Archivo</th><th>Usuario</th><th></th></tr></thead><tbody>@forelse($expenses as $expense)<tr><td>{{ $expense->fecha_egreso->format('d/m/Y') }}</td><td class="fw-semibold">{{ $expense->descripcion }}</td><td class="text-danger fw-bold">S/ {{ number_format($expense->monto, 2) }}</td><td><button type="button" class="btn btn-sm {{ $expense->archivo_path ? 'btn-outline-primary' : 'btn-outline-secondary' }} fw-bold text-nowrap" data-bs-toggle="modal" data-bs-target="#expenseFileModal{{ $expense->id }}">{{ $expense->archivo_path ? 'Ver archivo' : 'Subir archivo' }}</button></td><td>{{ $expense->creator->username ?? '—' }}</td><td class="text-end"><form method="POST" action="{{ route('cash-closings.expenses.destroy', $expense) }}" onsubmit="return confirm('¿Eliminar este egreso?')">@csrf @method('DELETE')<button class="btn btn-sm btn-outline-danger">Eliminar</button></form></td></tr>@empty<tr><td colspan="6" class="text-center py-4">Sin egresos registrados.</td></tr>@endforelse</tbody></table></div></div>
             </div>
+
+            @foreach($expenses as $expense)
+                @php
+                    $expenseFileExtension = strtolower(pathinfo($expense->archivo_path ?? '', PATHINFO_EXTENSION));
+                    $expenseFileUrl = $expense->archivo_path ? asset('storage/'.$expense->archivo_path) : null;
+                    $expenseFileIsImage = in_array($expenseFileExtension, ['jpg', 'jpeg', 'png', 'webp'], true);
+                @endphp
+                <div class="modal fade" id="expenseFileModal{{ $expense->id }}" tabindex="-1" aria-labelledby="expenseFileModalLabel{{ $expense->id }}" aria-hidden="true">
+                    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+                        <div class="modal-content border-0 shadow">
+                            <div class="modal-header">
+                                <div>
+                                    <h5 class="modal-title fw-bold" id="expenseFileModalLabel{{ $expense->id }}">Archivo sustentatorio</h5>
+                                    <div class="small text-muted">{{ $expense->descripcion }}</div>
+                                </div>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                            </div>
+                            <div class="modal-body p-4">
+                                @if($expenseFileUrl)
+                                    <div class="expense-file-preview mb-4">
+                                        @if($expenseFileIsImage)
+                                            <img src="{{ $expenseFileUrl }}" alt="Archivo sustentatorio de {{ $expense->descripcion }}" class="img-fluid rounded">
+                                        @elseif($expenseFileExtension === 'pdf')
+                                            <iframe src="{{ $expenseFileUrl }}" title="Archivo sustentatorio de {{ $expense->descripcion }}"></iframe>
+                                        @else
+                                            <div class="text-center p-4">
+                                                <div class="fw-bold mb-2">Archivo {{ strtoupper($expenseFileExtension) }}</div>
+                                                <p class="text-muted mb-3">Este tipo de archivo se abre con una aplicación externa.</p>
+                                                <a href="{{ $expenseFileUrl }}" target="_blank" rel="noopener" class="btn btn-outline-primary">Abrir archivo</a>
+                                            </div>
+                                        @endif
+                                    </div>
+                                    <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-4">
+                                        <span class="small text-muted text-break">{{ basename($expense->archivo_path) }}</span>
+                                        <a href="{{ $expenseFileUrl }}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-primary">Ver en otra pestaña</a>
+                                    </div>
+                                @else
+                                    <div class="alert alert-light border text-center py-4 mb-4">
+                                        <div class="fw-bold">Este egreso todavía no tiene un archivo.</div>
+                                        <div class="small text-muted">Selecciona el sustento para adjuntarlo.</div>
+                                    </div>
+                                @endif
+
+                                <form method="POST" action="{{ route('cash-closings.expenses.file.update', $expense) }}" enctype="multipart/form-data">
+                                    @csrf
+                                    @method('PATCH')
+                                    <input type="hidden" name="period" value="{{ $period }}">
+                                    <input type="hidden" name="base_date" value="{{ $baseDate }}">
+                                    <input type="hidden" name="base_month" value="{{ $period === 'month' ? \Illuminate\Support\Carbon::parse($baseDate)->format('Y-m') : '' }}">
+                                    <input type="hidden" name="tipo_pago" value="{{ $tipoPago }}">
+                                    <input type="hidden" name="agreement_id" value="{{ $agreementId }}">
+                                    <input type="hidden" name="tab" value="resumen">
+                                    <label for="expenseFile{{ $expense->id }}" class="form-label fw-bold">{{ $expense->archivo_path ? 'Reemplazar archivo' : 'Subir archivo' }}</label>
+                                    <input id="expenseFile{{ $expense->id }}" type="file" name="archivo" class="form-control" accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx,.xls,.xlsx" required>
+                                    <div class="form-text mb-3">PDF, imagen u Office hasta 10 MB.</div>
+                                    <div class="d-flex justify-content-end gap-2">
+                                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
+                                        <button type="submit" class="btn btn-clinic-primary">{{ $expense->archivo_path ? 'Reemplazar archivo' : 'Guardar archivo' }}</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            @endforeach
 
             <div class="card clinic-card">
                 <div class="card-header bg-white border-0 pt-4 px-4"><h5 class="fw-bold mb-0">Entradas por órdenes</h5></div>
@@ -260,5 +325,17 @@
     .agreement-badge-particular { background: #e5e7eb; border-color: #9ca3af; color: #4b5563; }
     .agreement-badge-essalud { background: #e0f2fe; border-color: #7dd3fc; color: #0369a1; }
     .agreement-badge-other { background: #dcfce7; border-color: #86efac; color: #15803d; }
+    .expense-file-preview {
+        align-items: center;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: .75rem;
+        display: flex;
+        justify-content: center;
+        min-height: 15rem;
+        overflow: hidden;
+    }
+    .expense-file-preview img { max-height: 28rem; object-fit: contain; }
+    .expense-file-preview iframe { border: 0; height: 28rem; width: 100%; }
 </style>
 @endpush
